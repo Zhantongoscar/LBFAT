@@ -1,0 +1,45 @@
+version: '3'
+
+services:
+  mysql:
+    image: mysql:5.7
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=13701033228
+      - MYSQL_DATABASE=lbfat
+    command: 
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_general_ci
+      --explicit_defaults_for_timestamp=true
+      --lower_case_table_names=1
+      --max_allowed_packet=128M
+      --skip-grant-tables
+    volumes:
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - lbfat-network
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - lbfat-network
+
+  emqx:
+    image: emqx/emqx:4.4.19
+    ports:
+      - "11883:1883"
+      - "18083:18083"
+      - "18084:8083"
+    environment:
+      - EMQX_NAME=emqx
+      - EMQX_HOST=127.0.0.1
+      - EMQX_ALLOW_ANONYMOUS=true
+    networks:
+      - lbfat-network
+
+networks:
+  lbfat-network:
+    driver: bridge

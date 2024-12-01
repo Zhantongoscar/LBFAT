@@ -1,0 +1,6 @@
+content
+EOL other_text
+
+# 正确的写法
+cat > "file.txt" << 'EOL'
+content

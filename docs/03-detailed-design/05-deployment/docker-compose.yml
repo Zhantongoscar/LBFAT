@@ -1,0 +1,59 @@
+version: '3'
+
+services:
+  frontend:
+    build:
+      context: ./docker/frontend
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    environment:
+      - VUE_APP_API_URL=http://localhost:3000
+      - VUE_APP_WS_URL=ws://localhost:8083
+    networks:
+      - lbfat-network
+
+  backend:
+    build:
+      context: ./docker/backend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - MQTT_HOST=emqx
+      - MQTT_PORT=1883
+    networks:
+      - lbfat-network
+
+  mysql:
+    image: mysql:8.0
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=your_password
+      - MYSQL_DATABASE=lbfat
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - lbfat-network
+
+  emqx:
+    image: emqx/emqx:latest
+    ports:
+      - "1883:1883"
+      - "8083:8083"
+    volumes:
+      - emqx_data:/opt/emqx/data
+    networks:
+      - lbfat-network
+
+networks:
+  lbfat-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  emqx_data:

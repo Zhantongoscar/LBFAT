@@ -1,0 +1,47 @@
+/**
+ * 数据格式标准
+ * @description 系统数据格式的具体实现标准
+ */
+
+## 相关文档
++ - [开发规范](../../04-standards/development-standard.md)
++ - [系统架构设计](../../02-architecture/system-architecture.md)
++ - [通信架构设计](../../02-architecture/communication-design.md)
++ - [数据库设计](../database/table-design.md)
++ - [MQTT设计](../backend/mqtt-design.md)
+
+## 1. 字段命名标准
+```yaml
+# 通用字段
+ID字段:
+  数据库: id (BIGINT)
+  后端: id (Long)
+  前端: id (number)
+   
+时间字段:
+  数据库: created_at, updated_at (TIMESTAMP)
+  后端: createdAt, updatedAt (LocalDateTime)
+  前端: createdAt, updatedAt (string)
+  格式: ISO 8601 (YYYY-MM-DDTHH:mm:ss.sssZ)
+
+# 设备相关字段
+设备ID:
+  数据库: device_id (BIGINT)
+  后端: deviceId (Long)
+  前端: deviceId (number)
+  MQTT: device_id (number)
+
+# 状态相关字段
+设备状态:
+  数据库: status (VARCHAR(20))
+  后端: status (String)
+  前端: status (string)
+  MQTT: status
+
+# 数值相关字段
+信号强度:
+  数据库: rssi (INT)
+  后端: rssi (Integer)
+  前端: rssi (number)
+  MQTT: rssi
+```

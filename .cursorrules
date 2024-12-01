@@ -1,0 +1,48 @@
+/*
+*本项目编写代码的时候，要注意前端 后端,mysql和emqx的交互及数据对齐，确保数据一致性。
+*/
+
+/*
+ * 详细规范文档
+ * 路径：/root/project/LBFAT/docs/04-standards/development-standard.md
+ * 用途：包含完整的编码规范和最佳实践
+ */
+
+ /*
+ *避免了在文档中使用多层嵌套的代码块（避免使用 符号）
+ 2. 使用了不同的EOF标记（EOF_CONTAINER, EOF_COMPOSE）
+ 3. 将目录树结构改为纯文本形式，使用ASCII字符（├、│、└）来表示
+ 4. 将docker-compose配置单独放在一个文件中关键改变是文档格式的简化，
+ 避免了heredoc（<<EOF）与Markdown代码块（）的冲突。
+ */
+
+/*
+ * 将简单的EOF标记改为更具体的标记名称,确保EOF标记的正确结
+ */
+
+/*
+ * 避免了在文档中使用多层嵌套的代码块（避免使用 ``` 符号）
+ 2. 使用了不同的EOF标记（EOF_CONTAINER, EOF_COMPOSE）
+ 3. 将目录树结构改为纯文本形式，使用ASCII字符（├、│、└）来表示
+ 4. 将docker-compose配置单独放在一个文件中关键改变是文档格式的简化，
+ 避免了heredoc（<<EOF）与Markdown代码块（```）的冲突。
+ */
+
+/*
+ * 将简单的EOF标记改为更具体的标记名称,确保EOF标记的正确结束
+ */
+
+/*
+ * 使用特殊EOF标记的好处：
+避免与文件内容冲突
+更容易识别文件类型
+3. 提高可读性
+建议的命名规范：
+EOF_VUE: Vue组件文件
+EOF_JS: JavaScript文件
+EOF_CSS: CSS文件
+EOF_HTML: HTML文件
+EOF_CONFIG: 配置文件
+  */ 
+
+  mysql8 有鉴权问题，需要修改为为传统鉴权方式，你可以使用mysql 5.7版本。要求 root@%， 要求 root密码 13701033228
