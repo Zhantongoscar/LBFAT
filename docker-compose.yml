@@ -1,0 +1,71 @@
+version: '3'
+
+services:
+  mysql:
+    image: mysql:5.7
+    container_name: lbfat_mysql
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=13701033228
+      - MYSQL_DATABASE=lbfat
+      - MYSQL_ROOT_HOST=%
+    volumes:
+      - ./mysql/data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - lbfat_network
+    command: --default-authentication-plugin=mysql_native_password
+
+  emqx:
+    image: emqx/emqx:latest
+    container_name: lbfat_emqx
+    ports:
+      - "1883:1883"   # MQTT
+      - "8083:8083"   # WebSocket
+      - "8084:8084"   # WSS
+      - "8883:8883"   # MQTT SSL
+      - "18083:18083" # Dashboard
+    volumes:
+      - ./emqx/data:/opt/emqx/data
+      - ./emqx/log:/opt/emqx/log
+    networks:
+      - lbfat_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: lbfat_backend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=13701033228
+      - DB_NAME=lbfat
+      - MQTT_HOST=emqx
+      - MQTT_PORT=1883
+    depends_on:
+      - mysql
+      - emqx
+    networks:
+      - lbfat_network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: lbfat_frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    networks:
+      - lbfat_network
+
+networks:
+  lbfat_network:
+    driver: bridge
