@@ -12,11 +12,16 @@ yarn-error.log
 # Build
 dist/
 build/
+coverage/
 
 # Docker volumes
 mysql/data/
 emqx/data/
 emqx/log/
+
+# Logs
+logs/
+*.log
 
 # IDE
 .idea/
@@ -26,4 +31,11 @@ emqx/log/
 
 # OS
 .DS_Store
-Thumbs.db 
+Thumbs.db
+
+# Backup
+backup/
+
+# Package locks
+package-lock.json
+yarn.lock 
