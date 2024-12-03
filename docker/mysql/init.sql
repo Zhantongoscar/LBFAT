@@ -1,19 +1,29 @@
-USE mysql;
-FLUSH PRIVILEGES;
-ALTER USER 'root'@'localhost' IDENTIFIED BY '13701033228';
-GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY '13701033228';
-FLUSH PRIVILEGES;
-
 CREATE DATABASE IF NOT EXISTS lbfat DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 USE lbfat;
 
+CREATE TABLE IF NOT EXISTS project_subscriptions (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    project_name VARCHAR(32) NOT NULL COMMENT '项目名称',
+    is_subscribed TINYINT(1) NOT NULL DEFAULT 1 COMMENT '是否订阅',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_project_name (project_name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS devices (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    device_code VARCHAR(32) NOT NULL COMMENT '设备编码',
-    device_name VARCHAR(64) NOT NULL COMMENT '设备名称',
-    status TINYINT NOT NULL DEFAULT 0 COMMENT '状态：0-离线 1-在线',
-    last_online_time DATETIME COMMENT '最后在线时间',
-    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY uk_device_code (device_code)
+    project_name VARCHAR(32) NOT NULL COMMENT '项目名称',
+    module_type VARCHAR(32) NOT NULL COMMENT '模块类型',
+    serial_number VARCHAR(32) NOT NULL COMMENT '序列号',
+    status VARCHAR(16) NOT NULL DEFAULT 'offline' COMMENT '当前状态',
+    rssi INT COMMENT '信号强度',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_device (project_name, module_type, serial_number)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT INTO project_subscriptions (project_name, is_subscribed) VALUES 
+('lb_test', 1);
+
+INSERT INTO devices (project_name, module_type, serial_number, status, rssi) VALUES 
+('lb_test', 'EDB', '4', 'offline', 0);
