@@ -25,6 +25,12 @@ class Project {
         const sql = 'INSERT INTO project_subscriptions (project_name) VALUES (?)';
         return await db.query(sql, [projectName]);
     }
+
+    // 删除项目
+    static async delete(projectName) {
+        const sql = 'DELETE FROM project_subscriptions WHERE project_name = ?';
+        return await db.query(sql, [projectName]);
+    }
 }
 
 module.exports = Project; 

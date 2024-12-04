@@ -18,7 +18,7 @@
           />
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="120">
+      <el-table-column label="操作" width="200">
         <template #default="scope">
           <el-button
             type="primary"
@@ -26,6 +26,13 @@
             @click="viewDevices(scope.row)"
           >
             查看设备
+          </el-button>
+          <el-button
+            type="danger"
+            link
+            @click="handleDelete(scope.row)"
+          >
+            删除
           </el-button>
         </template>
       </el-table-column>
@@ -65,7 +72,7 @@
 <script>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import projectApi from '../api/project'
 
 export default {
@@ -134,6 +141,29 @@ export default {
       })
     }
 
+    // 处理删除项目
+    const handleDelete = async (project) => {
+      try {
+        await ElMessageBox.confirm(
+          `确定要删除项目 "${project.project_name}" 吗？\n删除后将无法恢复。`,
+          '警告',
+          {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning',
+          }
+        )
+        
+        await projectApi.deleteProject(project.project_name)
+        ElMessage.success('删除成功')
+        loadProjects() // 重新加载项目列表
+      } catch (error) {
+        if (error !== 'cancel') {
+          ElMessage.error('删除失败')
+        }
+      }
+    }
+
     onMounted(loadProjects)
 
     return {
@@ -143,7 +173,8 @@ export default {
       showCreateDialog,
       submitProject,
       updateSubscription,
-      viewDevices
+      viewDevices,
+      handleDelete
     }
   }
 }

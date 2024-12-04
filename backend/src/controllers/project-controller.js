@@ -83,4 +83,41 @@ exports.updateSubscription = async (req, res) => {
             message: error.message
         });
     }
+};
+
+// 删除项目
+exports.deleteProject = async (req, res) => {
+    try {
+        const { projectName } = req.params;
+        
+        const project = await Project.findByName(projectName);
+        if (!project) {
+            return res.status(404).json({
+                code: 404,
+                message: 'Project not found'
+            });
+        }
+
+        // 取消MQTT订阅
+        try {
+            await mqttService.unsubscribeFromProject(projectName);
+        } catch (mqttError) {
+            console.error('MQTT取消订阅失败:', mqttError);
+            // 继续执行，不影响数据库操作
+        }
+
+        // 删除项目
+        await Project.delete(projectName);
+
+        res.json({
+            code: 200,
+            message: 'Project deleted successfully'
+        });
+    } catch (error) {
+        console.error('删除项目失败:', error);
+        res.status(500).json({
+            code: 500,
+            message: error.message
+        });
+    }
 }; 

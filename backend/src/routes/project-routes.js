@@ -11,4 +11,7 @@ router.post('/', projectController.createProject);
 // 更新项目订阅状态
 router.put('/:projectName/subscription', projectController.updateSubscription);
 
+// 删除项目
+router.delete('/:projectName', projectController.deleteProject);
+
 module.exports = router; 

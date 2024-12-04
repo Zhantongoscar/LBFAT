@@ -16,5 +16,10 @@ export default {
     // 更新项目订阅状态
     updateSubscription(projectName, isSubscribed) {
         return axios.put(`${baseURL}/api/projects/${projectName}/subscription`, { isSubscribed });
+    },
+
+    // 删除项目
+    deleteProject(projectName) {
+        return axios.delete(`${baseURL}/api/projects/${projectName}`);
     }
 }; 
