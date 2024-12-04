@@ -2,11 +2,19 @@ const Project = require('../models/project');
 const mqttService = require('../services/mqtt-service');
 
 // 获取所有项目
-exports.getAllProjects = async () => {
+exports.getAllProjects = async (req, res) => {
     try {
-        return await Project.findAll();
+        const projects = await Project.findAll();
+        res.json({
+            code: 200,
+            message: 'success',
+            data: projects
+        });
     } catch (error) {
-        throw error;
+        res.status(500).json({
+            code: 500,
+            message: error.message
+        });
     }
 };
 
@@ -40,6 +48,8 @@ exports.updateSubscription = async (req, res) => {
         const { projectName } = req.params;
         const { isSubscribed } = req.body;
 
+        console.log('Updating subscription:', { projectName, isSubscribed }); // 添加日志
+
         const project = await Project.findByName(projectName);
         if (!project) {
             return res.status(404).json({
@@ -51,10 +61,15 @@ exports.updateSubscription = async (req, res) => {
         await Project.updateSubscription(projectName, isSubscribed);
 
         // 更新MQTT订阅
-        if (isSubscribed) {
-            await mqttService.subscribeToProject(projectName);
-        } else {
-            await mqttService.unsubscribeFromProject(projectName);
+        try {
+            if (isSubscribed) {
+                await mqttService.subscribeToProject(projectName);
+            } else {
+                await mqttService.unsubscribeFromProject(projectName);
+            }
+        } catch (mqttError) {
+            console.error('MQTT操作失败，但数据库更新成功:', mqttError);
+            // 继续执行，不影响数据库更新
         }
 
         res.json({
@@ -62,6 +77,7 @@ exports.updateSubscription = async (req, res) => {
             message: 'Subscription updated successfully'
         });
     } catch (error) {
+        console.error('更新订阅状态失败:', error);
         res.status(500).json({
             code: 500,
             message: error.message
