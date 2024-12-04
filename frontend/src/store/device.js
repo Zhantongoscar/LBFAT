@@ -59,6 +59,21 @@ export const useDeviceStore = defineStore('device', {
       }
     },
 
+    async deleteDevice(projectName, moduleType, serialNumber) {
+      try {
+        await deviceApi.deleteDevice(projectName, moduleType, serialNumber)
+        this.devices = this.devices.filter(d => 
+          !(d.project_name === projectName && 
+            d.module_type === moduleType && 
+            d.serial_number === serialNumber)
+        )
+        return true
+      } catch (error) {
+        this.error = error.message
+        return false
+      }
+    },
+
     // WebSocket更新设备状态
     updateDeviceStatus(device) {
       const index = this.devices.findIndex(d => 

@@ -2,21 +2,6 @@
   <div class="project-list">
     <h1>项目管理</h1>
     
-    <!-- 创建项目 -->
-    <div class="create-project">
-      <el-input
-        v-model="newProjectName"
-        placeholder="输入项目名称"
-        class="input-with-select"
-      >
-        <template #append>
-          <el-button type="primary" @click="createProject">
-            创建项目
-          </el-button>
-        </template>
-      </el-input>
-    </div>
-
     <!-- 项目列表 -->
     <el-table :data="projects" style="width: 100%">
       <el-table-column prop="id" label="ID" width="80" />
@@ -149,11 +134,6 @@ export default {
       })
     }
 
-    // 格式化日期
-    const formatDate = (date) => {
-      return new Date(date).toLocaleString()
-    }
-
     onMounted(loadProjects)
 
     return {
@@ -163,8 +143,7 @@ export default {
       showCreateDialog,
       submitProject,
       updateSubscription,
-      viewDevices,
-      formatDate
+      viewDevices
     }
   }
 }

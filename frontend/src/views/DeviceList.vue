@@ -42,6 +42,17 @@
           {{ formatDate(scope.row.updated_at) }}
         </template>
       </el-table-column>
+      <el-table-column label="操作" width="120">
+        <template #default="scope">
+          <el-button
+            type="danger"
+            link
+            @click="handleDelete(scope.row)"
+          >
+            删除
+          </el-button>
+        </template>
+      </el-table-column>
     </el-table>
   </div>
 </template>
@@ -49,7 +60,7 @@
 <script>
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { useDeviceStore } from '../store/device'
 import { useProjectStore } from '../store/project'
 import { useWebSocket } from '../composables/useWebSocket'
@@ -128,6 +139,29 @@ export default {
       return new Date(date).toLocaleString()
     }
 
+    // 处理删除设备
+    const handleDelete = async (device) => {
+      try {
+        await ElMessageBox.confirm(
+          `确定要删除该设备吗？\n项目：${device.project_name}\n序列号：${device.serial_number}`,
+          '警告',
+          {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning',
+          }
+        )
+        
+        await deviceStore.deleteDevice(device.project_name, device.module_type, device.serial_number)
+        ElMessage.success('删除成功')
+        await loadDevices() // 重新加载设备列表
+      } catch (error) {
+        if (error !== 'cancel') {
+          ElMessage.error('删除失败')
+        }
+      }
+    }
+
     onMounted(() => {
       loadProjects()
       connect()
@@ -146,7 +180,8 @@ export default {
       handleProjectChange,
       calculateRssiPercentage,
       getRssiStatus,
-      formatDate
+      formatDate,
+      handleDelete
     }
   }
 }

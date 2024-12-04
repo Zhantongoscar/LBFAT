@@ -19,8 +19,8 @@ const deviceAPI = {
     return axios.put(`${baseURL}/api/devices/${id}`, data)
   },
   
-  deleteDevice(id) {
-    return axios.delete(`${baseURL}/api/devices/${id}`)
+  deleteDevice(projectName, moduleType, serialNumber) {
+    return axios.delete(`${baseURL}/api/devices/${projectName}/${moduleType}/${serialNumber}`)
   }
 }
 
