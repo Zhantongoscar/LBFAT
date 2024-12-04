@@ -21,4 +21,15 @@ pool.getConnection()
         logger.error("Database connection error:", err);
     });
 
-module.exports = pool;
+// 导出查询函数
+module.exports = {
+    query: async (sql, params) => {
+        try {
+            const [rows] = await pool.execute(sql, params);
+            return rows;
+        } catch (error) {
+            console.error('Database query error:', error);
+            throw error;
+        }
+    }
+};

@@ -19,26 +19,21 @@
 
     <!-- 项目列表 -->
     <el-table :data="projects" style="width: 100%">
+      <el-table-column prop="id" label="ID" width="80" />
       <el-table-column prop="project_name" label="项目名称" />
-      <el-table-column prop="is_subscribed" label="订阅状态">
+      <el-table-column prop="is_subscribed" label="订阅状态" width="120">
         <template #default="scope">
           <el-switch
             v-model="scope.row.is_subscribed"
+            active-text="已订阅"
+            inactive-text="未订阅"
+            :active-value="1"
+            :inactive-value="0"
             @change="updateSubscription(scope.row)"
           />
         </template>
       </el-table-column>
-      <el-table-column prop="created_at" label="创建时间">
-        <template #default="scope">
-          {{ formatDate(scope.row.created_at) }}
-        </template>
-      </el-table-column>
-      <el-table-column prop="updated_at" label="更新时间">
-        <template #default="scope">
-          {{ formatDate(scope.row.updated_at) }}
-        </template>
-      </el-table-column>
-      <el-table-column label="操作">
+      <el-table-column label="操作" width="120">
         <template #default="scope">
           <el-button
             type="primary"
@@ -50,6 +45,35 @@
         </template>
       </el-table-column>
     </el-table>
+
+    <!-- 创建项目对话框 -->
+    <el-dialog
+      v-model="dialogVisible"
+      title="创建新项目"
+      width="30%"
+      :close-on-click-modal="false"
+    >
+      <el-form :model="newProject" label-width="80px">
+        <el-form-item label="项目名称">
+          <el-input v-model="newProject.name" placeholder="请输入项目名称" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="dialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="submitProject">
+            确认
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
+
+    <!-- 创建项目按钮 -->
+    <div class="create-project">
+      <el-button type="primary" @click="showCreateDialog">
+        创建新项目
+      </el-button>
+    </div>
   </div>
 </template>
 
@@ -64,7 +88,10 @@ export default {
   setup() {
     const router = useRouter()
     const projects = ref([])
-    const newProjectName = ref('')
+    const dialogVisible = ref(false)
+    const newProject = ref({
+      name: ''
+    })
 
     // 加载项目列表
     const loadProjects = async () => {
@@ -76,17 +103,23 @@ export default {
       }
     }
 
-    // 创建项目
-    const createProject = async () => {
-      if (!newProjectName.value) {
+    // 显示创建对话框
+    const showCreateDialog = () => {
+      newProject.value.name = ''
+      dialogVisible.value = true
+    }
+
+    // 提交创建项目
+    const submitProject = async () => {
+      if (!newProject.value.name) {
         ElMessage.warning('请输入项目名称')
         return
       }
 
       try {
-        await projectApi.createProject(newProjectName.value)
+        await projectApi.createProject(newProject.value.name)
         ElMessage.success('创建项目成功')
-        newProjectName.value = ''
+        dialogVisible.value = false
         loadProjects()
       } catch (error) {
         ElMessage.error('创建项目失败')
@@ -101,6 +134,7 @@ export default {
           project.is_subscribed
         )
         ElMessage.success('更新订阅状态成功')
+        loadProjects() // 重新加载列表以确保数据同步
       } catch (error) {
         project.is_subscribed = !project.is_subscribed // 恢复状态
         ElMessage.error('更新订阅状态失败')
@@ -124,8 +158,10 @@ export default {
 
     return {
       projects,
-      newProjectName,
-      createProject,
+      dialogVisible,
+      newProject,
+      showCreateDialog,
+      submitProject,
       updateSubscription,
       viewDevices,
       formatDate
@@ -140,7 +176,22 @@ export default {
 }
 
 .create-project {
-  margin-bottom: 20px;
-  max-width: 500px;
+  margin: 20px 0;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+:deep(.el-switch__label) {
+  color: #606266;
+}
+
+:deep(.el-switch__label.is-active) {
+  color: #409EFF;
 }
 </style> 
