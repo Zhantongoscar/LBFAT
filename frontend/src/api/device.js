@@ -1,21 +1,27 @@
 import axios from 'axios'
 
-const baseURL = 'http://localhost:3000/api'
+const baseURL = import.meta.env.VITE_API_URL
 
-export const deviceAPI = {
-  getDevices() {
-    return axios.get(`${baseURL}/devices`)
+const deviceAPI = {
+  getDevices(filters = {}) {
+    return axios.get(`${baseURL}/api/devices`, { params: filters })
   },
   
-  createDevice(data) {
-    return axios.post(`${baseURL}/devices`, data)
+  getDevice(projectName, moduleType, serialNumber) {
+    return axios.get(`${baseURL}/api/devices/${projectName}/${moduleType}/${serialNumber}`)
+  },
+  
+  createDevice(device) {
+    return axios.post(`${baseURL}/api/devices`, device)
   },
   
   updateDevice(id, data) {
-    return axios.put(`${baseURL}/devices/${id}`, data)
+    return axios.put(`${baseURL}/api/devices/${id}`, data)
   },
   
   deleteDevice(id) {
-    return axios.delete(`${baseURL}/devices/${id}`)
+    return axios.delete(`${baseURL}/api/devices/${id}`)
   }
 }
+
+export default deviceAPI

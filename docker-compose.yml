@@ -12,10 +12,20 @@ services:
       - MYSQL_ROOT_HOST=%
     volumes:
       - ./mysql/data:/var/lib/mysql
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d
     networks:
       - lbfat_network
     command: --default-authentication-plugin=mysql_native_password
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p13701033228"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   emqx:
     image: emqx/emqx:latest
@@ -31,6 +41,11 @@ services:
       - ./emqx/log:/opt/emqx/log
     networks:
       - lbfat_network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
 
   backend:
     build:
@@ -41,6 +56,7 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=development
+      - PORT=3000
       - DB_HOST=mysql
       - DB_PORT=3306
       - DB_USER=root
@@ -49,10 +65,22 @@ services:
       - MQTT_HOST=emqx
       - MQTT_PORT=1883
     depends_on:
-      - mysql
-      - emqx
+      mysql:
+        condition: service_healthy
+      emqx:
+        condition: service_started
     networks:
       - lbfat_network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   frontend:
     build:
@@ -61,10 +89,39 @@ services:
     container_name: lbfat_frontend
     ports:
       - "8080:80"
+    environment:
+      - VITE_API_URL=http://localhost:3000
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
       - lbfat_network
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    deploy:
+      resources:
+        limits:
+          cpus: '0.2'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+#  mqtt-test:
+#    build:
+#      context: ./tests
+#      dockerfile: Dockerfile
+#    container_name: lbfat_mqtt_test
+#    depends_on:
+#      emqx:
+#        condition: service_started
+#    networks:
+#      - lbfat_network
+#    stdin_open: true
+#    tty: true
 
 networks:
   lbfat_network:

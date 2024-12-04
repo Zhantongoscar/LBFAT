@@ -1,143 +1,152 @@
 <template>
   <div class="device-list">
-    <h2>设备管理</h2>
-    <el-card>
-      <div class="toolbar">
-        <el-button type="primary" @click="handleAdd">添加设备</el-button>
+    <div class="header">
+      <h1>设备管理</h1>
+      <div class="controls">
+        <el-tag :type="wsConnected ? 'success' : 'danger'" class="connection-status">
+          {{ wsConnected ? '实时连接' : '连接断开' }}
+        </el-tag>
+        <el-select v-model="currentProject" placeholder="选择项目" @change="handleProjectChange">
+          <el-option
+            v-for="project in projects"
+            :key="project.project_name"
+            :label="project.project_name"
+            :value="project.project_name"
+          />
+        </el-select>
       </div>
-      <el-table :data="devices" style="width: 100%">
-        <el-table-column prop="device_code" label="设备编码" />
-        <el-table-column prop="device_name" label="设备名称" />
-        <el-table-column prop="status" label="状态">
-          <template #default="scope">
-            <el-tag :type="scope.row.status === 1 ? 'success' : 'info'">
-              {{ scope.row.status === 1 ? '在线' : '离线' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="last_online_time" label="最后在线时间" />
-        <el-table-column label="操作" width="200">
-          <template #default="scope">
-            <el-button size="small" @click="handleEdit(scope.row)">编辑</el-button>
-            <el-button size="small" type="danger" @click="handleDelete(scope.row)">删除</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-    </el-card>
+    </div>
 
-    <el-dialog :title="dialogTitle" v-model="dialogVisible" width="500px">
-      <el-form :model="deviceForm" label-width="100px">
-        <el-form-item label="设备编码">
-          <el-input v-model="deviceForm.device_code" />
-        </el-form-item>
-        <el-form-item label="设备名称">
-          <el-input v-model="deviceForm.device_name" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleSave">确定</el-button>
-        </span>
-      </template>
-    </el-dialog>
+    <!-- 设备列表 -->
+    <el-table :data="devices" style="width: 100%" v-loading="loading">
+      <el-table-column prop="project_name" label="项目名称" />
+      <el-table-column prop="module_type" label="模块类型" />
+      <el-table-column prop="serial_number" label="序列号" />
+      <el-table-column prop="status" label="状态">
+        <template #default="scope">
+          <el-tag :type="scope.row.status === 'online' ? 'success' : 'danger'">
+            {{ scope.row.status }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="rssi" label="信号强度">
+        <template #default="scope">
+          <el-progress
+            :percentage="calculateRssiPercentage(scope.row.rssi)"
+            :status="getRssiStatus(scope.row.rssi)"
+          />
+        </template>
+      </el-table-column>
+      <el-table-column prop="updated_at" label="最后通信时间">
+        <template #default="scope">
+          {{ formatDate(scope.row.updated_at) }}
+        </template>
+      </el-table-column>
+    </el-table>
   </div>
 </template>
 
 <script>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { useDeviceStore } from '../store/device'
+import { useProjectStore } from '../store/project'
+import { useWebSocket } from '../composables/useWebSocket'
 
 export default {
   name: 'DeviceList',
   setup() {
-    const devices = ref([])
-    const dialogVisible = ref(false)
-    const dialogTitle = ref('')
-    const deviceForm = ref({
-      device_code: '',
-      device_name: ''
-    })
-    const isEdit = ref(false)
+    const route = useRoute()
+    const deviceStore = useDeviceStore()
+    const projectStore = useProjectStore()
+    const currentProject = ref('')
+    const loading = ref(false)
 
-    const fetchDevices = async () => {
+    // 从store获取数据
+    const devices = computed(() => deviceStore.devices)
+    const projects = computed(() => projectStore.projects)
+
+    // WebSocket连接
+    const { connect, disconnect, subscribeToProject, isConnected: wsConnected } = useWebSocket()
+
+    // 加载项目列表
+    const loadProjects = async () => {
       try {
-        const response = await fetch('http://localhost:3000/api/devices')
-        const data = await response.json()
-        devices.value = data
-      } catch (error) {
-        console.error('Error fetching devices:', error)
-        ElMessage.error('获取设备列表失败')
-      }
-    }
-
-    const handleAdd = () => {
-      isEdit.value = false
-      dialogTitle.value = '添加设备'
-      deviceForm.value = {
-        device_code: '',
-        device_name: ''
-      }
-      dialogVisible.value = true
-    }
-
-    const handleEdit = (row) => {
-      isEdit.value = true
-      dialogTitle.value = '编辑设备'
-      deviceForm.value = { ...row }
-      dialogVisible.value = true
-    }
-
-    const handleDelete = async (row) => {
-      try {
-        await fetch(`http://localhost:3000/api/devices/${row.id}`, {
-          method: 'DELETE'
-        })
-        ElMessage.success('删除成功')
-        fetchDevices()
-      } catch (error) {
-        console.error('Error deleting device:', error)
-        ElMessage.error('删除设备失败')
-      }
-    }
-
-    const handleSave = async () => {
-      try {
-        const url = isEdit.value 
-          ? `http://localhost:3000/api/devices/${deviceForm.value.id}`
-          : 'http://localhost:3000/api/devices'
-        const method = isEdit.value ? 'PUT' : 'POST'
+        await projectStore.fetchProjects()
         
-        await fetch(url, {
-          method,
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(deviceForm.value)
-        })
-        
-        ElMessage.success(isEdit.value ? '更新成功' : '添加成功')
-        dialogVisible.value = false
-        fetchDevices()
+        // 如果URL中有项目参数，设置当前项目
+        const projectFromQuery = route.query.project
+        if (projectFromQuery) {
+          currentProject.value = projectFromQuery
+          await loadDevices()
+          subscribeToProject(projectFromQuery)
+        }
       } catch (error) {
-        console.error('Error saving device:', error)
-        ElMessage.error(isEdit.value ? '更新设备失败' : '添加设备失败')
+        ElMessage.error('加载项目列表失败')
       }
+    }
+
+    // 加载设备列表
+    const loadDevices = async () => {
+      if (!currentProject.value) return
+      loading.value = true
+      try {
+        await deviceStore.fetchDevices({ projectName: currentProject.value })
+      } catch (error) {
+        ElMessage.error('加载设备列表失败')
+      } finally {
+        loading.value = false
+      }
+    }
+
+    // 处理项目变更
+    const handleProjectChange = async (projectName) => {
+      if (projectName) {
+        await loadDevices()
+        subscribeToProject(projectName)
+      }
+    }
+
+    // 计算RSSI百分比
+    const calculateRssiPercentage = (rssi) => {
+      if (rssi === 0) return 0
+      // RSSI范围通常在-100到0之间，转换为0-100的百分比
+      return Math.min(100, Math.max(0, (rssi + 100)))
+    }
+
+    // 获取RSSI状态
+    const getRssiStatus = (rssi) => {
+      if (rssi === 0) return 'exception'
+      if (rssi > -60) return 'success'
+      if (rssi > -80) return 'warning'
+      return 'exception'
+    }
+
+    // 格式化日期
+    const formatDate = (date) => {
+      return new Date(date).toLocaleString()
     }
 
     onMounted(() => {
-      fetchDevices()
+      loadProjects()
+      connect()
+    })
+
+    onUnmounted(() => {
+      disconnect()
     })
 
     return {
       devices,
-      dialogVisible,
-      dialogTitle,
-      deviceForm,
-      handleAdd,
-      handleEdit,
-      handleDelete,
-      handleSave
+      projects,
+      currentProject,
+      loading,
+      wsConnected,
+      handleProjectChange,
+      calculateRssiPercentage,
+      getRssiStatus,
+      formatDate
     }
   }
 }
@@ -147,7 +156,26 @@ export default {
 .device-list {
   padding: 20px;
 }
-.toolbar {
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 20px;
+}
+
+.controls {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.controls .el-select {
+  width: 200px;
+}
+
+.connection-status {
+  min-width: 80px;
+  text-align: center;
 }
 </style>

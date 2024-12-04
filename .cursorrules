@@ -9,10 +9,11 @@
   * 2.4 Git提交规范
   * 2.5 错误处理规范
   * 2.6 测试规范
-- 保持清晰的目录结构：backend/、frontend/、docker/、docs/、tests/
-
+- 保持清晰的目录结构：backend/、frontend/、 mysql/、emqx/ docker/、docs/、tests/
+- docker-compose.yml 放 LBFAT 根目录。相关文件放其他四个文件内。
 ## 2. 系统架构
 - 项目仅包含四个Docker容器：前端、后端、MySQL和EMQX
+- 所有需要安装的软件要在容器内安装实现，不要在项目文件夹实现。
 - 各组件之间的数据交互必须保持一致性和对齐
 - API接口遵循 development-standard.md 中 4.1-4.4 的RESTful规范
 

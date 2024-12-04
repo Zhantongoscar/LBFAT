@@ -1,20 +1,26 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHashHistory } from 'vue-router'
+import ProjectList from '../views/ProjectList.vue'
 import DeviceList from '../views/DeviceList.vue'
 
 const routes = [
   {
     path: '/',
-    redirect: '/devices'
+    redirect: '/projects'
+  },
+  {
+    path: '/projects',
+    name: 'ProjectList',
+    component: ProjectList
   },
   {
     path: '/devices',
-    name: 'Devices',
+    name: 'DeviceList',
     component: DeviceList
   }
 ]
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHashHistory(),
   routes
 })
 
