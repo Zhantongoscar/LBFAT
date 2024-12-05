@@ -3,7 +3,13 @@ import api from '../utils/api';
 export default {
     // 获取所有设备类型
     getAllTypes() {
-        return api.get('/api/deviceTypes');
+        return api.get('/api/deviceTypes').then(response => {
+            console.log('设备类型API响应:', response);
+            return response;
+        }).catch(error => {
+            console.error('设备类型API错误:', error);
+            throw error;
+        });
     },
 
     // 获取单个设备类型

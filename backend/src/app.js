@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const projectRoutes = require('./routes/project-routes');
 const deviceRoutes = require('./routes/device-routes');
+const deviceTypeRoutes = require('./routes/device-type-routes');
 
 const app = express();
 
@@ -18,6 +19,7 @@ app.use((req, res, next) => {
 // API路由
 app.use('/api/projects', projectRoutes);
 app.use('/api/devices', deviceRoutes);
+app.use('/api/deviceTypes', deviceTypeRoutes);
 
 // 根路径
 app.get('/', (req, res) => {

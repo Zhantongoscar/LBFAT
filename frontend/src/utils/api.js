@@ -36,12 +36,8 @@ api.interceptors.response.use(
             data: response.data
         });
 
-        const data = response.data;
-        if (data.code !== 200) {
-            ElMessage.error(data.message || '操作失败');
-            return Promise.reject(new Error(data.message || '操作失败'));
-        }
-        return data;
+        // 直接返回响应数据，让调用方处理
+        return response;
     },
     error => {
         console.error('响应错误:', {
@@ -50,8 +46,11 @@ api.interceptors.response.use(
             data: error.response?.data,
             message: error.message
         });
-        const message = error.response?.data?.message || '网络错误';
-        ElMessage.error(message);
+
+        // 构造错误信息
+        const errorMessage = error.response?.data?.message || error.message || '网络错误';
+        ElMessage.error(errorMessage);
+        
         return Promise.reject(error);
     }
 );

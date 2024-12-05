@@ -19,7 +19,7 @@
     <el-table :data="filteredDeviceTypes" style="width: 100%; margin-top: 20px">
       <el-table-column prop="id" label="ID" width="80" />
       <el-table-column prop="type_name" label="设备类型" />
-      <el-table-column prop="unit_count" label="单元数量" width="100" />
+      <el-table-column prop="point_count" label="点位数量" width="100" />
       <el-table-column prop="description" label="描述" />
       <el-table-column label="操作" width="200">
         <template #default="scope">
@@ -51,8 +51,8 @@
         <el-form-item label="设备类型">
           <el-input v-model="deviceForm.type_name" />
         </el-form-item>
-        <el-form-item label="单元数量">
-          <el-input-number v-model="deviceForm.unit_count" :min="1" :max="32" />
+        <el-form-item label="点位数量">
+          <el-input-number v-model="deviceForm.point_count" :min="1" :max="32" />
         </el-form-item>
         <el-form-item label="描述">
           <el-input
@@ -61,15 +61,16 @@
             rows="3"
           />
         </el-form-item>
-        <el-form-item label="单元配置">
-          <div v-for="i in deviceForm.unit_count" :key="i" class="unit-config">
-            <span>单元 {{ i }}:</span>
-            <el-select v-model="deviceForm.units[i-1]">
+        <el-form-item label="点位配置">
+          <div v-for="i in deviceForm.point_count" :key="i" class="point-config">
+            <span>点位 {{ i }}:</span>
+            <el-select v-model="deviceForm.points[i-1].point_type">
               <el-option label="DI" value="DI" />
               <el-option label="DO" value="DO" />
               <el-option label="AI" value="AI" />
               <el-option label="AO" value="AO" />
             </el-select>
+            <el-input v-model="deviceForm.points[i-1].point_name" placeholder="点位名称" />
           </div>
         </el-form-item>
       </el-form>
@@ -99,9 +100,14 @@ export default {
     const isEdit = ref(false)
     const deviceForm = ref({
       type_name: '',
-      unit_count: 1,
+      point_count: 1,
       description: '',
-      units: []
+      points: [{
+        point_index: 1,
+        point_type: 'DI',
+        point_name: '',
+        description: ''
+      }]
     })
 
     // 过滤后的设备类型列表
@@ -117,10 +123,31 @@ export default {
     // 加载设备类型列表
     const loadDeviceTypes = async () => {
       try {
+        console.log('开始加载设备类型...')
         const response = await deviceConfigApi.getAllTypes()
-        deviceTypes.value = response.data
+        console.log('API响应:', response)
+        
+        // 检查响应数据结构
+        if (!response || !response.data) {
+          throw new Error('无效的响应数据');
+        }
+
+        const { code, message, data } = response.data;
+        
+        if (code === 200 && Array.isArray(data)) {
+          deviceTypes.value = data;
+          console.log('加载的设备类型:', deviceTypes.value);
+        } else {
+          throw new Error(message || '加载设备类型失败');
+        }
       } catch (error) {
-        ElMessage.error('加载设备类型失败')
+        console.error('加载设备类型错误:', error);
+        console.error('错误详情:', {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status
+        });
+        ElMessage.error(error.message || '加载设备类型失败');
       }
     }
 
@@ -134,9 +161,14 @@ export default {
       isEdit.value = false
       deviceForm.value = {
         type_name: '',
-        unit_count: 1,
+        point_count: 1,
         description: '',
-        units: ['DI']
+        points: [{
+          point_index: 1,
+          point_type: 'DI',
+          point_name: '',
+          description: ''
+        }]
       }
       dialogVisible.value = true
     }
@@ -147,9 +179,9 @@ export default {
       deviceForm.value = {
         id: row.id,
         type_name: row.type_name,
-        unit_count: row.unit_count,
+        point_count: row.point_count,
         description: row.description,
-        units: [...row.units]
+        points: row.points || []
       }
       dialogVisible.value = true
     }
@@ -224,13 +256,13 @@ export default {
   margin-bottom: 20px;
 }
 
-.unit-config {
+.point-config {
   display: flex;
   align-items: center;
   margin-bottom: 10px;
 }
 
-.unit-config span {
+.point-config span {
   width: 80px;
   margin-right: 10px;
 }
