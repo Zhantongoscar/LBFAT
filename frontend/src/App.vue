@@ -12,6 +12,9 @@
           <el-menu-item index="/devices">
             <span>设备管理</span>
           </el-menu-item>
+          <el-menu-item index="/device-config">
+            <span>设备配置</span>
+          </el-menu-item>
         </el-menu>
       </el-aside>
       <el-main>

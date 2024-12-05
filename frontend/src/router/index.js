@@ -1,6 +1,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import ProjectList from '../views/ProjectList.vue'
 import DeviceList from '../views/DeviceList.vue'
+import DeviceConfig from '../views/DeviceConfig.vue'
 
 const routes = [
   {
@@ -16,6 +17,11 @@ const routes = [
     path: '/devices',
     name: 'DeviceList',
     component: DeviceList
+  },
+  {
+    path: '/device-config',
+    name: 'DeviceConfig',
+    component: DeviceConfig
   }
 ]
 
