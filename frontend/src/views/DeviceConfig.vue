@@ -87,7 +87,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import deviceConfigApi from '../api/deviceConfig'
 
@@ -109,6 +109,33 @@ export default {
         description: ''
       }]
     })
+
+    // 监听点位数量变化
+    const updatePoints = (newCount) => {
+      const currentPoints = deviceForm.value.points;
+      const newPoints = [];
+      
+      // 保持现有点位的配置
+      for (let i = 0; i < newCount; i++) {
+        if (i < currentPoints.length) {
+          newPoints.push(currentPoints[i]);
+        } else {
+          newPoints.push({
+            point_index: i + 1,
+            point_type: 'DI',
+            point_name: '',
+            description: ''
+          });
+        }
+      }
+      
+      deviceForm.value.points = newPoints;
+    }
+
+    // 监听点位数量变化
+    watch(() => deviceForm.value.point_count, (newCount) => {
+      updatePoints(newCount);
+    });
 
     // 过滤后的设备类型列表
     const filteredDeviceTypes = computed(() => {
@@ -181,8 +208,15 @@ export default {
         type_name: row.type_name,
         point_count: row.point_count,
         description: row.description,
-        points: row.points || []
+        points: Array.isArray(row.points) ? row.points : Array(row.point_count).fill(0).map((_, i) => ({
+          point_index: i + 1,
+          point_type: 'DI',
+          point_name: '',
+          description: ''
+        }))
       }
+      // 确保点位数组长度与点位数量匹配
+      updatePoints(deviceForm.value.point_count);
       dialogVisible.value = true
     }
 
