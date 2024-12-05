@@ -6,13 +6,22 @@ const deviceTypeRoutes = require('./routes/device-type-routes');
 
 const app = express();
 
+// CORS配置
+const corsOptions = {
+    origin: process.env.CORS_ORIGIN || 'http://localhost:8080',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
+};
+
 // 中间件
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // 添加请求日志
 app.use((req, res, next) => {
     console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+    console.log('Request Headers:', req.headers);
     next();
 });
 

@@ -4,7 +4,7 @@ import { ElMessage } from 'element-plus';
 // 创建axios实例
 const api = axios.create({
     baseURL: import.meta.env.VITE_API_URL,
-    timeout: 10000,
+    timeout: 30000,
     headers: {
         'Content-Type': 'application/json'
     }
@@ -17,7 +17,8 @@ api.interceptors.request.use(
             url: config.url,
             method: config.method,
             data: config.data,
-            params: config.params
+            params: config.params,
+            baseURL: config.baseURL
         });
         return config;
     },
@@ -33,10 +34,10 @@ api.interceptors.response.use(
         console.log('收到响应:', {
             url: response.config.url,
             status: response.status,
-            data: response.data
+            data: response.data,
+            baseURL: response.config.baseURL
         });
 
-        // 直接返回响应数据，让调用方处理
         return response;
     },
     error => {
@@ -44,13 +45,23 @@ api.interceptors.response.use(
             url: error.config?.url,
             status: error.response?.status,
             data: error.response?.data,
-            message: error.message
+            message: error.message,
+            baseURL: error.config?.baseURL,
+            code: error.code,
+            stack: error.stack
         });
 
-        // 构造错误信息
-        const errorMessage = error.response?.data?.message || error.message || '网络错误';
-        ElMessage.error(errorMessage);
+        // 构造详细的错误信息
+        let errorMessage = '请求失败';
+        if (error.code === 'ECONNABORTED') {
+            errorMessage = '请求超时，请检查网络连接';
+        } else if (error.response) {
+            errorMessage = error.response.data?.message || `服务器错误 (${error.response.status})`;
+        } else if (!error.response) {
+            errorMessage = '无法连接到服务器，请检查网络';
+        }
         
+        ElMessage.error(errorMessage);
         return Promise.reject(error);
     }
 );

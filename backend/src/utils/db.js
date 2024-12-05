@@ -30,15 +30,30 @@ pool.getConnection()
         });
     });
 
-// 导出查询函数
+// 导出数据库工具
 module.exports = {
-    query: async (sql, params) => {
+    // 获取数据库连接
+    getConnection: async () => {
         try {
+            const connection = await pool.getConnection();
+            console.log('获取数据库连接成功');
+            return connection;
+        } catch (error) {
+            console.error('获取数据库连接失败:', error);
+            throw error;
+        }
+    },
+
+    // 执行查询
+    query: async (sql, params) => {
+        let connection;
+        try {
+            connection = await pool.getConnection();
             console.log('执行SQL查询:', {
                 sql,
                 params: params || []
             });
-            const [rows] = await pool.execute(sql, params);
+            const [rows] = await connection.execute(sql, params || []);
             console.log('查询结果行数:', rows.length);
             return rows;
         } catch (error) {
@@ -48,6 +63,11 @@ module.exports = {
                 params: params || []
             });
             throw error;
+        } finally {
+            if (connection) {
+                connection.release();
+                console.log('数据库连接已释放');
+            }
         }
     }
 };

@@ -65,6 +65,7 @@ services:
       - DB_NAME=lbfat
       - MQTT_HOST=emqx
       - MQTT_PORT=1883
+      - CORS_ORIGIN=http://localhost:8080
     depends_on:
       mysql:
         condition: service_healthy
@@ -91,38 +92,16 @@ services:
     ports:
       - "8080:80"
     environment:
-      - VITE_API_URL=http://localhost:3000
+      - VITE_API_URL=http://localhost:8080
     depends_on:
-      backend:
-        condition: service_healthy
+      - backend
     networks:
       - lbfat_network
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
     deploy:
       resources:
         limits:
           cpus: '0.2'
           memory: 128M
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-
-#  mqtt-test:
-#    build:
-#      context: ./tests
-#      dockerfile: Dockerfile
-#    container_name: lbfat_mqtt_test
-#    depends_on:
-#      emqx:
-#        condition: service_started
-#    networks:
-#      - lbfat_network
-#    stdin_open: true
-#    tty: true
 
 networks:
   lbfat_network:

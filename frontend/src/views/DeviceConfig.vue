@@ -112,13 +112,16 @@ export default {
 
     // 监听点位数量变化
     const updatePoints = (newCount) => {
-      const currentPoints = deviceForm.value.points;
+      const currentPoints = deviceForm.value.points || [];
       const newPoints = [];
       
       // 保持现有点位的配置
       for (let i = 0; i < newCount; i++) {
         if (i < currentPoints.length) {
-          newPoints.push(currentPoints[i]);
+          newPoints.push({
+            ...currentPoints[i],
+            point_index: i + 1  // 确保 point_index 正确
+          });
         } else {
           newPoints.push({
             point_index: i + 1,
@@ -130,6 +133,7 @@ export default {
       }
       
       deviceForm.value.points = newPoints;
+      console.log('更新后的点位配置:', deviceForm.value.points);
     }
 
     // 监听点位数量变化
@@ -150,30 +154,18 @@ export default {
     // 加载设备类型列表
     const loadDeviceTypes = async () => {
       try {
-        console.log('开始加载设备类型...')
-        const response = await deviceConfigApi.getAllTypes()
-        console.log('API响应:', response)
+        console.log('开始加载设备类型...');
+        const response = await deviceConfigApi.getAllTypes();
+        console.log('API响应:', response);
         
-        // 检查响应数据结构
-        if (!response || !response.data) {
-          throw new Error('无效的响应数据');
-        }
-
-        const { code, message, data } = response.data;
-        
-        if (code === 200 && Array.isArray(data)) {
-          deviceTypes.value = data;
-          console.log('加载的设备类型:', deviceTypes.value);
+        if (response && response.data && response.data.code === 200) {
+          deviceTypes.value = response.data.data;
+          console.log('设备类型数据已加载:', deviceTypes.value);
         } else {
-          throw new Error(message || '加载设备类型失败');
+          throw new Error(response?.data?.message || '加载设备类型失败');
         }
       } catch (error) {
         console.error('加载设备类型错误:', error);
-        console.error('错误详情:', {
-          message: error.message,
-          response: error.response?.data,
-          status: error.response?.status
-        });
         ElMessage.error(error.message || '加载设备类型失败');
       }
     }
@@ -185,7 +177,7 @@ export default {
 
     // 显示添加对话框
     const showAddDialog = () => {
-      isEdit.value = false
+      isEdit.value = false;
       deviceForm.value = {
         type_name: '',
         point_count: 1,
@@ -196,28 +188,29 @@ export default {
           point_name: '',
           description: ''
         }]
-      }
-      dialogVisible.value = true
+      };
+      dialogVisible.value = true;
     }
 
     // 编辑处理
     const handleEdit = (row) => {
-      isEdit.value = true
+      console.log('编辑行数据:', row);
+      isEdit.value = true;
       deviceForm.value = {
         id: row.id,
         type_name: row.type_name,
-        point_count: row.point_count,
+        point_count: parseInt(row.point_count),
         description: row.description,
-        points: Array.isArray(row.points) ? row.points : Array(row.point_count).fill(0).map((_, i) => ({
-          point_index: i + 1,
-          point_type: 'DI',
-          point_name: '',
-          description: ''
-        }))
-      }
+        points: Array.isArray(row.points) ? row.points.map((p, index) => ({
+          ...p,
+          point_index: index + 1  // 确保 point_index 正确
+        })) : []
+      };
+      
       // 确保点位数组长度与点位数量匹配
       updatePoints(deviceForm.value.point_count);
-      dialogVisible.value = true
+      console.log('编辑表单数据:', deviceForm.value);
+      dialogVisible.value = true;
     }
 
     // 删除处理
@@ -246,17 +239,42 @@ export default {
     // 提交表单
     const handleSubmit = async () => {
       try {
-        if (isEdit.value) {
-          await deviceConfigApi.updateType(deviceForm.value.id, deviceForm.value)
-          ElMessage.success('更新成功')
-        } else {
-          await deviceConfigApi.createType(deviceForm.value)
-          ElMessage.success('添加成功')
+        // 验证表单数据
+        if (!deviceForm.value.type_name.trim()) {
+          ElMessage.warning('请输入设备类型名称');
+          return;
         }
-        dialogVisible.value = false
-        loadDeviceTypes()
+
+        // 验证点位配置
+        if (!deviceForm.value.points.every(p => p.point_name.trim())) {
+          ElMessage.warning('请填写所有点位的名称');
+          return;
+        }
+
+        // 确保点位索引正确
+        const formData = {
+          ...deviceForm.value,
+          points: deviceForm.value.points.map((p, index) => ({
+            ...p,
+            point_index: index + 1
+          }))
+        };
+
+        console.log('提交表单数据:', formData);
+        
+        if (isEdit.value) {
+          await deviceConfigApi.updateType(formData.id, formData);
+          ElMessage.success('更新成功');
+        } else {
+          await deviceConfigApi.createType(formData);
+          ElMessage.success('添加成功');
+        }
+        
+        dialogVisible.value = false;
+        await loadDeviceTypes(); // 重新加载数据
       } catch (error) {
-        ElMessage.error(isEdit.value ? '更新失败' : '添加失败')
+        console.error('提交表单错误:', error);
+        ElMessage.error(error.message || (isEdit.value ? '更新失败' : '添加失败'));
       }
     }
 
