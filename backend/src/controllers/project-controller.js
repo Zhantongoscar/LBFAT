@@ -48,36 +48,57 @@ exports.updateSubscription = async (req, res) => {
         const { projectName } = req.params;
         const { isSubscribed } = req.body;
 
-        console.log('Updating subscription:', { projectName, isSubscribed }); // 添加日志
+        console.log('开始处理订阅更新:', { projectName, isSubscribed });
+        console.log('MQTT服务实例:', {
+            hasClient: !!mqttService.client,
+            hasSubscribeMethod: !!mqttService.subscribeToProject,
+            hasUnsubscribeMethod: !!mqttService.unsubscribeFromProject,
+            subscriptions: mqttService.subscriptions
+        });
 
         const project = await Project.findByName(projectName);
         if (!project) {
+            console.log('项目不存在:', projectName);
             return res.status(404).json({
                 code: 404,
                 message: 'Project not found'
             });
         }
 
+        console.log('更新数据库订阅状态...');
         await Project.updateSubscription(projectName, isSubscribed);
+        console.log('数据库更新成功');
 
         // 更新MQTT订阅
         try {
+            console.log('开始处理MQTT订阅...');
             if (isSubscribed) {
+                console.log(`准备订阅项目 ${projectName} 的MQTT主题`);
                 await mqttService.subscribeToProject(projectName);
+                console.log(`成功订阅项目 ${projectName} 的MQTT主题`);
             } else {
+                console.log(`准备取消订阅项目 ${projectName} 的MQTT主题`);
                 await mqttService.unsubscribeFromProject(projectName);
+                console.log(`成功取消订阅项目 ${projectName} 的MQTT主题`);
             }
         } catch (mqttError) {
-            console.error('MQTT操作失败，但数据库更新成功:', mqttError);
-            // 继续执行，不影响数据库更新
+            console.error('MQTT操作失败，详细错误:', mqttError);
+            console.error('MQTT错误堆栈:', mqttError.stack);
+            console.error('MQTT服务状态:', {
+                hasClient: !!mqttService.client,
+                methods: Object.keys(mqttService),
+                subscriptions: mqttService.subscriptions
+            });
         }
 
+        console.log('订阅更新处理完成');
         res.json({
             code: 200,
             message: 'Subscription updated successfully'
         });
     } catch (error) {
         console.error('更新订阅状态失败:', error);
+        console.error('错误堆栈:', error.stack);
         res.status(500).json({
             code: 500,
             message: error.message
@@ -114,7 +135,7 @@ exports.deleteProject = async (req, res) => {
             message: 'Project deleted successfully'
         });
     } catch (error) {
-        console.error('删除项目失败:', error);
+        console.error('删除项目���败:', error);
         res.status(500).json({
             code: 500,
             message: error.message
