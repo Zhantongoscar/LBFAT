@@ -47,15 +47,12 @@ class MQTTService {
                     });
 
                     // 通过WebSocket广播设备状态更新
-                    WebSocketService.broadcast({
-                        type: 'device_status',
-                        device: {
-                            project_name: projectName,
-                            module_type: moduleType,
-                            serial_number: serialNumber,
-                            status: payload.status,
-                            rssi: payload.rssi
-                        }
+                    WebSocketService.broadcastDeviceStatus({
+                        project_name: projectName,
+                        module_type: moduleType,
+                        serial_number: serialNumber,
+                        status: payload.status,
+                        rssi: payload.rssi
                     });
                 } catch (error) {
                     logger.error('Error processing MQTT message:', error);
@@ -79,6 +76,10 @@ class MQTTService {
             const topic = 'lb_test/+/+/status';
             this.client.subscribe(topic, { qos: 1 });
             logger.info(`Subscribed to topic: ${topic}`);
+            
+            // 更新订阅列表
+            this.subscriptions = [topic];
+            WebSocketService.updateTopicList(this.subscriptions);
         } catch (error) {
             logger.error('Error subscribing to topics:', error);
             throw error;
@@ -105,11 +106,11 @@ class MQTTService {
                     logger.error(`订阅失败:`, err);
                 } else {
                     logger.info(`订阅成功: ${topic}`);
+                    // 更新订阅列表
+                    this.subscriptions.push(topic);
+                    WebSocketService.updateTopicList(this.subscriptions);
                 }
             });
-
-            this.subscriptions.push(topic);
-            logger.info(`当前订阅列表:`, this.subscriptions);
         } catch (error) {
             logger.error(`订阅项目 ${projectName} 失败:`, error);
             logger.error('错误堆栈:', error.stack);
@@ -137,11 +138,11 @@ class MQTTService {
                     logger.error(`取消订阅失败:`, err);
                 } else {
                     logger.info(`取消订阅成功: ${topic}`);
+                    // 更新订阅列表
+                    this.subscriptions = this.subscriptions.filter(t => t !== topic);
+                    WebSocketService.updateTopicList(this.subscriptions);
                 }
             });
-
-            this.subscriptions = this.subscriptions.filter(t => t !== topic);
-            logger.info(`更新后的订阅列表:`, this.subscriptions);
         } catch (error) {
             logger.error(`取消订阅项目 ${projectName} 失败:`, error);
             logger.error('错误堆栈:', error.stack);

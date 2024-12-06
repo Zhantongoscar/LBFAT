@@ -10,7 +10,12 @@
             <span>项目管理</span>
           </el-menu-item>
           <el-menu-item index="/devices">
+            <el-icon><Monitor /></el-icon>
             <span>设备管理</span>
+          </el-menu-item>
+          <el-menu-item index="/messages">
+            <el-icon><Message /></el-icon>
+            <span>消息管理</span>
           </el-menu-item>
           <el-menu-item index="/device-config">
             <span>设备配置</span>
