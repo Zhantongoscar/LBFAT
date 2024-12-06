@@ -34,26 +34,43 @@ class MQTTService {
                     const payload = JSON.parse(message.toString());
                     logger.info(`Received message on topic ${topic}:`, payload);
 
-                    // 解析主题格式：projectName/moduleType/serialNumber/status
-                    const [projectName, moduleType, serialNumber] = topic.split('/');
-                    
-                    // 更新设备状态
-                    await Device.upsert({
-                        projectName,
-                        moduleType,
-                        serialNumber,
-                        status: payload.status,
-                        rssi: payload.rssi
-                    });
+                    // 解析主题
+                    const topicParts = topic.split('/');
+                    const projectName = topicParts[0];
+                    const moduleType = topicParts[1];
+                    const serialNumber = topicParts[2];
 
-                    // 通过WebSocket广播设备状态更新
-                    WebSocketService.broadcastDeviceStatus({
-                        project_name: projectName,
-                        module_type: moduleType,
-                        serial_number: serialNumber,
-                        status: payload.status,
-                        rssi: payload.rssi
-                    });
+                    if (topic.endsWith('/status')) {
+                        // 处理设备状态消息
+                        await Device.upsert({
+                            projectName,
+                            moduleType,
+                            serialNumber,
+                            status: payload.status,
+                            rssi: payload.rssi
+                        });
+
+                        // 通过WebSocket广播设备状态更新
+                        WebSocketService.broadcastDeviceStatus({
+                            project_name: projectName,
+                            module_type: moduleType,
+                            serial_number: serialNumber,
+                            status: payload.status,
+                            rssi: payload.rssi
+                        });
+                    } else if (topic.endsWith('/response')) {
+                        // 处理命令响应消息
+                        const channel = topicParts[3];  // 获取通道号
+                        WebSocketService.broadcastDeviceCommand(
+                            `${moduleType}_${serialNumber}`,
+                            channel,
+                            payload.command,
+                            {
+                                status: payload.status,
+                                value: payload.value
+                            }
+                        );
+                    }
                 } catch (error) {
                     logger.error('Error processing MQTT message:', error);
                 }
@@ -72,13 +89,15 @@ class MQTTService {
 
     async subscribe() {
         try {
-            // 订阅所有设备状态主题
-            const topic = 'lb_test/+/+/status';
-            this.client.subscribe(topic, { qos: 1 });
-            logger.info(`Subscribed to topic: ${topic}`);
+            // 订阅设备状态和命令响应主题
+            const statusTopic = 'lb_test/+/+/status';
+            const responseTopic = 'lb_test/+/+/+/response';
+            
+            this.client.subscribe([statusTopic, responseTopic], { qos: 1 });
+            logger.info(`Subscribed to topics: ${statusTopic}, ${responseTopic}`);
             
             // 更新订阅列表
-            this.subscriptions = [topic];
+            this.subscriptions = [statusTopic, responseTopic];
             WebSocketService.updateTopicList(this.subscriptions);
         } catch (error) {
             logger.error('Error subscribing to topics:', error);
@@ -94,20 +113,21 @@ class MQTTService {
             }
 
             logger.info(`开始订阅项目 ${projectName} 的MQTT主题`);
-            const topic = `${projectName}/+/+/status`;
+            const statusTopic = `${projectName}/+/+/status`;
+            const responseTopic = `${projectName}/+/+/+/response`;
             
             logger.info(`MQTT客户端状态:`, {
                 connected: this.client.connected,
                 clientId: this.client.options.clientId
             });
 
-            this.client.subscribe(topic, { qos: 1 }, (err) => {
+            this.client.subscribe([statusTopic, responseTopic], { qos: 1 }, (err) => {
                 if (err) {
                     logger.error(`订阅失败:`, err);
                 } else {
-                    logger.info(`订阅成功: ${topic}`);
+                    logger.info(`订阅成功: ${statusTopic}, ${responseTopic}`);
                     // 更新订阅列表
-                    this.subscriptions.push(topic);
+                    this.subscriptions.push(statusTopic, responseTopic);
                     WebSocketService.updateTopicList(this.subscriptions);
                 }
             });
@@ -126,20 +146,21 @@ class MQTTService {
             }
 
             logger.info(`开始取消订阅项目 ${projectName} 的MQTT主题`);
-            const topic = `${projectName}/+/+/status`;
+            const statusTopic = `${projectName}/+/+/status`;
+            const responseTopic = `${projectName}/+/+/+/response`;
             
             logger.info(`MQTT客户端状态:`, {
                 connected: this.client.connected,
                 clientId: this.client.options.clientId
             });
 
-            this.client.unsubscribe(topic, (err) => {
+            this.client.unsubscribe([statusTopic, responseTopic], (err) => {
                 if (err) {
                     logger.error(`取消订阅失败:`, err);
                 } else {
-                    logger.info(`取消订阅成功: ${topic}`);
+                    logger.info(`取消订阅成功: ${statusTopic}, ${responseTopic}`);
                     // 更新订阅列表
-                    this.subscriptions = this.subscriptions.filter(t => t !== topic);
+                    this.subscriptions = this.subscriptions.filter(t => t !== statusTopic && t !== responseTopic);
                     WebSocketService.updateTopicList(this.subscriptions);
                 }
             });
@@ -150,11 +171,15 @@ class MQTTService {
         }
     }
 
-    publish(topic, message) {
+    // 发送命令到设备
+    sendCommand(projectName, moduleType, serialNumber, channel, command) {
         if (!this.client) {
             throw new Error('MQTT client not connected');
         }
+        const topic = `${projectName}/${moduleType}/${serialNumber}/${channel}/command`;
+        const message = { command };
         this.client.publish(topic, JSON.stringify(message));
+        logger.info(`Sent command to topic ${topic}:`, message);
     }
 }
 
