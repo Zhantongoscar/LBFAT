@@ -2,6 +2,7 @@ const mqtt = require('mqtt');
 const logger = require('../utils/logger');
 const Device = require('../models/device');
 const WebSocketService = require('./websocket-service');
+const db = require('../utils/db');
 
 class MQTTService {
     constructor() {
@@ -11,6 +12,30 @@ class MQTTService {
             MQTTService.instance = this;
         }
         return MQTTService.instance;
+    }
+
+    // 添加订阅到数据库
+    async addSubscriptionToDb(topic) {
+        try {
+            const sql = 'INSERT INTO mqtt_subscriptions (topic) VALUES (?) ON DUPLICATE KEY UPDATE topic = topic';
+            await db.query(sql, [topic]);
+            logger.info(`Added subscription to database: ${topic}`);
+        } catch (error) {
+            logger.error('Error adding subscription to database:', error);
+            throw error;
+        }
+    }
+
+    // 从数据库删除订阅
+    async removeSubscriptionFromDb(topic) {
+        try {
+            const sql = 'DELETE FROM mqtt_subscriptions WHERE topic = ?';
+            await db.query(sql, [topic]);
+            logger.info(`Removed subscription from database: ${topic}`);
+        } catch (error) {
+            logger.error('Error removing subscription from database:', error);
+            throw error;
+        }
     }
 
     async connect() {
@@ -99,6 +124,10 @@ class MQTTService {
             // 更新订阅列表
             this.subscriptions = [statusTopic, responseTopic];
             WebSocketService.updateTopicList(this.subscriptions);
+
+            // 添加到数据库
+            await this.addSubscriptionToDb(statusTopic);
+            await this.addSubscriptionToDb(responseTopic);
         } catch (error) {
             logger.error('Error subscribing to topics:', error);
             throw error;
@@ -121,7 +150,7 @@ class MQTTService {
                 clientId: this.client.options.clientId
             });
 
-            this.client.subscribe([statusTopic, responseTopic], { qos: 1 }, (err) => {
+            this.client.subscribe([statusTopic, responseTopic], { qos: 1 }, async (err) => {
                 if (err) {
                     logger.error(`订阅失败:`, err);
                 } else {
@@ -129,6 +158,10 @@ class MQTTService {
                     // 更新订阅列表
                     this.subscriptions.push(statusTopic, responseTopic);
                     WebSocketService.updateTopicList(this.subscriptions);
+                    
+                    // 添加到数据库
+                    await this.addSubscriptionToDb(statusTopic);
+                    await this.addSubscriptionToDb(responseTopic);
                 }
             });
         } catch (error) {
@@ -154,7 +187,7 @@ class MQTTService {
                 clientId: this.client.options.clientId
             });
 
-            this.client.unsubscribe([statusTopic, responseTopic], (err) => {
+            this.client.unsubscribe([statusTopic, responseTopic], async (err) => {
                 if (err) {
                     logger.error(`取消订阅失败:`, err);
                 } else {
@@ -162,6 +195,10 @@ class MQTTService {
                     // 更新订阅列表
                     this.subscriptions = this.subscriptions.filter(t => t !== statusTopic && t !== responseTopic);
                     WebSocketService.updateTopicList(this.subscriptions);
+                    
+                    // 从数据库删除
+                    await this.removeSubscriptionFromDb(statusTopic);
+                    await this.removeSubscriptionFromDb(responseTopic);
                 }
             });
         } catch (error) {
