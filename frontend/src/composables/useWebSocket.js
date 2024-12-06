@@ -15,7 +15,8 @@ const isConnected = ref(false)
 export function useWebSocket() {
     const connect = () => {
         if (!ws.value || ws.value.readyState === WS_STATES.CLOSED) {
-            const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:3000/ws'
+            const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:3000'
+            console.log('正在连接WebSocket:', wsUrl)
             ws.value = new WebSocket(wsUrl)
 
             ws.value.addEventListener('open', () => {
@@ -24,8 +25,9 @@ export function useWebSocket() {
             })
 
             ws.value.addEventListener('close', () => {
-                console.log('WebSocket连接已关闭')
+                console.log('WebSocket连接已关闭，5秒后重试')
                 isConnected.value = false
+                setTimeout(connect, 5000)
             })
 
             ws.value.addEventListener('error', (error) => {

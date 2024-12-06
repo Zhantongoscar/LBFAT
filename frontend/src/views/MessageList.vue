@@ -87,10 +87,38 @@ export default {
     const listenerAdded = ref(false)
     const wsInstance = useWebSocket()
 
+    // 从localStorage加载消息
+    const loadMessages = () => {
+      try {
+        const savedStatusMessages = localStorage.getItem('deviceStatusMessages')
+        if (savedStatusMessages) {
+          deviceStatusMessages.value = JSON.parse(savedStatusMessages)
+        }
+
+        const savedCommands = localStorage.getItem('deviceCommands')
+        if (savedCommands) {
+          deviceCommands.value = JSON.parse(savedCommands)
+        }
+      } catch (error) {
+        console.error('加载保存的消息失败:', error)
+      }
+    }
+
+    // 保存消息到localStorage
+    const saveMessages = () => {
+      try {
+        localStorage.setItem('deviceStatusMessages', JSON.stringify(deviceStatusMessages.value))
+        localStorage.setItem('deviceCommands', JSON.stringify(deviceCommands.value))
+      } catch (error) {
+        console.error('保存消息失败:', error)
+      }
+    }
+
     // 处理WebSocket消息
     const handleMessage = (message) => {
       try {
         const data = JSON.parse(message.data)
+        console.log('收到WebSocket消息:', data)
         
         switch (data.type) {
           case 'topic_list':
@@ -103,13 +131,16 @@ export default {
           case 'device_status':
             deviceStatusMessages.value.unshift({
               timestamp: new Date().toLocaleString(),
-              deviceId: `${data.device.project_name}/${data.device.module_type}/${data.device.serial_number}`,
+              deviceId: `${data.device.projectName}/${data.device.moduleType}/${data.device.serialNumber}`,
               status: data.device.status,
-              message: `RSSI: ${data.device.rssi}`
+              message: `RSSI: ${data.device.rssi}`,
+              rawTopic: data.topic,
+              rawMessage: data.rawMessage
             })
             if (deviceStatusMessages.value.length > MAX_MESSAGES) {
               deviceStatusMessages.value = deviceStatusMessages.value.slice(0, MAX_MESSAGES)
             }
+            saveMessages()
             break
             
           case 'device_command':
@@ -118,11 +149,14 @@ export default {
               deviceId: data.deviceId,
               channel: data.channel,
               type: data.commandType,
-              content: data.content
+              content: JSON.stringify(data.content),
+              rawTopic: data.topic,
+              rawMessage: data.rawMessage
             })
             if (deviceCommands.value.length > MAX_MESSAGES) {
               deviceCommands.value = deviceCommands.value.slice(0, MAX_MESSAGES)
             }
+            saveMessages()
             break
 
           default:
@@ -130,18 +164,23 @@ export default {
         }
       } catch (error) {
         console.error('解析消息失败:', error)
-        ElMessage.error('消息格式错误')
+        console.error('错误详情:', {
+          message: message.data,
+          error: error.stack
+        })
       }
     }
 
     // 清除设备状态消息
     const clearDeviceStatusMessages = () => {
       deviceStatusMessages.value = []
+      localStorage.removeItem('deviceStatusMessages')
     }
 
     // 清除设备命令消息
     const clearDeviceCommands = () => {
       deviceCommands.value = []
+      localStorage.removeItem('deviceCommands')
     }
 
     // 设置消息监听器
@@ -177,7 +216,17 @@ export default {
       }
     })
 
+    // 监听消息变化并保存
+    watch(deviceStatusMessages, () => {
+      saveMessages()
+    }, { deep: true })
+
+    watch(deviceCommands, () => {
+      saveMessages()
+    }, { deep: true })
+
     onMounted(() => {
+      loadMessages()  // 加载保存的消息
       if (wsInstance.ws.value) {
         setupMessageListener(wsInstance.ws.value)
       }

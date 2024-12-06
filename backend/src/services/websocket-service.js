@@ -67,21 +67,25 @@ class WebSocketService extends EventEmitter {
         });
     }
 
-    broadcastDeviceStatus(device) {
-        this.broadcast({
-            type: 'device_status',
-            device
+    broadcastDeviceStatus(data) {
+        logger.info('广播设备状态消息:', {
+            type: data.type,
+            deviceId: `${data.device.projectName}/${data.device.moduleType}/${data.device.serialNumber}`,
+            status: data.device.status,
+            timestamp: new Date().toISOString()
         });
+        this.broadcast(data);
     }
 
-    broadcastDeviceCommand(deviceId, channel, commandType, content) {
-        this.broadcast({
-            type: 'device_command',
-            deviceId,
-            channel,
-            commandType,
-            content
+    broadcastDeviceCommand(data) {
+        logger.info('广播设备命令消息:', {
+            type: data.type,
+            deviceId: data.deviceId,
+            channel: data.channel,
+            commandType: data.commandType,
+            timestamp: new Date().toISOString()
         });
+        this.broadcast(data);
     }
 
     updateTopicList(topics) {
