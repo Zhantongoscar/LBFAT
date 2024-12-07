@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import deviceApi from '../api/device'
+import deviceAPI from '../api/device'
 
 export const useDeviceStore = defineStore('device', {
   state: () => ({
@@ -25,13 +25,18 @@ export const useDeviceStore = defineStore('device', {
     async fetchDevices(filters = {}) {
       this.loading = true
       try {
-        const response = await deviceApi.getDevices(filters)
-        this.devices = response.data.data
-        this.error = null
-        if (filters.projectName) {
-          this.currentProject = filters.projectName
+        const response = await deviceAPI.getDevices(filters)
+        if (response.data.code === 200) {
+          this.devices = response.data.data || []
+          this.error = null
+          if (filters.projectName) {
+            this.currentProject = filters.projectName
+          }
+        } else {
+          throw new Error(response.data.message || '获取设备列表失败')
         }
       } catch (error) {
+        console.error('获取设备列表失败:', error)
         this.error = error.message
       } finally {
         this.loading = false
@@ -40,7 +45,7 @@ export const useDeviceStore = defineStore('device', {
 
     async getDevice(projectName, moduleType, serialNumber) {
       try {
-        const response = await deviceApi.getDevice(projectName, moduleType, serialNumber)
+        const response = await deviceAPI.getDevice(projectName, moduleType, serialNumber)
         return response.data.data
       } catch (error) {
         this.error = error.message
@@ -50,7 +55,7 @@ export const useDeviceStore = defineStore('device', {
 
     async createDevice(device) {
       try {
-        await deviceApi.createDevice(device)
+        await deviceAPI.createDevice(device)
         await this.fetchDevices({ projectName: device.projectName })
         return true
       } catch (error) {
@@ -61,7 +66,7 @@ export const useDeviceStore = defineStore('device', {
 
     async deleteDevice(projectName, moduleType, serialNumber) {
       try {
-        await deviceApi.deleteDevice(projectName, moduleType, serialNumber)
+        await deviceAPI.deleteDevice(projectName, moduleType, serialNumber)
         this.devices = this.devices.filter(d => 
           !(d.project_name === projectName && 
             d.module_type === moduleType && 

@@ -4,16 +4,31 @@ const deviceController = {
   // 获取所有设备
   async getAllDevices(req, res) {
     try {
-      const devices = await Device.findAll(req.query);
+      console.log('开始获取设备列表, 查询参数:', req.query);
+      let devices = await Device.findAll(req.query);
+      
+      // 确保devices是数组
+      if (!Array.isArray(devices)) {
+        console.log('查询结果不是数组，进行转换');
+        devices = devices ? [devices] : [];
+      }
+      
+      console.log('最终返回数据:', {
+        type: Array.isArray(devices) ? 'Array' : typeof devices,
+        length: devices.length,
+        data: devices
+      });
+
       res.json({
         code: 200,
         message: 'success',
         data: devices
       });
     } catch (error) {
+      console.error('获取设备列表失败:', error);
       res.status(500).json({
         code: 500,
-        message: error.message
+        message: error.message || '获取设备列表失败'
       });
     }
   },

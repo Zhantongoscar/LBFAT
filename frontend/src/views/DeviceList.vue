@@ -2,6 +2,9 @@
   <div class="device-list">
     <div class="header">
       <h1>设备管理</h1>
+      <el-button type="primary" @click="loadDevices" :loading="loading">
+        刷新
+      </el-button>
     </div>
 
     <!-- 设备列表 -->
@@ -16,17 +19,9 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="rssi" label="信号强度">
+      <el-table-column prop="updated_at" label="最后更新时间">
         <template #default="scope">
-          <el-progress
-            :percentage="calculateRssiPercentage(scope.row.rssi)"
-            :status="getRssiStatus(scope.row.rssi)"
-          />
-        </template>
-      </el-table-column>
-      <el-table-column prop="updated_at" label="最后通信时间">
-        <template #default="scope">
-          {{ formatDate(scope.row.updated_at) }}
+          {{ new Date(scope.row.updated_at).toLocaleString() }}
         </template>
       </el-table-column>
     </el-table>
@@ -36,55 +31,43 @@
 <script>
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { useDeviceStore } from '../store/device'
+import axios from 'axios'
 
 export default {
   name: 'DeviceList',
   setup() {
-    const deviceStore = useDeviceStore()
+    const devices = ref([])
     const loading = ref(false)
 
     // 加载设备列表
     const loadDevices = async () => {
       loading.value = true
       try {
-        await deviceStore.fetchDevices()
+        console.log('开始加载设备列表')
+        const response = await axios.get(import.meta.env.VITE_API_URL + '/api/devices')
+        console.log('获取到的数据:', response.data)
+        if (response.data.code === 200) {
+          devices.value = response.data.data
+        } else {
+          throw new Error(response.data.message)
+        }
       } catch (error) {
+        console.error('加载失败:', error)
         ElMessage.error('加载设备列表失败')
       } finally {
         loading.value = false
       }
     }
 
-    // 计算RSSI百分比
-    const calculateRssiPercentage = (rssi) => {
-      if (rssi === 0) return 0
-      return Math.min(100, Math.max(0, (rssi + 100)))
-    }
-
-    // 获取RSSI状态
-    const getRssiStatus = (rssi) => {
-      if (rssi === 0) return 'exception'
-      if (rssi > -60) return 'success'
-      if (rssi > -80) return 'warning'
-      return 'exception'
-    }
-
-    // 格式化日期
-    const formatDate = (date) => {
-      return new Date(date).toLocaleString()
-    }
-
+    // 初始加载
     onMounted(() => {
       loadDevices()
     })
 
     return {
-      devices: deviceStore.devices,
+      devices,
       loading,
-      calculateRssiPercentage,
-      getRssiStatus,
-      formatDate
+      loadDevices
     }
   }
 }
@@ -97,5 +80,8 @@ export default {
 
 .header {
   margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 </style>
