@@ -67,7 +67,7 @@ class MQTTService {
 
                     const parts = topic.split('/');
                     if (parts.length < 4) {
-                        logger.warn('无效的主题格式', { topic, parts });
+                        logger.warn('无效的���题格式', { topic, parts });
                         return;
                     }
 
@@ -84,6 +84,27 @@ class MQTTService {
                             rssi: payload.rssi
                         });
 
+                        // 更新数据库中的设备状态
+                        try {
+                            await Device.upsert({
+                                projectName,
+                                moduleType,
+                                serialNumber,
+                                status: payload.status,
+                                rssi: payload.rssi
+                            });
+                            logger.info('设备状态已更新到数据库', {
+                                deviceId: `${projectName}/${moduleType}/${serialNumber}`,
+                                status: payload.status
+                            });
+                        } catch (error) {
+                            logger.error('更新设备状态失败', {
+                                deviceId: `${projectName}/${moduleType}/${serialNumber}`,
+                                error: error.message
+                            });
+                        }
+
+                        // 广播到WebSocket
                         WebSocketService.broadcastDeviceStatus({
                             type: 'device_status',
                             topic,
