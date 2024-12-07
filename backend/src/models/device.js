@@ -17,29 +17,20 @@ class Device {
             }
 
             sql += ' ORDER BY updated_at DESC';
-            console.log('完整SQL查询语句:', sql);
+            console.log('=== 开始数据库查询 ===');
+            console.log('SQL语句:', sql);
+            console.log('查询参数:', params);
             
             // 执行查询
             const result = await db.query(sql, params);
+            console.log('=== 原始查询结果 ===');
+            console.log('result完整结构:', JSON.stringify(result, null, 2));
             console.log('result类型:', typeof result);
             console.log('result是否为数组:', Array.isArray(result));
             console.log('result长度:', result.length);
-            console.log('result[0]类型:', typeof result[0]);
-            console.log('result[0]是否为数组:', Array.isArray(result[0]));
-            console.log('result[0]长度:', result[0] ? result[0].length : 0);
-            console.log('result完整内容:', JSON.stringify(result, null, 2));
             
-            // 获取实际的数据行
-            const rows = result[0];
-            
-            // 确保返回数组
-            if (!Array.isArray(rows)) {
-                console.log('rows不是数组，进行转换');
-                return rows ? [rows] : [];
-            }
-            
-            console.log('返回数据行数:', rows.length);
-            return rows;
+            // 直接返回查询结果
+            return result;
             
         } catch (error) {
             console.error('查询出错:', error);
