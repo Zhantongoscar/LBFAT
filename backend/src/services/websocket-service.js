@@ -50,6 +50,15 @@ class WebSocketService extends EventEmitter {
                         
                         await mqttService.publish(data.topic, data.payload);
                     }
+                    // 处理获取topic列表请求
+                    else if (data.type === 'get_topic_list') {
+                        logger.info('收到获取topic列表请求');
+                        const mqttService = require('./mqtt-service');
+                        // 获取最新的订阅列表
+                        this.topicList = mqttService.subscriptions;
+                        // 发送topic列表
+                        this.sendTopicList(ws);
+                    }
                 } catch (error) {
                     logger.error('处理WebSocket消息失败:', error);
                 }

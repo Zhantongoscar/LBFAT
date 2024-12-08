@@ -140,19 +140,26 @@ class MQTTService {
                             value: payload.value
                         });
 
-                        const deviceCommand = {
-                            type: 'device_command',
+                        // 转发响应消息到WebSocket
+                        WebSocketService.broadcast({
+                            type: 'mqtt_message',
+                            messageType: 'response',
                             topic,
-                            rawMessage: messageStr,
-                            deviceId,
-                            channel,
-                            commandType: 'response',
-                            content: payload,
+                            payload,
+                            device: {
+                                projectName,
+                                moduleType,
+                                serialNumber,
+                                channel
+                            },
                             timestamp: new Date().toISOString()
-                        };
-
-                        WebSocketService.broadcastDeviceCommand(deviceCommand);
-                        logger.info('已广播设备响应消息', { deviceId, channel });
+                        });
+                        
+                        logger.info('已转发设备响应消息到WebSocket', { 
+                            deviceId, 
+                            channel,
+                            status: payload.status
+                        });
                     }
                 } catch (error) {
                     logger.error('处理MQTT消息失败', {
@@ -254,7 +261,7 @@ class MQTTService {
                     logger.error(`取消订阅失败:`, err);
                 } else {
                     logger.info(`取消订阅成功: ${statusTopic}, ${responseTopic}`);
-                    // 更新订阅列表
+                    // 更新���阅列表
                     this.subscriptions = this.subscriptions.filter(
                         topic => topic !== statusTopic && topic !== responseTopic
                     );

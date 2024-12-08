@@ -206,6 +206,8 @@ export default {
       }
       if (newWs) {
         setupMessageListener(newWs)
+        // WebSocket连接建立后，主动请求topic列表
+        requestTopicList()
       }
     })
 
@@ -213,8 +215,21 @@ export default {
     watch(() => wsInstance.isConnected.value, (isConnected) => {
       if (!isConnected) {
         ElMessage.warning('WebSocket连接已断开，正在重连...')
+      } else {
+        // 连接成功后，主动请求topic列表
+        requestTopicList()
       }
     })
+
+    // 请求topic列表
+    const requestTopicList = () => {
+      if (wsInstance.ws.value && wsInstance.isConnected.value) {
+        console.log('请求topic列表')
+        wsInstance.ws.value.send(JSON.stringify({
+          type: 'get_topic_list'
+        }))
+      }
+    }
 
     // 监听消息变化并保存
     watch(deviceStatusMessages, () => {
@@ -229,6 +244,10 @@ export default {
       loadMessages()  // 加载保存的消息
       if (wsInstance.ws.value) {
         setupMessageListener(wsInstance.ws.value)
+        // 组件挂载时，如果WebSocket已连接，主动请求topic列表
+        if (wsInstance.isConnected.value) {
+          requestTopicList()
+        }
       }
     })
 
