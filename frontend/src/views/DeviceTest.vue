@@ -2,25 +2,25 @@
   <div class="device-test">
     <h2>设备测试</h2>
 
-    <!-- 设备选择 -->
-    <el-form :model="form" label-width="120px">
-      <el-form-item label="选择设备">
-        <el-select v-model="form.deviceId" placeholder="请选择设备" @change="handleDeviceChange">
-          <el-option
-            v-for="device in onlineDevices"
-            :key="`${device.project_name}-${device.module_type}-${device.serial_number}`"
-            :label="`${device.project_name}/${device.module_type}/${device.serial_number}`"
-            :value="`${device.project_name}-${device.module_type}-${device.serial_number}`"
-          />
-        </el-select>
-      </el-form-item>
+    <!-- 设备选择和刷新按钮 -->
+    <div class="header-actions">
+      <el-select v-model="form.deviceId" placeholder="请选择设备" @change="handleDeviceChange">
+        <el-option
+          v-for="device in onlineDevices"
+          :key="`${device.project_name}-${device.module_type}-${device.serial_number}`"
+          :label="`${device.project_name}/${device.module_type}/${device.serial_number}`"
+          :value="`${device.project_name}-${device.module_type}-${device.serial_number}`"
+        />
+      </el-select>
+      <el-button type="primary" @click="loadDevices">刷新设备列表</el-button>
+    </div>
 
-      <!-- 点位选择 -->
+    <!-- 命令操作区域 -->
+    <el-form :model="form" label-width="120px" class="command-form">
       <el-form-item label="通道号">
         <el-input-number v-model="form.channel" :min="1" :max="8" />
       </el-form-item>
 
-      <!-- 命令操作区域 -->
       <el-form-item>
         <el-button type="primary" @click="handleRead" :disabled="!form.deviceId">读取</el-button>
         <el-input-number 
@@ -55,7 +55,7 @@
 </template>
 
 <script>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, onUnmounted } from 'vue'
 import axios from 'axios'
 import { useWebSocket } from '../composables/useWebSocket'
 import { ElMessage } from 'element-plus'
@@ -185,23 +185,18 @@ export default {
       }
     }
 
-    // 定时刷新设备列表
-    const startDeviceRefresh = () => {
-      const refreshInterval = setInterval(loadDevices, 5000)
-      return () => clearInterval(refreshInterval)
-    }
-
+    // 组件挂载时添加WebSocket监听
     onMounted(() => {
       loadDevices()
       if (ws.value) {
         ws.value.addEventListener('message', handleWebSocketMessage)
       }
-      const stopRefresh = startDeviceRefresh()
-      return () => {
-        stopRefresh()
-        if (ws.value) {
-          ws.value.removeEventListener('message', handleWebSocketMessage)
-        }
+    })
+
+    // 组件卸载时移除WebSocket监听
+    onUnmounted(() => {
+      if (ws.value) {
+        ws.value.removeEventListener('message', handleWebSocketMessage)
       }
     })
 
@@ -213,7 +208,8 @@ export default {
       handleDeviceChange,
       handleRead,
       handleWrite,
-      clearMessages
+      clearMessages,
+      loadDevices
     }
   }
 }
@@ -222,6 +218,16 @@ export default {
 <style scoped>
 .device-test {
   padding: 20px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.command-form {
+  margin-top: 20px;
 }
 
 .message-log {
