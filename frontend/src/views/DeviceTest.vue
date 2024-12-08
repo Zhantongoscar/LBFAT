@@ -98,7 +98,7 @@ export default {
           }
         }
       } catch (error) {
-        console.error('加载设备列表失败:', error)
+        console.error('加载设备���表失败:', error)
         ElMessage.error('加载设备列表失败')
       }
     }
@@ -132,17 +132,31 @@ export default {
       const topic = `${projectName}/${moduleType}/${serialNumber}/${form.value.channel}/command`
       const payload = { command: 'read' }
       
+      console.log('准备发送读取命令:', {
+        deviceId: form.value.deviceId,
+        topic,
+        payload,
+        wsConnected: isConnected.value,
+        wsState: ws.value ? ws.value.readyState : 'no ws'
+      })
+      
       // 发送MQTT消息
       if (ws.value && isConnected.value) {
-        ws.value.send(JSON.stringify({
+        const message = JSON.stringify({
           type: 'mqtt_publish',
           topic,
           payload
-        }))
+        })
+        console.log('发送WebSocket消息:', message)
+        ws.value.send(message)
         
         // 记录发送的消息
         addMessage('send', topic, payload)
       } else {
+        console.error('WebSocket未连接:', {
+          ws: !!ws.value,
+          isConnected: isConnected.value
+        })
         ElMessage.error('WebSocket未连接')
       }
     }
@@ -158,17 +172,31 @@ export default {
         value: form.value.writeValue
       }
       
+      console.log('准备发送写入命令:', {
+        deviceId: form.value.deviceId,
+        topic,
+        payload,
+        wsConnected: isConnected.value,
+        wsState: ws.value ? ws.value.readyState : 'no ws'
+      })
+      
       // 发送MQTT消息
       if (ws.value && isConnected.value) {
-        ws.value.send(JSON.stringify({
+        const message = JSON.stringify({
           type: 'mqtt_publish',
           topic,
           payload
-        }))
+        })
+        console.log('发送WebSocket消息:', message)
+        ws.value.send(message)
         
         // 记录发送的消息
         addMessage('send', topic, payload)
       } else {
+        console.error('WebSocket未连接:', {
+          ws: !!ws.value,
+          isConnected: isConnected.value
+        })
         ElMessage.error('WebSocket未连接')
       }
     }

@@ -48,10 +48,17 @@ class MQTTService {
         return new Promise((resolve, reject) => {
             this.client = mqtt.connect(url);
 
-            this.client.on('connect', () => {
+            this.client.on('connect', async () => {
                 logger.info('MQTT connected successfully');
-                this.subscribe().catch(logger.error);
-                resolve();
+                try {
+                    await this.subscribe();
+                    // 连接成功后立即发送主题列表
+                    WebSocketService.updateTopicList(this.subscriptions);
+                    resolve();
+                } catch (error) {
+                    logger.error('MQTT初始订阅失败:', error);
+                    reject(error);
+                }
             });
 
             this.client.on('message', async (topic, message) => {
@@ -67,7 +74,7 @@ class MQTTService {
 
                     const parts = topic.split('/');
                     if (parts.length < 4) {
-                        logger.warn('无效的���题格式', { topic, parts });
+                        logger.warn('无效的格式', { topic, parts });
                         return;
                     }
 
@@ -248,7 +255,9 @@ class MQTTService {
                 } else {
                     logger.info(`取消订阅成功: ${statusTopic}, ${responseTopic}`);
                     // 更新订阅列表
-                    this.subscriptions = this.subscriptions.filter(t => t !== statusTopic && t !== responseTopic);
+                    this.subscriptions = this.subscriptions.filter(
+                        topic => topic !== statusTopic && topic !== responseTopic
+                    );
                     WebSocketService.updateTopicList(this.subscriptions);
                     
                     // 从数据库删除
@@ -258,7 +267,6 @@ class MQTTService {
             });
         } catch (error) {
             logger.error(`取消订阅项目 ${projectName} 失败:`, error);
-            logger.error('错误堆栈:', error.stack);
             throw error;
         }
     }
@@ -272,6 +280,40 @@ class MQTTService {
         const message = { command };
         this.client.publish(topic, JSON.stringify(message));
         logger.info(`Sent command to topic ${topic}:`, message);
+    }
+
+    // 发布MQTT消息
+    async publish(topic, payload) {
+        if (!this.client) {
+            logger.error('MQTT客户端未连接，无法发布消息');
+            throw new Error('MQTT client not connected');
+        }
+
+        logger.info('准备发布MQTT消息:', {
+            topic,
+            payload,
+            clientConnected: this.client.connected,
+            clientId: this.client.options.clientId
+        });
+
+        return new Promise((resolve, reject) => {
+            this.client.publish(topic, JSON.stringify(payload), { qos: 1 }, (error) => {
+                if (error) {
+                    logger.error('发布MQTT消息失败:', {
+                        error,
+                        topic,
+                        payload
+                    });
+                    reject(error);
+                } else {
+                    logger.info('MQTT消息发布成功:', {
+                        topic,
+                        payload
+                    });
+                    resolve();
+                }
+            });
+        });
     }
 }
 

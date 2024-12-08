@@ -26,8 +26,34 @@ class WebSocketService extends EventEmitter {
             logger.info('New WebSocket client connected');
             this.clients.add(ws);
 
+            // 主动从MQTT服务获取主题列表
+            const mqttService = require('./mqtt-service');
+            if (mqttService.subscriptions && mqttService.subscriptions.length > 0) {
+                this.topicList = mqttService.subscriptions;
+            }
+
             // 发送当前topic列表
             this.sendTopicList(ws);
+
+            // 处理来自客户端的消息
+            ws.on('message', async (message) => {
+                try {
+                    const data = JSON.parse(message);
+                    logger.info('收到WebSocket消息:', data);
+
+                    if (data.type === 'mqtt_publish') {
+                        const mqttService = require('./mqtt-service');
+                        logger.info('准备发布MQTT消息:', {
+                            topic: data.topic,
+                            payload: data.payload
+                        });
+                        
+                        await mqttService.publish(data.topic, data.payload);
+                    }
+                } catch (error) {
+                    logger.error('处理WebSocket消息失败:', error);
+                }
+            });
 
             ws.on('close', () => {
                 logger.info('WebSocket client disconnected');
