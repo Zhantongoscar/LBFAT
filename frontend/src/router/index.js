@@ -3,6 +3,7 @@ import ProjectList from '../views/ProjectList.vue'
 import DeviceList from '../views/DeviceList.vue'
 import DeviceConfig from '../views/DeviceConfig.vue'
 import MessageList from '../views/MessageList.vue'
+import DeviceTest from '../views/DeviceTest.vue'
 
 const routes = [
   {
@@ -28,6 +29,11 @@ const routes = [
     path: '/messages',
     name: 'MessageList',
     component: MessageList
+  },
+  {
+    path: '/device-test',
+    name: 'DeviceTest',
+    component: DeviceTest
   }
 ]
 

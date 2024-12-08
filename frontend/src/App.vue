@@ -20,6 +20,10 @@
           <el-menu-item index="/device-config">
             <span>设备配置</span>
           </el-menu-item>
+          <el-menu-item index="/device-test">
+            <el-icon><Operation /></el-icon>
+            <span>设备测试</span>
+          </el-menu-item>
         </el-menu>
       </el-aside>
       <el-main>
@@ -28,6 +32,18 @@
     </el-container>
   </el-container>
 </template>
+
+<script>
+import { Monitor, Message, Operation } from '@element-plus/icons-vue'
+
+export default {
+  components: {
+    Monitor,
+    Message,
+    Operation
+  }
+}
+</script>
 
 <style>
 .el-header {
