@@ -34,6 +34,21 @@ const routes = [
     path: '/device-test',
     name: 'DeviceTest',
     component: DeviceTest
+  },
+  {
+    path: '/template',
+    name: 'TemplateManager',
+    component: () => import('../views/template/TemplateManager.vue')
+  },
+  {
+    path: '/test-execution',
+    name: 'TestExecution',
+    component: () => import('../views/test/TestExecution.vue')
+  },
+  {
+    path: '/test-report',
+    name: 'TestReport',
+    component: () => import('../views/test/TestReport.vue')
   }
 ]
 

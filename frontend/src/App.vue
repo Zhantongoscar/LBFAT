@@ -24,6 +24,21 @@
             <el-icon><Operation /></el-icon>
             <span>设备测试</span>
           </el-menu-item>
+          <el-sub-menu index="/test">
+            <template #title>
+              <el-icon><Tools /></el-icon>
+              <span>测试管理</span>
+            </template>
+            <el-menu-item index="/template">
+              <span>真值表管理</span>
+            </el-menu-item>
+            <el-menu-item index="/test-execution">
+              <span>测试执行</span>
+            </el-menu-item>
+            <el-menu-item index="/test-report">
+              <span>测试报告</span>
+            </el-menu-item>
+          </el-sub-menu>
         </el-menu>
       </el-aside>
       <el-main>
@@ -34,13 +49,14 @@
 </template>
 
 <script>
-import { Monitor, Message, Operation } from '@element-plus/icons-vue'
+import { Monitor, Message, Operation, Tools } from '@element-plus/icons-vue'
 
 export default {
   components: {
     Monitor,
     Message,
-    Operation
+    Operation,
+    Tools
   }
 }
 </script>
