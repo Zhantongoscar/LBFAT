@@ -28,39 +28,12 @@
       </el-form>
     </el-card>
 
-    <!-- 测试设备配置 -->
+    <!-- 真值表设计 -->
     <el-card class="box-card mt-4">
       <template #header>
         <div class="card-header">
-          <span class="title">测试设备配置</span>
-        </div>
-      </template>
-      <el-form label-width="100px">
-        <el-form-item label="设备类型">
-          <el-select v-model="selectedDeviceType" placeholder="请选择设备类型" class="device-select">
-            <el-option label="EDB4" value="EDB4" />
-          </el-select>
-        </el-form-item>
-      </el-form>
-      
-      <div class="unit-list mt-4">
-        <div class="unit-list-header">
-          <span class="title">可用Unit列表</span>
-        </div>
-        <el-table :data="unitList" border style="width: 100%">
-          <el-table-column prop="unitId" label="UnitID" width="180" />
-          <el-table-column prop="type" label="类型" width="180" />
-          <el-table-column prop="description" label="用途说明" />
-        </el-table>
-      </div>
-    </el-card>
-
-    <!-- 测试流程设计 -->
-    <el-card class="box-card mt-4">
-      <template #header>
-        <div class="card-header">
-          <span class="title">测试流程设计</span>
-          <el-button type="primary" @click="addTestGroup">添加测试组</el-button>
+          <span class="title">真值表设计</span>
+          <el-button type="primary" @click="addNewTestId">新增TestID</el-button>
         </div>
       </template>
 
@@ -157,15 +130,6 @@ export default defineComponent({
       version: ''
     })
 
-    // 设备配置
-    const selectedDeviceType = ref('EDB4')
-    const unitList = ref([
-      { unitId: 'AI1', type: 'AI', description: '压力检测' },
-      { unitId: 'DI1', type: 'DI', description: '开关状态' },
-      { unitId: 'AO1', type: 'AO', description: '模拟输出' },
-      { unitId: 'DO1', type: 'DO', description: '开关输出' }
-    ])
-
     // 测试组管理
     const activeGroups = ref(['1'])
     const testGroups = ref([
@@ -256,7 +220,6 @@ export default defineComponent({
     const saveTemplate = () => {
       console.log('保存模板', {
         drawingInfo: drawingInfo.value,
-        deviceType: selectedDeviceType.value,
         groups: testGroups.value
       })
     }
@@ -273,8 +236,6 @@ export default defineComponent({
 
     return {
       drawingInfo,
-      selectedDeviceType,
-      unitList,
       activeGroups,
       testGroups,
       deviceDialog,
@@ -318,14 +279,6 @@ export default defineComponent({
 .title {
   font-size: 16px;
   font-weight: bold;
-}
-
-.device-select {
-  width: 200px;
-}
-
-.unit-list-header {
-  margin-bottom: 15px;
 }
 
 .group-title {

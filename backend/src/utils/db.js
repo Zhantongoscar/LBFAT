@@ -7,32 +7,43 @@ const pool = mysql.createPool({
     database: process.env.DB_NAME || "lbfat",
     waitForConnections: true,
     connectionLimit: 10,
-    queueLimit: 0
+    queueLimit: 0,
+    connectTimeout: 60000,
+    acquireTimeout: 60000,
+    timeout: 60000,
+    enableKeepAlive: true,
+    keepAliveInitialDelay: 10000
 });
 
-// 测试连接
-pool.getConnection()
-    .then(connection => {
-        console.log("数据库连接成功");
-        console.log("连接信息:", {
-            host: process.env.DB_HOST || "mysql",
-            user: process.env.DB_USER || "root",
-            database: process.env.DB_NAME || "lbfat"
-        });
-        connection.release();
-    })
-    .catch(err => {
-        console.error("数据库连接错误:", err);
-        console.error("连接配置:", {
-            host: process.env.DB_HOST || "mysql",
-            user: process.env.DB_USER || "root",
-            database: process.env.DB_NAME || "lbfat"
-        });
-    });
+pool.on('error', (err) => {
+    console.error('数据库池错误:', err);
+});
 
-// 导出数据库工具
+const testConnection = async (retries = 5, delay = 5000) => {
+    for (let i = 0; i < retries; i++) {
+        try {
+            const connection = await pool.getConnection();
+            console.log("数据库连接成功");
+            console.log("连接信息:", {
+                host: process.env.DB_HOST || "mysql",
+                user: process.env.DB_USER || "root",
+                database: process.env.DB_NAME || "lbfat"
+            });
+            connection.release();
+            return true;
+        } catch (err) {
+            console.error(`数据库连接尝试 ${i + 1}/${retries} 失败:`, err);
+            if (i < retries - 1) {
+                console.log(`等待 ${delay/1000} 秒后重试...`);
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+        }
+    }
+    throw new Error('数据库连接失败，已达到最大重试次数');
+};
+
 module.exports = {
-    // 获取数据库连接
+    testConnection,
     getConnection: async () => {
         try {
             const connection = await pool.getConnection();
@@ -44,7 +55,6 @@ module.exports = {
         }
     },
 
-    // 执行查询
     query: async (sql, params) => {
         let connection;
         try {

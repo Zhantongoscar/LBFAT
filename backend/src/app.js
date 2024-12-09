@@ -61,34 +61,51 @@ const PORT = process.env.PORT || 3000;
 async function initializeServices() {
     try {
         // 测试数据库连接
-        const connection = await db.getConnection();
-        connection.release();
-        console.log('数据库连接成功');
-        console.log('连接信息:', {
-            host: process.env.DB_HOST || 'mysql',
-            user: process.env.DB_USER || 'root',
-            database: process.env.DB_NAME || 'lbfat'
-        });
+        console.log('正在连接数据库...');
+        await db.testConnection();
+        console.log('数据库连接测试成功');
 
         // 连接MQTT服务
+        console.log('正在连接MQTT服务...');
         await mqttService.connect();
+        console.log('MQTT服务连接成功');
 
         // 初始化WebSocket服务
+        console.log('正在初始化WebSocket服务...');
         WebSocketService.initialize(server);
-        console.log('WebSocket服务已初始化');
+        console.log('WebSocket服务初始化成功');
 
         // 启动HTTP服务器
         server.listen(PORT, '0.0.0.0', () => {
-            console.log(`Server is running at http://0.0.0.0:${PORT}`);
-            console.log(`Process ID: ${process.pid}`);
+            console.log(`服务器正在运行: http://0.0.0.0:${PORT}`);
+            console.log(`进程ID: ${process.pid}`);
+            console.log('所有服务初始化完成');
         });
-
-        console.log('所有服务初始化完成');
     } catch (error) {
         console.error('服务初始化失败:', error);
-        process.exit(1);
+        // 给系统一些时间来完成日志写入
+        setTimeout(() => {
+            process.exit(1);
+        }, 1000);
     }
 }
+
+// 优雅关闭
+process.on('SIGTERM', async () => {
+    console.log('收到 SIGTERM 信号，开始优雅关闭...');
+    server.close(() => {
+        console.log('HTTP 服务器已关闭');
+        process.exit(0);
+    });
+});
+
+process.on('SIGINT', async () => {
+    console.log('收到 SIGINT 信号，开始优雅关闭...');
+    server.close(() => {
+        console.log('HTTP 服务器已关闭');
+        process.exit(0);
+    });
+});
 
 // 启动服务
 initializeServices(); 
