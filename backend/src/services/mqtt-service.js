@@ -185,7 +185,7 @@ class MQTTService {
         try {
             // 订阅设备状态和命令响应主题
             const statusTopic = 'lb_test/+/+/status';
-            const responseTopic = 'lb_test/+/+/channel/+/response';
+            const responseTopic = 'lb_test/+/+/+/response';
             
             this.client.subscribe([statusTopic, responseTopic], { qos: 1 });
             logger.info(`Subscribed to topics: ${statusTopic}, ${responseTopic}`);
@@ -212,7 +212,7 @@ class MQTTService {
 
             logger.info(`开始订阅项目 ${projectName} 的MQTT主题`);
             const statusTopic = `${projectName}/+/+/status`;
-            const responseTopic = `${projectName}/+/+/channel/+/response`;
+            const responseTopic = `${projectName}/+/+/+/response`;
             
             logger.info(`MQTT客户端状态:`, {
                 connected: this.client.connected,
@@ -249,7 +249,7 @@ class MQTTService {
 
             logger.info(`开始取消订阅项 ${projectName} 的MQTT主题`);
             const statusTopic = `${projectName}/+/+/status`;
-            const responseTopic = `${projectName}/+/+/channel/+/response`;
+            const responseTopic = `${projectName}/+/+/+/response`;
             
             logger.info(`MQTT客户端状态:`, {
                 connected: this.client.connected,
@@ -261,7 +261,7 @@ class MQTTService {
                     logger.error(`取消订阅失败:`, err);
                 } else {
                     logger.info(`取消订阅成功: ${statusTopic}, ${responseTopic}`);
-                    // 更新���阅列表
+                    // 更新订阅列表
                     this.subscriptions = this.subscriptions.filter(
                         topic => topic !== statusTopic && topic !== responseTopic
                     );
@@ -292,7 +292,7 @@ class MQTTService {
     // 发布MQTT消息
     async publish(topic, payload) {
         if (!this.client) {
-            logger.error('MQTT客户端未连接，无法发布消息');
+            logger.error('MQTT客户端未连接，无法发布��息');
             throw new Error('MQTT client not connected');
         }
 

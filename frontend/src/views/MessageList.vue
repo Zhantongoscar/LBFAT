@@ -143,6 +143,23 @@ export default {
             saveMessages()
             break
             
+          case 'mqtt_message':
+            if (data.messageType === 'response') {
+              deviceCommands.value.unshift({
+                timestamp: new Date().toLocaleString(),
+                deviceId: `${data.device.projectName}/${data.device.moduleType}/${data.device.serialNumber}`,
+                channel: data.device.channel,
+                type: 'response',
+                content: JSON.stringify(data.payload),
+                rawTopic: data.topic
+              })
+              if (deviceCommands.value.length > MAX_MESSAGES) {
+                deviceCommands.value = deviceCommands.value.slice(0, MAX_MESSAGES)
+              }
+              saveMessages()
+            }
+            break
+
           case 'device_command':
             deviceCommands.value.unshift({
               timestamp: new Date().toLocaleString(),
