@@ -29,13 +29,13 @@
               <el-icon><Tools /></el-icon>
               <span>测试管理</span>
             </template>
-            <el-menu-item index="/template">
+            <el-menu-item index="/test/template">
               <span>真值表管理</span>
             </el-menu-item>
-            <el-menu-item index="/test-execution">
+            <el-menu-item index="/test/execution">
               <span>测试执行</span>
             </el-menu-item>
-            <el-menu-item index="/test-report">
+            <el-menu-item index="/test/report">
               <span>测试报告</span>
             </el-menu-item>
           </el-sub-menu>
