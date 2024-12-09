@@ -12,150 +12,228 @@
       </div>
     </el-card>
 
-    <!-- 真值表列表（可折叠） -->
-    <el-collapse v-model="isTemplateListExpanded" class="template-list-section">
-      <el-collapse-item name="templateList">
-        <template #title>
-          <div class="collapse-header">
-            <span>真值表管理</span>
-          </div>
-        </template>
-        
-        <el-card class="template-list-card" shadow="never">
-          <template #header>
-            <div class="card-header">
-              <el-button type="primary" @click="showCreateDialog">新建真值表</el-button>
-            </div>
-          </template>
-
-          <!-- 真值表列表 -->
-          <el-table :data="templateList" style="width: 100%" height="250">
-            <el-table-column prop="id" label="ID" width="180" />
-            <el-table-column prop="drawingNo" label="图纸编号" width="180" />
-            <el-table-column prop="version" label="版本" width="100" />
-            <el-table-column prop="name" label="名称" />
-            <el-table-column prop="updateTime" label="更新时间" width="180" />
-            <el-table-column label="操作" width="150">
-              <template #default="scope">
-                <el-button type="primary" link @click="editTemplate(scope.row)">编辑</el-button>
-                <el-button type="danger" link @click="deleteTemplate(scope.row)">删除</el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-        </el-card>
-      </el-collapse-item>
-    </el-collapse>
-
-    <!-- 真值表编辑区域 -->
-    <el-card v-if="currentTemplate" class="template-edit-card">
-      <template #header>
-        <div class="card-header">
-          <span>真值表编辑</span>
-          <el-button type="primary" @click="addNewTestId">添加新测试ID</el-button>
-        </div>
-      </template>
-
-      <!-- 按TestID分组的测试步骤 -->
-      <el-collapse v-model="expandedTestIds" class="test-groups">
-        <el-collapse-item 
-          v-for="group in groupedTestSteps" 
-          :key="group.testId" 
-          :name="group.testId"
-        >
+    <div class="main-content">
+      <!-- 左侧：真值表管理 -->
+      <el-collapse v-model="isTemplateListExpanded" class="template-list-section">
+        <el-collapse-item name="templateList">
           <template #title>
-            <div class="test-group-header">
-              <span class="test-id">测试ID: {{ group.testId }}</span>
-              <span class="step-count">({{ group.steps.length }} 个步骤)</span>
+            <div class="collapse-header">
+              <span>真值表管理</span>
             </div>
           </template>
+          
+          <el-card class="template-list-card" shadow="never">
+            <template #header>
+              <div class="card-header">
+                <el-button type="primary" @click="showCreateDialog">新建真值表</el-button>
+              </div>
+            </template>
 
-          <!-- 测试步骤表格 -->
-          <div class="test-group-content">
-            <div class="group-actions">
-              <el-button type="primary" link @click="addStepToGroup(group.testId)">
-                添加步骤
-              </el-button>
-            </div>
-
-            <el-table :data="group.steps" border style="width: 100%">
-              <el-table-column label="步骤序号" width="90">
-                <template #default="scope">
-                  <span>{{ scope.$index + 1 }}</span>
-                </template>
-              </el-table-column>
-              
-              <el-table-column label="步骤描述" width="200">
-                <template #default="scope">
-                  <el-input v-model="scope.row.description" placeholder="步骤描述"/>
-                </template>
-              </el-table-column>
-
-              <el-table-column label="预期输入" width="200">
-                <template #default="scope">
-                  <el-select v-model="scope.row.expectedInput" multiple placeholder="选择输入点位">
-                    <el-option
-                      v-for="point in inputPoints"
-                      :key="point.id"
-                      :label="point.name"
-                      :value="point.id"
-                    />
-                  </el-select>
-                </template>
-              </el-table-column>
-
-              <el-table-column label="预期输出" width="200">
-                <template #default="scope">
-                  <el-select v-model="scope.row.expectedOutput" multiple placeholder="选择输出点位">
-                    <el-option
-                      v-for="point in outputPoints"
-                      :key="point.id"
-                      :label="point.name"
-                      :value="point.id"
-                    />
-                  </el-select>
-                </template>
-              </el-table-column>
-
-              <el-table-column label="延时(ms)" width="120">
-                <template #default="scope">
-                  <el-input-number 
-                    v-model="scope.row.delay" 
-                    :min="0" 
-                    :step="100"
-                    placeholder="延时"/>
-                </template>
-              </el-table-column>
-
+            <!-- 真值表列表 -->
+            <el-table :data="templateList" style="width: 100%" height="250">
+              <el-table-column prop="id" label="ID" width="180" />
+              <el-table-column prop="drawingNo" label="图纸编号" width="180" />
+              <el-table-column prop="version" label="版本" width="100" />
+              <el-table-column prop="name" label="名称" />
+              <el-table-column prop="updateTime" label="更新时间" width="180" />
               <el-table-column label="操作" width="150">
                 <template #default="scope">
-                  <el-button-group>
-                    <el-button 
-                      type="primary" 
-                      :icon="ArrowUp"
-                      @click="moveStepInGroup(group.testId, scope.$index, 'up')"
-                      :disabled="scope.$index === 0"/>
-                    <el-button 
-                      type="primary" 
-                      :icon="ArrowDown"
-                      @click="moveStepInGroup(group.testId, scope.$index, 'down')"
-                      :disabled="scope.$index === group.steps.length - 1"/>
-                    <el-button 
-                      type="danger" 
-                      :icon="Delete"
-                      @click="removeStepFromGroup(group.testId, scope.$index)"/>
-                  </el-button-group>
+                  <el-button type="primary" link @click="editTemplate(scope.row)">编辑</el-button>
+                  <el-button type="danger" link @click="deleteTemplate(scope.row)">删除</el-button>
                 </template>
               </el-table-column>
             </el-table>
-          </div>
+          </el-card>
         </el-collapse-item>
       </el-collapse>
 
-      <!-- 保存按钮 -->
-      <div class="actions">
-        <el-button type="primary" @click="saveTemplate">保存</el-button>
-      </div>
-    </el-card>
+      <!-- 右侧：真值表编辑区域 -->
+      <el-collapse v-model="isEditSectionExpanded" class="edit-section">
+        <el-collapse-item name="editSection">
+          <template #title>
+            <div class="collapse-header">
+              <span>真值表编辑</span>
+            </div>
+          </template>
+
+          <template v-if="currentTemplate">
+            <el-card class="edit-card" shadow="never">
+              <template #header>
+                <div class="card-header">
+                  <el-button type="primary" @click="addNewTestId">添加新测试ID</el-button>
+                </div>
+              </template>
+
+              <!-- 按TestID分组的测试步骤 -->
+              <el-collapse v-model="expandedTestIds" class="test-groups">
+                <el-collapse-item 
+                  v-for="group in groupedTestSteps" 
+                  :key="group.testId" 
+                  :name="group.testId"
+                >
+                  <template #title>
+                    <div class="test-group-header">
+                      <span class="test-id">测试ID: {{ group.testId }}</span>
+                      <span class="step-count">({{ group.steps.length }} 个步骤)</span>
+                    </div>
+                  </template>
+
+                  <!-- 测试步骤表格 -->
+                  <div class="test-group-content">
+                    <div class="group-actions">
+                      <el-button type="primary" link @click="addStepToGroup(group.testId)">
+                        添加步骤
+                      </el-button>
+                    </div>
+
+                    <el-table :data="group.steps" border style="width: 100%">
+                      <el-table-column label="步骤序号" width="90">
+                        <template #default="scope">
+                          <span>{{ scope.$index + 1 }}</span>
+                        </template>
+                      </el-table-column>
+                      
+                      <el-table-column label="步骤描述" width="200">
+                        <template #default="scope">
+                          <el-input v-model="scope.row.description" placeholder="步骤描述"/>
+                        </template>
+                      </el-table-column>
+
+                      <el-table-column label="预期输入" width="200">
+                        <template #default="scope">
+                          <el-select v-model="scope.row.expectedInput" multiple placeholder="选择输入点位">
+                            <el-option
+                              v-for="point in inputPoints"
+                              :key="point.id"
+                              :label="point.name"
+                              :value="point.id"
+                            />
+                          </el-select>
+                        </template>
+                      </el-table-column>
+
+                      <el-table-column label="预期输出" width="200">
+                        <template #default="scope">
+                          <el-select v-model="scope.row.expectedOutput" multiple placeholder="选择输出点位">
+                            <el-option
+                              v-for="point in outputPoints"
+                              :key="point.id"
+                              :label="point.name"
+                              :value="point.id"
+                            />
+                          </el-select>
+                        </template>
+                      </el-table-column>
+
+                      <el-table-column label="延时(ms)" width="120">
+                        <template #default="scope">
+                          <el-input-number 
+                            v-model="scope.row.delay" 
+                            :min="0" 
+                            :step="100"
+                            placeholder="延时"/>
+                        </template>
+                      </el-table-column>
+
+                      <el-table-column label="操作" width="150">
+                        <template #default="scope">
+                          <el-button-group>
+                            <el-button 
+                              type="primary" 
+                              :icon="ArrowUp"
+                              @click="moveStepInGroup(group.testId, scope.$index, 'up')"
+                              :disabled="scope.$index === 0"/>
+                            <el-button 
+                              type="primary" 
+                              :icon="ArrowDown"
+                              @click="moveStepInGroup(group.testId, scope.$index, 'down')"
+                              :disabled="scope.$index === group.steps.length - 1"/>
+                            <el-button 
+                              type="danger" 
+                              :icon="Delete"
+                              @click="removeStepFromGroup(group.testId, scope.$index)"/>
+                          </el-button-group>
+                        </template>
+                      </el-table-column>
+                    </el-table>
+                  </div>
+                </el-collapse-item>
+              </el-collapse>
+
+              <!-- 保存按钮 -->
+              <div class="actions">
+                <el-button type="primary" @click="saveTemplate">保存</el-button>
+              </div>
+            </el-card>
+
+            <!-- 真值表编译区域 -->
+            <el-card class="compile-card">
+              <template #header>
+                <div class="card-header">
+                  <span>真值表编译</span>
+                  <div class="compile-actions">
+                    <el-button type="primary" @click="compileTemplate">编译</el-button>
+                    <el-button type="success" @click="exportCompiledTemplate">导出</el-button>
+                  </div>
+                </div>
+              </template>
+
+              <!-- 编译结果展示 -->
+              <div class="compile-result">
+                <el-tabs v-model="activeCompileTab">
+                  <!-- JSON格式 -->
+                  <el-tab-pane label="JSON格式" name="json">
+                    <el-input
+                      v-model="compiledJson"
+                      type="textarea"
+                      :rows="10"
+                      readonly
+                      placeholder="编译后的JSON格式"
+                    />
+                  </el-tab-pane>
+                  
+                  <!-- 表格格式 -->
+                  <el-tab-pane label="表格格式" name="table">
+                    <el-table :data="compiledTable" border style="width: 100%">
+                      <el-table-column prop="testId" label="测试ID" width="120" />
+                      <el-table-column prop="step" label="步骤" width="80" />
+                      <el-table-column prop="description" label="描述" width="200" />
+                      <el-table-column prop="inputs" label="输入点位">
+                        <template #default="{ row }">
+                          <el-tag 
+                            v-for="input in row.inputs" 
+                            :key="input"
+                            size="small"
+                            class="mx-1"
+                          >
+                            {{ input }}
+                          </el-tag>
+                        </template>
+                      </el-table-column>
+                      <el-table-column prop="outputs" label="输出点位">
+                        <template #default="{ row }">
+                          <el-tag 
+                            v-for="output in row.outputs" 
+                            :key="output"
+                            type="success"
+                            size="small"
+                            class="mx-1"
+                          >
+                            {{ output }}
+                          </el-tag>
+                        </template>
+                      </el-table-column>
+                      <el-table-column prop="delay" label="延时(ms)" width="100" />
+                    </el-table>
+                  </el-tab-pane>
+                </el-tabs>
+              </div>
+            </el-card>
+          </template>
+          <el-empty v-else description="请选择要编辑的真值表" />
+        </el-collapse-item>
+      </el-collapse>
+    </div>
 
     <!-- 新建真值表对话框 -->
     <el-dialog
@@ -314,46 +392,57 @@ const outputPoints = ref([
 
 // 添加新的测试ID组
 const addNewTestId = () => {
-  const newTestId = `T${groupedTestSteps.value.length + 1}`
+  const newTestId = `TEST${String(groupedTestSteps.value.length + 1).padStart(3, '0')}`
   testSteps.value.push({
     testId: newTestId,
-    description: '',
+    description: '新测试步骤',
     expectedInput: [],
     expectedOutput: [],
-    delay: 100
+    delay: 1000
   })
   expandedTestIds.value.push(newTestId)
 }
 
-// 向指定组添加步骤
+// 添加步骤到组
 const addStepToGroup = (testId) => {
   testSteps.value.push({
     testId,
-    description: '',
+    description: '新步骤',
     expectedInput: [],
     expectedOutput: [],
-    delay: 100
+    delay: 1000
   })
 }
 
 // 在组内移动步骤
 const moveStepInGroup = (testId, index, direction) => {
-  const groupSteps = groupedTestSteps.value.find(g => g.testId === testId).steps
+  const groupSteps = testSteps.value.filter(step => step.testId === testId)
   if (direction === 'up' && index > 0) {
-    [groupSteps[index], groupSteps[index - 1]] = [groupSteps[index - 1], groupSteps[index]]
+    const temp = groupSteps[index]
+    groupSteps[index] = groupSteps[index - 1]
+    groupSteps[index - 1] = temp
+    // 更新原数组
+    testSteps.value = testSteps.value.map(step => 
+      step.testId === testId ? groupSteps.shift() : step
+    )
   } else if (direction === 'down' && index < groupSteps.length - 1) {
-    [groupSteps[index], groupSteps[index + 1]] = [groupSteps[index + 1], groupSteps[index]]
+    const temp = groupSteps[index]
+    groupSteps[index] = groupSteps[index + 1]
+    groupSteps[index + 1] = temp
+    // 更新原数组
+    testSteps.value = testSteps.value.map(step => 
+      step.testId === testId ? groupSteps.shift() : step
+    )
   }
 }
 
 // 从组中删除步骤
 const removeStepFromGroup = (testId, index) => {
-  const groupIndex = testSteps.value.findIndex(step => 
-    step.testId === testId && 
-    step === groupedTestSteps.value.find(g => g.testId === testId).steps[index]
+  const stepIndex = testSteps.value.findIndex((step, i) => 
+    step.testId === testId && i === index
   )
-  if (groupIndex > -1) {
-    testSteps.value.splice(groupIndex, 1)
+  if (stepIndex !== -1) {
+    testSteps.value.splice(stepIndex, 1)
   }
 }
 
@@ -405,32 +494,54 @@ const createTemplate = async () => {
 // 编辑真值表
 const editTemplate = (template) => {
   currentTemplate.value = template
-  // TODO: 加载真值表的测试步骤数据
-  loadTestSteps(template.id)
+  // 模拟加载该模板的测试步骤
+  testSteps.value = [
+    {
+      testId: 'TEST001',
+      description: '初始状态检查',
+      expectedInput: ['IN1', 'IN2'],
+      expectedOutput: ['OUT1'],
+      delay: 1000
+    },
+    {
+      testId: 'TEST001',
+      description: '执行操作1',
+      expectedInput: ['IN3'],
+      expectedOutput: ['OUT2', 'OUT3'],
+      delay: 500
+    },
+    {
+      testId: 'TEST002',
+      description: '状态验证',
+      expectedInput: ['IN4'],
+      expectedOutput: ['OUT4'],
+      delay: 1000
+    }
+  ]
+  // 默认展开第一个测试组
+  expandedTestIds.value = ['TEST001']
 }
 
 // 删除真值表
-const deleteTemplate = async (template) => {
-  try {
-    await ElMessageBox.confirm('确定要删除该真值表吗？', '提示', {
+const deleteTemplate = (template) => {
+  ElMessageBox.confirm(
+    `确定要删除真值表"${template.name}"吗？`,
+    '警告',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
       type: 'warning'
-    })
-    // TODO: 调用API删除真值表
-    const index = templateList.value.findIndex(t => t.id === template.id)
-    if (index > -1) {
-      templateList.value.splice(index, 1)
     }
+  ).then(() => {
+    templateList.value = templateList.value.filter(t => t.id !== template.id)
     if (currentTemplate.value?.id === template.id) {
       currentTemplate.value = null
       testSteps.value = []
     }
     ElMessage.success('删除成功')
-  } catch (error) {
-    if (error !== 'cancel') {
-      console.error('删除真值表失败:', error)
-      ElMessage.error('删除失败: ' + error.message)
-    }
-  }
+  }).catch(() => {
+    // 取消删除
+  })
 }
 
 // 加载测试步骤数据
@@ -453,41 +564,8 @@ const handleDrawingSelect = (drawingNo) => {
 }
 
 // 保存模板
-const saveTemplate = async () => {
-  try {
-    if (!currentTemplate.value) {
-      ElMessage.error('请先选择或创建真值表')
-      return
-    }
-
-    if (testSteps.value.length === 0) {
-      ElMessage.error('请至少添加一个测试步骤')
-      return
-    }
-
-    // 验证每个测试步骤
-    for (const step of testSteps.value) {
-      if (!step.testId) {
-        ElMessage.error('每个步骤都需要测试ID')
-        return
-      }
-      if (step.expectedInput.length === 0 && step.expectedOutput.length === 0) {
-        ElMessage.error('每个步骤都需要至少一个输入或输出点位')
-        return
-      }
-    }
-
-    // TODO: 调用API保存模板
-    console.log('保存模板:', {
-      template: currentTemplate.value,
-      steps: testSteps.value
-    })
-    
-    ElMessage.success('保存成功')
-  } catch (error) {
-    console.error('保存模板失败:', error)
-    ElMessage.error('保存失败: ' + error.message)
-  }
+const saveTemplate = () => {
+  ElMessage.success('保存成功（模拟）')
 }
 
 // 初始化数据
@@ -506,6 +584,54 @@ const initData = async () => {
 onMounted(() => {
   initData()
 })
+
+// 编译相关的状态
+const activeCompileTab = ref('json')
+const compiledJson = ref('')
+const compiledTable = ref([])
+
+// 编译真值表
+const compileTemplate = () => {
+  try {
+    // 将测试步骤转换为编译格式
+    const compiled = testSteps.value.map((step, index) => ({
+      testId: step.testId,
+      step: index + 1,
+      description: step.description,
+      inputs: step.expectedInput,
+      outputs: step.expectedOutput,
+      delay: step.delay
+    }))
+    
+    // 更新编译结果
+    compiledTable.value = compiled
+    compiledJson.value = JSON.stringify(compiled, null, 2)
+    
+    ElMessage.success('编译成功')
+  } catch (error) {
+    ElMessage.error('编译失败：' + error.message)
+  }
+}
+
+// 导出编译后的真值表
+const exportCompiledTemplate = () => {
+  try {
+    const data = compiledJson.value
+    const blob = new Blob([data], { type: 'application/json' })
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${currentTemplate.value.name}_compiled.json`
+    link.click()
+    window.URL.revokeObjectURL(url)
+    ElMessage.success('导出成功')
+  } catch (error) {
+    ElMessage.error('导出失败：' + error.message)
+  }
+}
+
+// 编辑区域的展开状态
+const isEditSectionExpanded = ref(['editSection'])
 </script>
 
 <style scoped>
@@ -513,40 +639,66 @@ onMounted(() => {
   padding: 20px;
 }
 
+.main-content {
+  display: flex;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.template-list-section {
+  flex: 1;
+  min-width: 300px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+}
+
+.edit-section {
+  flex: 2;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+}
+
 .current-file-card {
   margin-bottom: 20px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
 
 .current-file-info {
   display: flex;
   align-items: center;
-  gap: 10px;
+  padding: 10px;
 }
 
-.current-file-info .label {
+.label {
   font-weight: bold;
+  margin-right: 10px;
 }
 
-.current-file-info .value {
+.value {
   color: #409EFF;
+  margin-right: 10px;
 }
 
-.current-file-info .sub-info {
+.sub-info {
   color: #909399;
-  font-size: 14px;
 }
 
-.current-file-info .no-file {
+.no-file {
   color: #909399;
   font-style: italic;
 }
 
-.template-list-section {
-  margin-bottom: 20px;
+.template-list-card {
+  border: none;
 }
 
 .template-edit-card {
-  margin-bottom: 20px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
 }
 
 .test-groups {
@@ -556,60 +708,102 @@ onMounted(() => {
 .test-group-header {
   display: flex;
   align-items: center;
-  gap: 10px;
 }
 
-.test-group-header .test-id {
+.test-id {
   font-weight: bold;
+  margin-right: 10px;
 }
 
-.test-group-header .step-count {
+.step-count {
   color: #909399;
-  font-size: 14px;
 }
 
 .test-group-content {
-  padding: 10px 0;
+  padding: 20px;
 }
 
 .group-actions {
   margin-bottom: 10px;
 }
 
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
 .actions {
   margin-top: 20px;
   text-align: right;
+  padding: 0 20px 20px;
 }
 
-:deep(.el-collapse-item__header) {
-  padding: 0 20px;
+/* 添加过渡动画 */
+.el-collapse-item__wrap {
+  will-change: height;
+  transition: height 0.3s ease-in-out;
 }
 
-:deep(.el-collapse-item__content) {
-  padding: 0;
+.el-table {
+  margin-top: 10px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
 
-:deep(.el-card.template-list-card) {
+/* 优化表格内部样式 */
+.el-table th {
+  background-color: #f5f7fa;
+}
+
+.el-table td {
+  padding: 8px 0;
+}
+
+/* 优化按钮组样式 */
+.el-button-group {
+  .el-button {
+    margin-left: 0;
+  }
+}
+
+/* 优化折叠面板样式 */
+.el-collapse {
   border: none;
-  margin: 0;
+  
+  .el-collapse-item__header {
+    padding: 0 20px;
+    font-size: 16px;
+    font-weight: bold;
+  }
+  
+  .el-collapse-item__content {
+    padding: 0;
+  }
 }
 
-:deep(.el-card.template-list-card .el-card__header) {
-  padding: 10px 20px;
-  border-top: 1px solid #EBEEF5;
+/* 编译区域样式 */
+.compile-card {
+  margin-top: 20px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
 
-:deep(.el-table) {
-  margin-bottom: 20px;
+.compile-actions {
+  display: flex;
+  gap: 10px;
 }
 
-:deep(.el-form-item) {
-  margin-bottom: 20px;
+.compile-result {
+  margin-top: 10px;
+}
+
+.mx-1 {
+  margin: 0 5px;
+}
+
+/* 优化文本域样式 */
+:deep(.el-textarea__inner) {
+  font-family: monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  padding: 12px;
+}
+
+/* 编译结果标签样式 */
+.el-tag {
+  margin: 2px;
 }
 </style> 
