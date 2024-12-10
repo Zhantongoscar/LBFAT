@@ -4,6 +4,7 @@ import DeviceList from '../views/DeviceList.vue'
 import DeviceConfig from '../views/DeviceConfig.vue'
 import MessageList from '../views/MessageList.vue'
 import DeviceTest from '../views/DeviceTest.vue'
+import UserManager from '../views/UserManager.vue'
 
 const routes = [
   {
@@ -34,6 +35,11 @@ const routes = [
     path: '/device-test',
     name: 'DeviceTest',
     component: DeviceTest
+  },
+  {
+    path: '/user-manager',
+    name: 'UserManager',
+    component: UserManager
   },
   {
     path: '/test',

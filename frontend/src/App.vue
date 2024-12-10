@@ -38,6 +38,10 @@
             <el-icon><Operation /></el-icon>
             <template #title>设备测试</template>
           </el-menu-item>
+          <el-menu-item index="/user-manager">
+            <el-icon><User /></el-icon>
+            <template #title>用户管理</template>
+          </el-menu-item>
           <el-sub-menu index="/test">
             <template #title>
               <el-icon><Tools /></el-icon>
@@ -77,7 +81,8 @@ import {
   VideoPlay,
   DataAnalysis,
   Expand,
-  Fold
+  Fold,
+  User
 } from '@element-plus/icons-vue'
 
 export default {
@@ -91,7 +96,8 @@ export default {
     VideoPlay,
     DataAnalysis,
     Expand,
-    Fold
+    Fold,
+    User
   },
   setup() {
     const isCollapse = ref(false)
