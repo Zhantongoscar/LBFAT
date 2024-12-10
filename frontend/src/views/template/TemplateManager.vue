@@ -187,7 +187,7 @@
                             </template>
                           </el-table-column>
 
-                          <!-- 描述列 -->
+                          <!-- 描述列 ---->
                           <el-table-column label="描述" min-width="200">
                             <template #default="scope">
                               <el-input 
