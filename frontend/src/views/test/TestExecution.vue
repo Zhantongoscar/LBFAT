@@ -1,276 +1,262 @@
 <template>
   <div class="test-execution">
     <!-- 产品信息 -->
-    <el-card class="box-card">
+    <el-card class="box-card mb-20">
       <template #header>
         <div class="card-header">
-          <span class="title">产品信息</span>
+          <span>产品信息</span>
         </div>
       </template>
-      <el-form :model="productInfo" label-width="100px">
+      <el-form :model="productInfo" label-width="120px">
         <el-row :gutter="20">
           <el-col :span="8">
-            <el-form-item label="产品序列号">
-              <el-input v-model="productInfo.serialNumber" placeholder="请输入产品序列号"/>
+            <el-form-item label="产品型号">
+              <el-input v-model="productInfo.model" disabled />
             </el-form-item>
           </el-col>
           <el-col :span="8">
-            <el-form-item label="图纸编号">
-              <el-input v-model="productInfo.drawingCode" placeholder="请输入图纸编号"/>
+            <el-form-item label="序列号">
+              <el-input v-model="productInfo.serialNumber" disabled />
             </el-form-item>
           </el-col>
           <el-col :span="8">
-            <el-form-item label="测试模板">
-              <el-select v-model="productInfo.templateId" placeholder="请选择测试模板" class="template-select">
-                <el-option label="模板1" value="1" />
-                <el-option label="模板2" value="2" />
-              </el-select>
+            <el-form-item label="固件版本">
+              <el-input v-model="productInfo.firmwareVersion" disabled />
             </el-form-item>
           </el-col>
         </el-row>
       </el-form>
     </el-card>
 
-    <!-- 测试设备状态 -->
-    <el-card class="box-card mt-4">
+    <!-- 测试设备状态（可收纳） -->
+    <el-card class="box-card mb-20">
       <template #header>
         <div class="card-header">
-          <span class="title">测试设备状态</span>
-          <el-button type="primary" @click="refreshDevices">刷新</el-button>
-        </div>
-      </template>
-      <div class="device-list">
-        <el-row :gutter="20">
-          <el-col :span="6" v-for="device in devices" :key="device.id">
-            <el-card shadow="hover" :class="['device-card', device.online ? 'online' : 'offline']">
-              <template #header>
-                <div class="device-header">
-                  {{ device.name }}
-                  <el-tag :type="device.online ? 'success' : 'info'" size="small">
-                    {{ device.online ? '在线' : '离线' }}
-                  </el-tag>
-                </div>
-              </template>
-              <div class="device-info">
-                <div>RSSI: {{ device.rssi }} dBm</div>
-                <div>最后通信: {{ device.lastSeen }}</div>
-              </div>
-            </el-card>
-          </el-col>
-        </el-row>
-      </div>
-    </el-card>
-
-    <!-- 测试控制 -->
-    <el-card class="box-card mt-4">
-      <template #header>
-        <div class="card-header">
-          <span class="title">测试控制</span>
-        </div>
-      </template>
-      <div class="control-panel">
-        <div class="control-buttons">
-          <el-button type="primary" :disabled="!canStart" @click="startTest">
-            开始测试
-          </el-button>
-          <el-button :disabled="!isRunning" @click="pauseTest">暂停</el-button>
-          <el-button :disabled="!isPaused" @click="resumeTest">继续</el-button>
-          <el-button type="danger" :disabled="!isRunning" @click="stopTest">
-            停止
-          </el-button>
-        </div>
-        <div class="progress-info mt-4">
-          <el-progress 
-            :percentage="testProgress" 
-            :status="testStatus === 'error' ? 'exception' : testStatus"
-          />
-          <div class="current-step mt-2">
-            <span class="step-info">当前测试组: {{ currentGroup.name }}</span>
-            <span class="step-info">TestID: {{ currentGroup.testId }}</span>
-          </div>
-        </div>
-      </div>
-    </el-card>
-
-    <!-- 测试结果 -->
-    <el-card class="box-card mt-4">
-      <template #header>
-        <div class="card-header">
-          <span class="title">测试结果</span>
-          <div class="result-actions">
-            <el-button type="success" :disabled="!hasResults" @click="exportResults">
-              导出结果
-            </el-button>
-            <el-button :disabled="!hasResults" @click="clearResults">
-              清除
-            </el-button>
-          </div>
-        </div>
-      </template>
-      <el-table :data="testResults" border style="width: 100%">
-        <el-table-column prop="step" label="Step" width="80" />
-        <el-table-column prop="device" label="设备" width="120" />
-        <el-table-column prop="unit" label="Unit" width="100" />
-        <el-table-column prop="operation" label="操作" width="100" />
-        <el-table-column prop="actualValue" label="实际值" width="120" />
-        <el-table-column prop="expectedValue" label="期望值" width="120" />
-        <el-table-column label="结果" width="100">
-          <template #default="{ row }">
-            <el-tag :type="row.result.success ? 'success' : 'danger'">
-              {{ row.result.success ? '通过' : '失败' }}
+          <div class="header-left">
+            <el-button 
+              :icon="isDevicesPanelCollapsed ? 'ArrowRight' : 'ArrowDown'"
+              @click="toggleDevicesPanel"
+              text
+            />
+            <span>测试设备状态</span>
+            <el-tag type="info" class="ml-10">
+              {{ onlineCount }}/{{ totalCount }}
             </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="timestamp" label="时间" width="180" />
-      </el-table>
+          </div>
+          <div class="header-right">
+            <el-switch
+              v-model="showOfflineDevices"
+              active-text="显示离线设备"
+            />
+          </div>
+        </div>
+      </template>
+      
+      <!-- 设备状态面板（可收纳） -->
+      <div v-show="!isDevicesPanelCollapsed">
+        <!-- 在线设备区域 -->
+        <div class="devices-section" v-if="onlineDevices.length > 0">
+          <h4 class="section-title">在线设备</h4>
+          <div class="devices-grid">
+            <div
+              v-for="device in onlineDevices"
+              :key="device.id"
+              class="device-item online"
+              @click="showDeviceDetails(device)"
+            >
+              <el-tooltip
+                :content="'信号强度: ' + device.rssi + ' dBm'"
+                placement="top"
+              >
+                <div class="device-icon">
+                  <el-icon :size="24">
+                    <Monitor v-if="device.type === 'EDB'" />
+                    <Cpu v-else-if="device.type === 'CPU'" />
+                    <Connection v-else />
+                  </el-icon>
+                  <span class="device-name">{{ device.name }}</span>
+                  <div class="signal-indicator" :class="getSignalLevel(device.rssi)"></div>
+                </div>
+              </el-tooltip>
+            </div>
+          </div>
+        </div>
+
+        <!-- 离线设备区域 -->
+        <div class="devices-section" v-if="showOfflineDevices && offlineDevices.length > 0">
+          <h4 class="section-title">离线设备</h4>
+          <div class="devices-grid">
+            <div
+              v-for="device in offlineDevices"
+              :key="device.id"
+              class="device-item offline"
+              @click="showDeviceDetails(device)"
+            >
+              <el-tooltip content="设备离线" placement="top">
+                <div class="device-icon">
+                  <el-icon :size="24">
+                    <Monitor v-if="device.type === 'EDB'" />
+                    <Cpu v-else-if="device.type === 'CPU'" />
+                    <Connection v-else />
+                  </el-icon>
+                  <span class="device-name">{{ device.name }}</span>
+                </div>
+              </el-tooltip>
+            </div>
+          </div>
+        </div>
+      </div>
+    </el-card>
+
+    <!-- 设备详情对话框 -->
+    <el-dialog
+      v-model="deviceDetailsVisible"
+      title="设备详情"
+      width="500px"
+    >
+      <el-descriptions :column="1" border>
+        <el-descriptions-item label="设备名称">{{ selectedDevice?.name }}</el-descriptions-item>
+        <el-descriptions-item label="设备类型">{{ selectedDevice?.type }}</el-descriptions-item>
+        <el-descriptions-item label="序列号">{{ selectedDevice?.serialNumber }}</el-descriptions-item>
+        <el-descriptions-item label="状态">
+          <el-tag :type="selectedDevice?.online ? 'success' : 'danger'">
+            {{ selectedDevice?.online ? '在线' : '离线' }}
+          </el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="信号强度" v-if="selectedDevice?.online">
+          {{ selectedDevice?.rssi }} dBm
+          <el-tag :type="getSignalLevelType(selectedDevice?.rssi)" class="ml-10">
+            {{ getSignalLevelText(selectedDevice?.rssi) }}
+          </el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="最后更新时间">
+          {{ formatDateTime(selectedDevice?.lastUpdateTime) }}
+        </el-descriptions-item>
+      </el-descriptions>
+    </el-dialog>
+
+    <!-- 测试控制区域 -->
+    <el-card class="box-card">
+      <template #header>
+        <div class="card-header">
+          <span>测试控制</span>
+        </div>
+      </template>
+      <div class="test-control">
+        <!-- 测试控制内容 -->
+      </div>
     </el-card>
   </div>
 </template>
 
 <script>
-import { defineComponent, ref, computed } from 'vue'
+import { ref, computed } from 'vue'
+import { Monitor, Cpu, Connection, ArrowRight, ArrowDown } from '@element-plus/icons-vue'
 
-export default defineComponent({
+export default {
   name: 'TestExecution',
+  components: {
+    Monitor,
+    Cpu,
+    Connection,
+    ArrowRight,
+    ArrowDown
+  },
   setup() {
     // 产品信息
     const productInfo = ref({
-      serialNumber: '',
-      drawingCode: '',
-      templateId: ''
+      model: 'EDB-TEST-001',
+      serialNumber: 'SN20240001',
+      firmwareVersion: 'v1.0.0'
     })
 
-    // 设备状态
+    // 设备面板收纳状态
+    const isDevicesPanelCollapsed = ref(true)
+    const showOfflineDevices = ref(true)
+
+    // 模拟设备数据
     const devices = ref([
-      { 
-        id: 1, 
-        name: 'EDB4-1', 
-        online: true, 
-        rssi: -75,
-        lastSeen: '2023-12-09 15:30:00'
-      },
-      { 
-        id: 2, 
-        name: 'EDB4-2', 
-        online: true,
-        rssi: -65,
-        lastSeen: '2023-12-09 15:30:00'
-      },
-      { 
-        id: 3, 
-        name: 'EDB4-3', 
-        online: false,
-        rssi: 0,
-        lastSeen: '2023-12-09 15:00:00'
-      }
+      { id: 1, name: 'EDB-1', type: 'EDB', serialNumber: 'EDB001', online: true, rssi: -65, lastUpdateTime: new Date() },
+      { id: 2, name: 'EDB-2', type: 'EDB', serialNumber: 'EDB002', online: true, rssi: -75, lastUpdateTime: new Date() },
+      { id: 3, name: 'CPU-1', type: 'CPU', serialNumber: 'CPU001', online: false, lastUpdateTime: new Date() },
+      { id: 4, name: 'EDB-3', type: 'EDB', serialNumber: 'EDB003', online: true, rssi: -85, lastUpdateTime: new Date() }
     ])
 
-    // 测试状态
-    const testStatus = ref('') // '', 'success', 'exception', 'warning'
-    const testProgress = ref(0)
-    const isRunning = ref(false)
-    const isPaused = ref(false)
+    // 计算属性：在线设备
+    const onlineDevices = computed(() => devices.value.filter(d => d.online))
+    
+    // 计算属性：离线设备
+    const offlineDevices = computed(() => devices.value.filter(d => !d.online))
 
-    // 当前测试组信息
-    const currentGroup = ref({
-      name: '组1：初始状态检查',
-      testId: 'test_01'
-    })
+    // 设备统计
+    const onlineCount = computed(() => onlineDevices.value.length)
+    const totalCount = computed(() => devices.value.length)
 
-    // 测试结果
-    const testResults = ref([
-      {
-        step: 1,
-        device: 'EDB4-1',
-        unit: 'AI1',
-        operation: 'read',
-        actualValue: 0.5,
-        expectedValue: 0,
-        result: { success: true },
-        timestamp: '2023-12-09 15:30:01'
-      },
-      {
-        step: 1,
-        device: 'EDB4-2',
-        unit: 'AI1',
-        operation: 'read',
-        actualValue: 1.5,
-        expectedValue: 0,
-        result: { success: false },
-        timestamp: '2023-12-09 15:30:01'
-      }
-    ])
+    // 设备详情对话框
+    const deviceDetailsVisible = ref(false)
+    const selectedDevice = ref(null)
 
-    // 计算属性
-    const canStart = computed(() => {
-      return productInfo.value.serialNumber && 
-             productInfo.value.drawingCode && 
-             productInfo.value.templateId &&
-             devices.value.some(d => d.online)
-    })
-
-    const hasResults = computed(() => testResults.value.length > 0)
-
-    // 方法
-    const refreshDevices = () => {
-      console.log('刷新设备状态')
+    // 方法：切换设备面板显示状态
+    const toggleDevicesPanel = () => {
+      isDevicesPanelCollapsed.value = !isDevicesPanelCollapsed.value
     }
 
-    const startTest = () => {
-      isRunning.value = true
-      testStatus.value = ''
-      testProgress.value = 0
-      // 启动测试逻辑
+    // 方法：显示设备详情
+    const showDeviceDetails = (device) => {
+      selectedDevice.value = device
+      deviceDetailsVisible.value = true
     }
 
-    const pauseTest = () => {
-      isPaused.value = true
-      isRunning.value = false
-      testStatus.value = 'warning'
+    // 方法：获取信号强度等级
+    const getSignalLevel = (rssi) => {
+      if (rssi >= -65) return 'signal-excellent'
+      if (rssi >= -75) return 'signal-good'
+      if (rssi >= -85) return 'signal-fair'
+      return 'signal-poor'
     }
 
-    const resumeTest = () => {
-      isPaused.value = false
-      isRunning.value = true
-      testStatus.value = ''
+    // 方法：获取信号强度文本
+    const getSignalLevelText = (rssi) => {
+      if (rssi >= -65) return '优秀'
+      if (rssi >= -75) return '良好'
+      if (rssi >= -85) return '一般'
+      return '较差'
     }
 
-    const stopTest = () => {
-      isRunning.value = false
-      isPaused.value = false
-      testStatus.value = ''
-      testProgress.value = 0
+    // 方法：获取信号强度标签类型
+    const getSignalLevelType = (rssi) => {
+      if (rssi >= -65) return 'success'
+      if (rssi >= -75) return ''
+      if (rssi >= -85) return 'warning'
+      return 'danger'
     }
 
-    const exportResults = () => {
-      console.log('导出测试结果')
-    }
-
-    const clearResults = () => {
-      testResults.value = []
+    // 方法：格式化日期时间
+    const formatDateTime = (date) => {
+      if (!date) return ''
+      return new Date(date).toLocaleString()
     }
 
     return {
       productInfo,
+      isDevicesPanelCollapsed,
+      showOfflineDevices,
       devices,
-      testStatus,
-      testProgress,
-      isRunning,
-      isPaused,
-      currentGroup,
-      testResults,
-      canStart,
-      hasResults,
-      refreshDevices,
-      startTest,
-      pauseTest,
-      resumeTest,
-      stopTest,
-      exportResults,
-      clearResults
+      onlineDevices,
+      offlineDevices,
+      onlineCount,
+      totalCount,
+      deviceDetailsVisible,
+      selectedDevice,
+      toggleDevicesPanel,
+      showDeviceDetails,
+      getSignalLevel,
+      getSignalLevelText,
+      getSignalLevelType,
+      formatDateTime
     }
   }
-})
+}
 </script>
 
 <style scoped>
@@ -278,78 +264,119 @@ export default defineComponent({
   padding: 20px;
 }
 
-.mt-4 {
-  margin-top: 20px;
+.mb-20 {
+  margin-bottom: 20px;
 }
 
-.mt-2 {
-  margin-top: 10px;
+.ml-10 {
+  margin-left: 10px;
 }
 
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  background-color: #3f4d68;
+  margin: -20px -20px 20px -20px;
+  padding: 15px 20px;
+  color: #bfcbd9;
+  border-radius: 4px 4px 0 0;
 }
 
-.title {
-  font-size: 16px;
-  font-weight: bold;
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-.template-select {
-  width: 100%;
+.header-left .el-button {
+  color: #bfcbd9;
 }
 
-.device-list {
-  margin-top: 10px;
+.header-left .el-button:hover {
+  color: #fff;
 }
 
-.device-card {
+.header-right {
+  color: #bfcbd9;
+}
+
+.devices-section {
   margin-bottom: 20px;
 }
 
-.device-card.online {
-  border: 1px solid #67C23A;
-}
-
-.device-card.offline {
-  border: 1px solid #909399;
-}
-
-.device-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.device-info {
+.section-title {
+  margin: 0 0 10px 0;
+  color: #606266;
   font-size: 14px;
-  color: #666;
 }
 
-.control-panel {
-  padding: 20px;
+.devices-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 15px;
+  padding: 10px;
 }
 
-.control-buttons {
+.device-item {
+  padding: 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-align: center;
+}
+
+.device-item.online {
+  background-color: #f0f9eb;
+  border: 1px solid #e1f3d8;
+}
+
+.device-item.offline {
+  background-color: #f4f4f5;
+  border: 1px solid #e9e9eb;
+  opacity: 0.7;
+}
+
+.device-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+}
+
+.device-icon {
+  position: relative;
   display: flex;
-  gap: 10px;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
 }
 
-.progress-info {
-  max-width: 600px;
-  margin: 0 auto;
+.device-name {
+  font-size: 12px;
+  color: #606266;
 }
 
-.step-info {
-  margin-right: 20px;
-  font-weight: bold;
+.signal-indicator {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
 }
 
-.result-actions {
-  display: flex;
-  gap: 10px;
+.signal-excellent {
+  background-color: #67c23a;
+}
+
+.signal-good {
+  background-color: #409eff;
+}
+
+.signal-fair {
+  background-color: #e6a23c;
+}
+
+.signal-poor {
+  background-color: #f56c6c;
 }
 </style> 

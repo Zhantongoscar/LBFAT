@@ -116,15 +116,21 @@ export default {
 
 <style>
 .el-header {
-  background-color: #409EFF;
-  color: white;
+  background-color: #e4e7ed;
+  color: #303133;
   line-height: 60px;
   padding: 0 20px;
+  border-bottom: 1px solid #dcdfe6;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
+  position: relative;
+  z-index: 100;
 }
 
 .el-header h1 {
   margin: 0;
   font-size: 20px;
+  color: #303133;
+  font-weight: 600;
 }
 
 .aside-container {
