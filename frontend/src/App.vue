@@ -152,10 +152,12 @@ export default {
 /* 菜单项样式 */
 .el-menu {
   border-right: none;
+  background-color: #304156;
 }
 
 .el-menu-item {
   color: #bfcbd9 !important;
+  background-color: #304156 !important;
 }
 
 .el-menu-item.is-active {
@@ -169,9 +171,33 @@ export default {
 
 .el-sub-menu__title {
   color: #bfcbd9 !important;
+  background-color: #304156 !important;
 }
 
 .el-sub-menu__title:hover {
+  background-color: #263445 !important;
+}
+
+/* 子菜单样式 */
+.el-menu--popup {
+  background-color: #304156 !important;
+}
+
+.el-sub-menu .el-menu {
+  background-color: #304156 !important;
+}
+
+.el-sub-menu .el-menu-item {
+  background-color: #304156 !important;
+  color: #bfcbd9 !important;
+}
+
+.el-sub-menu .el-menu-item:hover {
+  background-color: #263445 !important;
+}
+
+.el-sub-menu .el-menu-item.is-active {
+  color: #409EFF !important;
   background-color: #263445 !important;
 }
 
