@@ -1,45 +1,49 @@
 <template>
   <div class="device-config">
-    <h1>设备配置</h1>
+    <el-card class="box-card">
+      <template #header>
+        <div class="card-header">
+          <span>设备配置</span>
+          <div class="header-actions">
+            <el-input
+              v-model="searchQuery"
+              placeholder="搜索设备类型"
+              style="width: 200px"
+              clearable
+              @clear="handleSearch"
+              @input="handleSearch"
+            />
+            <el-button type="primary" @click="showAddDialog">添加设备类型</el-button>
+          </div>
+        </div>
+      </template>
 
-    <!-- 搜索和添加按钮 -->
-    <div class="operation-bar">
-      <el-input
-        v-model="searchQuery"
-        placeholder="搜索设备类型"
-        style="width: 200px"
-        clearable
-        @clear="handleSearch"
-        @input="handleSearch"
-      />
-      <el-button type="primary" @click="showAddDialog">添加设备类型</el-button>
-    </div>
-
-    <!-- 设备类型列表 -->
-    <el-table :data="filteredDeviceTypes" style="width: 100%; margin-top: 20px">
-      <el-table-column prop="id" label="ID" width="80" />
-      <el-table-column prop="type_name" label="设备类型" />
-      <el-table-column prop="point_count" label="点位数量" width="100" />
-      <el-table-column prop="description" label="描述" />
-      <el-table-column label="操作" width="200">
-        <template #default="scope">
-          <el-button
-            type="primary"
-            link
-            @click="handleEdit(scope.row)"
-          >
-            编辑
-          </el-button>
-          <el-button
-            type="danger"
-            link
-            @click="handleDelete(scope.row)"
-          >
-            删除
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+      <!-- 设备类型列表 -->
+      <el-table :data="filteredDeviceTypes" style="width: 100%">
+        <el-table-column prop="id" label="ID" width="80" />
+        <el-table-column prop="type_name" label="设备类型" />
+        <el-table-column prop="point_count" label="点位数量" width="100" />
+        <el-table-column prop="description" label="描述" />
+        <el-table-column label="操作" width="200">
+          <template #default="scope">
+            <el-button
+              type="primary"
+              link
+              @click="handleEdit(scope.row)"
+            >
+              编辑
+            </el-button>
+            <el-button
+              type="danger"
+              link
+              @click="handleDelete(scope.row)"
+            >
+              删除
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
 
     <!-- 添加/编辑对话框 -->
     <el-dialog
@@ -52,34 +56,20 @@
           <el-input v-model="deviceForm.type_name" />
         </el-form-item>
         <el-form-item label="点位数量">
-          <el-input-number v-model="deviceForm.point_count" :min="1" :max="32" />
+          <el-input-number v-model="deviceForm.point_count" :min="1" />
         </el-form-item>
         <el-form-item label="描述">
           <el-input
             v-model="deviceForm.description"
             type="textarea"
-            rows="3"
+            :rows="3"
           />
-        </el-form-item>
-        <el-form-item label="点位配置">
-          <div v-for="i in deviceForm.point_count" :key="i" class="point-config">
-            <span>点位 {{ i }}:</span>
-            <el-select v-model="deviceForm.points[i-1].point_type">
-              <el-option label="DI" value="DI" />
-              <el-option label="DO" value="DO" />
-              <el-option label="AI" value="AI" />
-              <el-option label="AO" value="AO" />
-            </el-select>
-            <el-input v-model="deviceForm.points[i-1].point_name" placeholder="点位名称" />
-          </div>
         </el-form-item>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleSubmit">
-            确定
-          </el-button>
+          <el-button type="primary" @click="handleSubmit">确定</el-button>
         </span>
       </template>
     </el-dialog>
@@ -302,21 +292,21 @@ export default {
   padding: 20px;
 }
 
-.operation-bar {
+.box-card {
+  margin-bottom: 20px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 20px;
-}
-
-.point-config {
-  display: flex;
   align-items: center;
-  margin-bottom: 10px;
 }
 
-.point-config span {
-  width: 80px;
-  margin-right: 10px;
+.header-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
 }
 
 .dialog-footer {

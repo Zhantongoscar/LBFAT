@@ -1,97 +1,106 @@
 <template>
   <div class="test-report">
-    <a-card title="测试报告查询" :bordered="false">
+    <el-card class="box-card">
+      <template #header>
+        <div class="card-header">
+          <span>测试报告查询</span>
+        </div>
+      </template>
+
       <!-- 查询条件 -->
-      <a-form layout="inline" class="search-form">
-        <a-form-item label="产品序列号">
-          <a-input v-model:value="searchForm.serialNumber" />
-        </a-form-item>
-        <a-form-item label="图纸编号">
-          <a-input v-model:value="searchForm.drawingCode" />
-        </a-form-item>
-        <a-form-item label="开始时间">
-          <a-date-picker
-            v-model:value="searchForm.startTime"
-            show-time
+      <el-form :inline="true" class="search-form">
+        <el-form-item label="产品序列号">
+          <el-input v-model="searchForm.serialNumber" />
+        </el-form-item>
+        <el-form-item label="图纸编号">
+          <el-input v-model="searchForm.drawingCode" />
+        </el-form-item>
+        <el-form-item label="开始时间">
+          <el-date-picker
+            v-model="searchForm.startTime"
+            type="datetime"
             format="YYYY-MM-DD HH:mm:ss"
+            placeholder="选择开始时间"
           />
-        </a-form-item>
-        <a-form-item label="结束时间">
-          <a-date-picker
-            v-model:value="searchForm.endTime"
-            show-time
+        </el-form-item>
+        <el-form-item label="结束时间">
+          <el-date-picker
+            v-model="searchForm.endTime"
+            type="datetime"
             format="YYYY-MM-DD HH:mm:ss"
+            placeholder="选择结束时间"
           />
-        </a-form-item>
-        <a-form-item>
-          <a-button type="primary" @click="searchRecords">查询</a-button>
-        </a-form-item>
-      </a-form>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="searchRecords">查询</el-button>
+        </el-form-item>
+      </el-form>
 
       <!-- 测试记录列表 -->
-      <a-table
-        :columns="recordColumns"
-        :data-source="testRecords"
-        :pagination="{ total: 100 }"
-        class="mt-4"
-      >
-        <template #status="{ text }">
-          <a-tag :color="text === '完成' ? 'success' : 'processing'">
-            {{ text }}
-          </a-tag>
-        </template>
-        <template #result="{ text }">
-          <a-tag :color="text === '通过' ? 'success' : 'error'">
-            {{ text }}
-          </a-tag>
-        </template>
-        <template #action="{ record }">
-          <a @click="showDetail(record)">详情</a>
-        </template>
-      </a-table>
+      <el-table :data="testRecords" style="width: 100%">
+        <el-table-column prop="serialNumber" label="产品序列号" />
+        <el-table-column prop="drawingCode" label="图纸编号" />
+        <el-table-column prop="testTime" label="测试时间" />
+        <el-table-column prop="status" label="状态">
+          <template #default="{ row }">
+            <el-tag :type="row.status === '完成' ? 'success' : 'info'">
+              {{ row.status }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="result" label="结果">
+          <template #default="{ row }">
+            <el-tag :type="row.result === '通过' ? 'success' : 'danger'">
+              {{ row.result }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="100">
+          <template #default="{ row }">
+            <el-button type="primary" link @click="showDetail(row)">
+              详情
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
 
-      <!-- 测试详情抽屉 -->
-      <a-drawer
-        v-model:visible="detailDrawer.visible"
-        title="测试详情"
-        width="800px"
-        placement="right"
-      >
-        <template v-if="detailDrawer.record">
-          <div class="detail-header mb-4">
-            <div>产品序列号: {{ detailDrawer.record.serialNumber }}</div>
-            <div>图纸编号: {{ detailDrawer.record.drawingCode }}</div>
-            <div>测试时间: {{ detailDrawer.record.testTime }}</div>
+    <!-- 测试详情抽屉 -->
+    <el-drawer
+      v-model="detailDrawer.visible"
+      title="测试详情"
+      size="800px"
+      direction="rtl"
+    >
+      <template v-if="detailDrawer.record">
+        <div class="detail-header">
+          <div class="detail-item">
+            <span class="label">产品序列号:</span>
+            <span class="value">{{ detailDrawer.record.serialNumber }}</span>
           </div>
-
-          <a-collapse v-model:activeKey="activeGroups">
-            <a-collapse-panel
-              v-for="group in testGroups"
-              :key="group.id"
-              :header="group.name"
-            >
-              <div class="mb-2">TestID: {{ group.testId }}</div>
-              <a-table
-                :columns="stepColumns"
-                :data-source="group.steps"
-                :pagination="false"
-              >
-                <template #result="{ text }">
-                  <a-tag :color="text.success ? 'success' : 'error'">
-                    {{ text.success ? '✓ 通过' : '✗ 失败' }}
-                  </a-tag>
-                </template>
-              </a-table>
-            </a-collapse-panel>
-          </a-collapse>
-
-          <div class="drawer-actions mt-4">
-            <a-button type="primary" @click="exportPDF">导出PDF报告</a-button>
-            <a-button class="ml-2" @click="exportExcel">导出Excel明细</a-button>
+          <div class="detail-item">
+            <span class="label">图纸编号:</span>
+            <span class="value">{{ detailDrawer.record.drawingCode }}</span>
           </div>
-        </template>
-      </a-drawer>
-    </a-card>
+          <div class="detail-item">
+            <span class="label">测试时间:</span>
+            <span class="value">{{ detailDrawer.record.testTime }}</span>
+          </div>
+        </div>
+
+        <!-- 详情内容 -->
+        <div class="detail-content">
+          <!-- 这里添加详细的测试结果内容 -->
+        </div>
+      </template>
+
+      <template #footer>
+        <div class="drawer-footer">
+          <el-button @click="detailDrawer.visible = false">关闭</el-button>
+          <el-button type="primary" @click="exportReport">导出报告</el-button>
+        </div>
+      </template>
+    </el-drawer>
   </div>
 </template>
 
@@ -237,28 +246,63 @@ export default defineComponent({
 
 <style scoped>
 .test-report {
-  padding: 24px;
+  padding: 20px;
 }
-.mt-4 {
-  margin-top: 16px;
+
+.box-card {
+  margin-bottom: 20px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
-.mb-4 {
-  margin-bottom: 16px;
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
-.ml-2 {
-  margin-left: 8px;
-}
+
 .search-form {
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
+
 .detail-header {
-  background: #fafafa;
-  padding: 16px;
+  background-color: #f5f7fa;
+  padding: 20px;
   border-radius: 4px;
+  margin-bottom: 20px;
 }
-.drawer-actions {
+
+.detail-item {
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+}
+
+.detail-item .label {
+  font-weight: bold;
+  margin-right: 10px;
+  color: #606266;
+  width: 100px;
+}
+
+.detail-item .value {
+  color: #303133;
+}
+
+.drawer-footer {
   position: absolute;
-  bottom: 24px;
-  width: calc(100% - 48px);
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 20px;
+  background: #fff;
+  border-top: 1px solid #e4e7ed;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.detail-content {
+  padding: 0 20px;
+  margin-bottom: 60px;
 }
 </style> 
