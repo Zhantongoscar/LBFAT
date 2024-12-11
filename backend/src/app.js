@@ -13,7 +13,20 @@ const server = http.createServer(app);
 
 // CORS配置
 const corsOptions = {
-    origin: process.env.CORS_ORIGIN || 'http://localhost:8080',
+    origin: function(origin, callback) {
+        // 允许的源列表
+        const allowedOrigins = [
+            'http://localhost:8080',
+            'http://127.0.0.1:8080',
+            `http://${process.env.HOST_IP}:8080`  // 服务器IP
+        ];
+        // null 源表示同源请求
+        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('不允许的源'));
+        }
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true

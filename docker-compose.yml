@@ -65,6 +65,7 @@ services:
       - DB_NAME=lbfat
       - MQTT_HOST=emqx
       - MQTT_PORT=1883
+      - HOST_IP=${HOST_IP:-localhost}
       - CORS_ORIGIN=http://localhost:8080
     depends_on:
       mysql:
@@ -93,6 +94,7 @@ services:
       - "8080:80"
     environment:
       - VITE_API_URL=http://localhost:8080
+      - HOST_IP=${HOST_IP:-localhost}
     depends_on:
       - backend
     networks:
