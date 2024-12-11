@@ -6,6 +6,8 @@ RUN apk add --no-cache curl python3 make g++
 
 COPY package*.json ./
 
+RUN sed -i '/"dependencies": {/a\    "jsonwebtoken": "^9.0.0",\n    "bcrypt": "^5.1.0",' package.json
+
 RUN npm install
 
 COPY . .

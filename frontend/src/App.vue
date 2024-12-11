@@ -1,7 +1,38 @@
 <template>
   <el-container>
     <el-header>
-      <h1>Leybold Panel Test System V1.0.0</h1>
+      <div class="header-content">
+        <h1>Leybold Panel Test System V1.0.0</h1>
+        <div class="user-info" v-if="userStore.isAuthenticated">
+          <el-dropdown>
+            <span class="el-dropdown-link">
+              <el-icon><user /></el-icon>
+              {{ userStore.user?.username }}
+              <el-icon class="el-icon--right"><arrow-down /></el-icon>
+            </span>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item>
+                  <span>用户名：{{ userStore.user?.username }}</span>
+                </el-dropdown-item>
+                <el-dropdown-item>
+                  <span>显示名称：{{ userStore.user?.display_name || '-' }}</span>
+                </el-dropdown-item>
+                <el-dropdown-item>
+                  <span>角色：</span>
+                  <el-tag size="small" :type="userStore.isAdmin ? 'danger' : 'info'">
+                    {{ userStore.isAdmin ? '管理员' : '普通用户' }}
+                  </el-tag>
+                </el-dropdown-item>
+                <el-dropdown-item divided @click="handleLogout">
+                  <el-icon><switch-button /></el-icon>
+                  退出登录
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </div>
+      </div>
     </el-header>
     <el-container>
       <el-aside :width="isCollapse ? '64px' : '180px'" class="aside-container">
@@ -71,6 +102,8 @@
 
 <script>
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useUserStore } from './stores/user'
 import { 
   Monitor, 
   Message, 
@@ -82,8 +115,11 @@ import {
   DataAnalysis,
   Expand,
   Fold,
-  User
+  User,
+  ArrowDown,
+  SwitchButton
 } from '@element-plus/icons-vue'
+import { ElMessageBox } from 'element-plus'
 
 export default {
   components: {
@@ -97,18 +133,39 @@ export default {
     DataAnalysis,
     Expand,
     Fold,
-    User
+    User,
+    ArrowDown,
+    SwitchButton
   },
   setup() {
+    const router = useRouter()
+    const userStore = useUserStore()
     const isCollapse = ref(false)
     
     const toggleCollapse = () => {
       isCollapse.value = !isCollapse.value
     }
+
+    const handleLogout = () => {
+      ElMessageBox.confirm(
+        '确定要退出登录吗？',
+        '提示',
+        {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning',
+        }
+      ).then(() => {
+        userStore.logout()
+        router.push('/login')
+      })
+    }
     
     return {
       isCollapse,
-      toggleCollapse
+      toggleCollapse,
+      userStore,
+      handleLogout
     }
   }
 }
@@ -223,5 +280,37 @@ export default {
 .el-main {
   padding: 20px;
   background-color: #f0f2f5;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+}
+
+.el-dropdown-link {
+  display: flex;
+  align-items: center;
+  color: #303133;
+  cursor: pointer;
+}
+
+.el-dropdown-link:hover {
+  color: #409EFF;
+}
+
+.el-dropdown-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.el-icon {
+  margin-right: 5px;
 }
 </style>

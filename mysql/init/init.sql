@@ -26,9 +26,11 @@ CREATE TABLE IF NOT EXISTS users (
     INDEX idx_status (status)
 ) COMMENT '用户管理表';
 
--- 初始管理员用户
-INSERT INTO users (username, password, display_name, email, role) VALUES
-('admin', '$2b$10$8nGwR.DqYdmVpxK1yGqRy.M5J6p/G4jYtS8UOVjD0lLYpWl.Ot7Hy', '系统管理员', 'admin@example.com', 'admin');
+-- 插入默认管理员账户 (root/root)
+-- 使用明文密码
+INSERT INTO users (username, password, display_name, role, status) 
+VALUES ('root', 'root', '系统管理员', 'admin', 'active')
+ON DUPLICATE KEY UPDATE password = VALUES(password);
 
 -- 项目订阅管理表
 CREATE TABLE IF NOT EXISTS project_subscriptions (
@@ -191,10 +193,10 @@ INSERT INTO device_type_points (device_type_id, point_index, point_type, point_n
 (1, 15, 'DI', 'DI12', 'EDB数字输入点12 - 中段'),
 (1, 16, 'DI', 'DI13', 'EDB数字输入点13 - 中段'),
 (1, 17, 'DI', 'DI14', 'EDB数字输入点14 - 中段'),
--- 剩余3���点位
+-- 剩余3个点位
 (1, 18, 'DI', 'DI15', 'EDB数字输入点15 - 后段'),
 (1, 19, 'DI', 'DI16', 'EDB数字输入点16 - 后段'),
 (1, 20, 'DI', 'DI17', 'EDB数字输入点17 - 后段');
 
--- 开启外键检查
+-- 开启���键检查
 SET FOREIGN_KEY_CHECKS = 1;

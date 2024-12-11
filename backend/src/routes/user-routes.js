@@ -1,20 +1,18 @@
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/user-controller');
+const { verifyToken, isAdmin } = require('../middleware/auth');
 
-// 获取用户列表
-router.get('/', userController.getAllUsers);
+// 公开路由
+router.post('/login', userController.login);
 
-// 获取单个用户
-router.get('/:id', userController.getUser);
+// 需要登录的路由
+router.get('/current', verifyToken, userController.getCurrentUser);
 
-// 创建用户
-router.post('/', userController.createUser);
-
-// 更新用户
-router.put('/:id', userController.updateUser);
-
-// 删除用户
-router.delete('/:id', userController.deleteUser);
+// 需要管理员权限的路由
+router.get('/', verifyToken, isAdmin, userController.getAllUsers);
+router.post('/', verifyToken, isAdmin, userController.createUser);
+router.put('/:id', verifyToken, isAdmin, userController.updateUser);
+router.delete('/:id', verifyToken, isAdmin, userController.deleteUser);
 
 module.exports = router; 

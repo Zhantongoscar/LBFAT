@@ -1,10 +1,124 @@
 const db = require('../utils/db');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 const VALID_ROLES = ['admin', 'user'];
 const VALID_STATUSES = ['active', 'inactive'];
 
 const userController = {
+    // 用户登录
+    async login(req, res) {
+        try {
+            const { username, password } = req.body;
+            console.log('收到登录请求:', { username });
+            
+            // 参数验证
+            if (!username || !password) {
+                console.log('参数验证失败：用户名或密码为空');
+                return res.status(400).json({
+                    code: 400,
+                    message: '用户名和密码不能为空'
+                });
+            }
+
+            // 查询用户
+            const sql = 'SELECT * FROM users WHERE username = ? AND status = "active"';
+            console.log('执行SQL查询:', { sql, username });
+            const [user] = await db.query(sql, [username]);
+            console.log('查询结果:', { found: !!user, role: user?.role });
+
+            if (!user) {
+                console.log('用户不存在或状态不是active');
+                return res.status(401).json({
+                    code: 401,
+                    message: '用户名或密码错误'
+                });
+            }
+
+            // 验证密码
+            const isValid = password === user.password;
+            console.log('密码验证:', { isValid });
+            if (!isValid) {
+                console.log('密码验证失败');
+                return res.status(401).json({
+                    code: 401,
+                    message: '用户名或密码错误'
+                });
+            }
+
+            // 生成 JWT token
+            const token = jwt.sign(
+                { 
+                    id: user.id,
+                    username: user.username,
+                    role: user.role
+                },
+                JWT_SECRET,
+                { expiresIn: '24h' }
+            );
+            console.log('生成JWT token成功');
+
+            // 返回用户信息和token
+            const responseData = {
+                code: 200,
+                message: '登录成功',
+                data: {
+                    token,
+                    user: {
+                        id: user.id,
+                        username: user.username,
+                        display_name: user.display_name,
+                        email: user.email,
+                        role: user.role
+                    }
+                }
+            };
+            console.log('返回登录响应:', responseData);
+            res.json(responseData);
+        } catch (error) {
+            console.error('登录失败:', error);
+            res.status(500).json({
+                code: 500,
+                message: error.message || '登录失败'
+            });
+        }
+    },
+
+    // 获取当前用户信息
+    async getCurrentUser(req, res) {
+        try {
+            const userId = req.user.id; // 从 JWT 中获取
+            
+            const sql = `
+                SELECT id, username, display_name, email, role, status, created_at, updated_at 
+                FROM users 
+                WHERE id = ?
+            `;
+            
+            const [user] = await db.query(sql, [userId]);
+            
+            if (!user) {
+                return res.status(404).json({
+                    code: 404,
+                    message: '用户不存在'
+                });
+            }
+
+            res.json({
+                code: 200,
+                message: 'success',
+                data: user
+            });
+        } catch (error) {
+            console.error('获取当前用户信息失败:', error);
+            res.status(500).json({
+                code: 500,
+                message: error.message || '获取当前用户信息失败'
+            });
+        }
+    },
+
     // 获取所有用户
     async getAllUsers(req, res) {
         try {
