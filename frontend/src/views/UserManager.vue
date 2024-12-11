@@ -85,10 +85,12 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import axios from 'axios'
+import { useUserStore } from '../stores/user'
 
 export default {
   name: 'UserManager',
   setup() {
+    const userStore = useUserStore()
     const users = ref([])
     const loading = ref(false)
     const dialogVisible = ref(false)
@@ -128,15 +130,28 @@ export default {
       ]
     }
 
+    // 配置 axios 请求拦截器
+    axios.interceptors.request.use(config => {
+      const token = userStore.token
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`
+      }
+      return config
+    })
+
     // 获取用户列表**************************************
     const fetchUsers = async () => {
       loading.value = true
       try {
         const response = await axios.get('/api/users')
-        users.value = response.data
+        if (response.data.code === 200) {
+          users.value = response.data.data
+        } else {
+          ElMessage.error(response.data.message || '获取用户列表失败')
+        }
       } catch (error) {
-        ElMessage.error('获取用户列表失败')
-        console.error('获取用户列���失败:', error)
+        console.error('获取用户列表失败:', error)
+        ElMessage.error(error.response?.data?.message || '获取用户列表失败')
       } finally {
         loading.value = false
       }

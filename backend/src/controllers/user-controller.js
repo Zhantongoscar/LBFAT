@@ -235,15 +235,16 @@ const userController = {
             }
 
             // 对密码进行加密
-            const hashedPassword = await bcrypt.hash(password, 10);
-            console.log('密码加密完成');
+            // const hashedPassword = await bcrypt.hash(password, 10);
+            // console.log('密码加密完成');
+            console.log('使用明文密码');
 
             const sql = `
                 INSERT INTO users (username, display_name, email, password, role, status) 
                 VALUES (?, ?, ?, ?, ?, ?)
             `;
             
-            const params = [username, display_name, email, hashedPassword, role, status];
+            const params = [username, display_name, email, password, role, status];
             console.log('准备执行SQL插入:', { 
                 sql, 
                 params: params.map((p, i) => i === 3 ? '******' : p) 
@@ -315,9 +316,9 @@ const userController = {
             }
 
             if (password) {
-                const hashedPassword = await bcrypt.hash(password, 10);
+                // const hashedPassword = await bcrypt.hash(password, 10);
                 sql += ', password = ?';
-                params.push(hashedPassword);
+                params.push(password);
             }
 
             sql += ' WHERE id = ?';
