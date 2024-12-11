@@ -6,12 +6,27 @@
         <div class="user-info" v-if="userStore.isAuthenticated">
           <el-dropdown>
             <span class="el-dropdown-link">
-              <el-icon><user /></el-icon>
+              <el-avatar
+                :size="32"
+                class="user-avatar"
+                :src="userStore.user?.avatar"
+              >
+                {{ userStore.user?.username.charAt(0).toUpperCase() }}
+              </el-avatar>
               {{ userStore.user?.username }}
               <el-icon class="el-icon--right"><arrow-down /></el-icon>
             </span>
             <template #dropdown>
               <el-dropdown-menu>
+                <el-dropdown-item class="user-info-header">
+                  <el-avatar
+                    :size="50"
+                    class="user-avatar-large"
+                    :src="userStore.user?.avatar"
+                  >
+                    {{ userStore.user?.username.charAt(0).toUpperCase() }}
+                  </el-avatar>
+                </el-dropdown-item>
                 <el-dropdown-item>
                   <span>用户名：{{ userStore.user?.username }}</span>
                 </el-dropdown-item>
@@ -298,10 +313,29 @@ export default {
   align-items: center;
   color: #303133;
   cursor: pointer;
+  gap: 8px;
 }
 
-.el-dropdown-link:hover {
-  color: #409EFF;
+.user-avatar {
+  background-color: #409EFF;
+  color: #fff;
+  font-weight: bold;
+}
+
+.user-avatar-large {
+  background-color: #409EFF;
+  color: #fff;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.user-info-header {
+  display: flex;
+  justify-content: center;
+  padding: 16px 0;
+  pointer-events: none;
+  cursor: default;
+  border-bottom: 1px solid #ebeef5;
 }
 
 .el-dropdown-menu__item {
