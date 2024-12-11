@@ -213,17 +213,29 @@ export default {
         if (valid) {
           try {
             if (dialogType.value === 'add') {
-              await axios.post('/api/users', userForm.value)
-              ElMessage.success('添加成功')
+              console.log('准备创建用户:', userForm.value)
+              const response = await axios.post('/api/users', userForm.value)
+              if (response.data.code === 200) {
+                ElMessage.success('添加成功')
+                dialogVisible.value = false
+                fetchUsers()
+              } else {
+                ElMessage.error(response.data.message || '添加失败')
+              }
             } else {
-              await axios.put(`/api/users/${userForm.value.id}`, userForm.value)
-              ElMessage.success('更新成功')
+              console.log('准备更新用户:', userForm.value)
+              const response = await axios.put(`/api/users/${userForm.value.id}`, userForm.value)
+              if (response.data.code === 200) {
+                ElMessage.success('更新成功')
+                dialogVisible.value = false
+                fetchUsers()
+              } else {
+                ElMessage.error(response.data.message || '更新失败')
+              }
             }
-            dialogVisible.value = false
-            fetchUsers()
           } catch (error) {
-            ElMessage.error(dialogType.value === 'add' ? '添加失败' : '更新失败')
             console.error('操作失败:', error)
+            ElMessage.error(error.response?.data?.message || (dialogType.value === 'add' ? '添加失败' : '更新失败'))
           }
         }
       })

@@ -195,29 +195,14 @@ const userController = {
     async createUser(req, res) {
         try {
             const { username, display_name, email, password, role = 'user', status = 'active' } = req.body;
-            console.log('创建用户请求:', { username, display_name, email, role, status });
+            console.log('创建用户请求:', { username, display_name, email, role, status, password });
             
             // 参数验证
             if (!username || !password) {
+                console.log('参数验证失败：用户名或密码为空');
                 return res.status(400).json({
                     code: 400,
                     message: '用户名和密码不能为空'
-                });
-            }
-
-            // 验证角色
-            if (!VALID_ROLES.includes(role)) {
-                return res.status(400).json({
-                    code: 400,
-                    message: `无效的角色值，必须是以下之一: ${VALID_ROLES.join(', ')}`
-                });
-            }
-
-            // 验证状态
-            if (!VALID_STATUSES.includes(status)) {
-                return res.status(400).json({
-                    code: 400,
-                    message: `无效的状态值，必须是以下之一: ${VALID_STATUSES.join(', ')}`
                 });
             }
 
@@ -234,11 +219,8 @@ const userController = {
                 });
             }
 
-            // 对密码进行加密
-            // const hashedPassword = await bcrypt.hash(password, 10);
-            // console.log('密码加密完成');
-            console.log('使用明文密码');
-
+            // 使用明文密码
+            console.log('使用明文密码存储:', password);
             const sql = `
                 INSERT INTO users (username, display_name, email, password, role, status) 
                 VALUES (?, ?, ?, ?, ?, ?)
@@ -252,6 +234,17 @@ const userController = {
 
             const result = await db.query(sql, params);
             console.log('插入结果:', result);
+
+            // 查询新创建的用户信息
+            const newUserSql = 'SELECT * FROM users WHERE id = ?';
+            const [newUser] = await db.query(newUserSql, [result.insertId]);
+            console.log('新创建的用户信息:', { 
+                id: newUser.id,
+                username: newUser.username,
+                password: newUser.password,
+                role: newUser.role,
+                status: newUser.status
+            });
 
             res.status(201).json({
                 code: 200,
