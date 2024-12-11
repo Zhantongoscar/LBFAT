@@ -10,6 +10,26 @@ USE lbfat;
 -- 基础表结构
 -- =====================================================
 
+-- 用户表
+CREATE TABLE IF NOT EXISTS users (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    username VARCHAR(50) NOT NULL UNIQUE COMMENT '用户名',
+    password VARCHAR(255) NOT NULL COMMENT '密码',
+    display_name VARCHAR(100) COMMENT '显示名称',
+    email VARCHAR(100) COMMENT '邮箱',
+    role ENUM('admin', 'user') DEFAULT 'user' COMMENT '用户角色',
+    status ENUM('active', 'inactive') DEFAULT 'active' COMMENT '用户状态',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    INDEX idx_username (username),
+    INDEX idx_role (role),
+    INDEX idx_status (status)
+) COMMENT '用户管理表';
+
+-- 初始管理员用户
+INSERT INTO users (username, password, display_name, email, role) VALUES
+('admin', '$2b$10$8nGwR.DqYdmVpxK1yGqRy.M5J6p/G4jYtS8UOVjD0lLYpWl.Ot7Hy', '系统管理员', 'admin@example.com', 'admin');
+
 -- 项目订阅管理表
 CREATE TABLE IF NOT EXISTS project_subscriptions (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -171,7 +191,7 @@ INSERT INTO device_type_points (device_type_id, point_index, point_type, point_n
 (1, 15, 'DI', 'DI12', 'EDB数字输入点12 - 中段'),
 (1, 16, 'DI', 'DI13', 'EDB数字输入点13 - 中段'),
 (1, 17, 'DI', 'DI14', 'EDB数字输入点14 - 中段'),
--- 剩余3个点位
+-- 剩余3���点位
 (1, 18, 'DI', 'DI15', 'EDB数字输入点15 - 后段'),
 (1, 19, 'DI', 'DI16', 'EDB数字输入点16 - 后段'),
 (1, 20, 'DI', 'DI17', 'EDB数字输入点17 - 后段');

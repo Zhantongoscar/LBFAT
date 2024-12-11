@@ -2,7 +2,7 @@ FROM node:16-alpine
 
 WORKDIR /app
 
-RUN apk add --no-cache curl
+RUN apk add --no-cache curl python3 make g++ 
 
 COPY package*.json ./
 

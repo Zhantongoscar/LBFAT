@@ -61,8 +61,7 @@
         <el-form-item label="角色" prop="role">
           <el-select v-model="userForm.role" style="width: 100%">
             <el-option label="管理员" value="admin" />
-            <el-option label="测试员" value="tester" />
-            <el-option label="访客" value="viewer" />
+            <el-option label="普通用户" value="user" />
           </el-select>
         </el-form-item>
         <el-form-item label="状态" prop="status">
@@ -101,7 +100,7 @@ export default {
       display_name: '',
       email: '',
       password: '',
-      role: 'tester',
+      role: 'user',
       status: 'active'
     })
 
@@ -129,7 +128,7 @@ export default {
       ]
     }
 
-    // 获取用户列表
+    // 获取用户列表**************************************
     const fetchUsers = async () => {
       loading.value = true
       try {
@@ -137,7 +136,7 @@ export default {
         users.value = response.data
       } catch (error) {
         ElMessage.error('获取用户列表失败')
-        console.error('获取用户列表失败:', error)
+        console.error('获取用户列���失败:', error)
       } finally {
         loading.value = false
       }
@@ -151,7 +150,7 @@ export default {
         display_name: '',
         email: '',
         password: '',
-        role: 'tester',
+        role: 'user',
         status: 'active'
       }
       dialogVisible.value = true
@@ -219,8 +218,7 @@ export default {
     const getRoleType = (role) => {
       const types = {
         admin: 'danger',
-        tester: 'warning',
-        viewer: 'info'
+        user: 'info'
       }
       return types[role] || 'info'
     }
@@ -229,8 +227,7 @@ export default {
     const getRoleLabel = (role) => {
       const labels = {
         admin: '管理员',
-        tester: '测试员',
-        viewer: '访客'
+        user: '普通用户'
       }
       return labels[role] || role
     }
