@@ -48,20 +48,56 @@
     <!-- 添加/编辑对话框 -->
     <el-dialog
       v-model="dialogVisible"
-      :title="isEdit ? '编辑设备类型' : '添加设备类型'"
+      :title="'编辑设备类型！'"
       width="500px"
     >
       <el-form :model="deviceForm" label-width="100px">
         <el-form-item label="设备类型">
-          <el-input v-model="deviceForm.type_name" />
+          <el-input v-model="deviceForm.type_name" placeholder="如：EDB" />
         </el-form-item>
-        <el-form-item label="点位数量">
-          <el-input-number v-model="deviceForm.point_count" :min="1" />
+        <el-form-item label="点位数量！">
+          <el-input-number 
+            v-model="deviceForm.point_count" 
+            :min="1" 
+            :max="100"
+          />
         </el-form-item>
+        
+        <!-- 点位配置列表 -->
+        <el-form-item label="点位配置">
+          <div class="points-list">
+            <div v-for="(point, index) in deviceForm.points" :key="index" class="point-item">
+              <el-row :gutter="10">
+                <el-col :span="6">
+                  <el-select v-model="point.point_type" placeholder="类型">
+                    <el-option label="DI" value="DI" />
+                    <el-option label="DO" value="DO" />
+                    <el-option label="AI" value="AI" />
+                    <el-option label="AO" value="AO" />
+                  </el-select>
+                </el-col>
+                <el-col :span="8">
+                  <el-input 
+                    v-model="point.point_name" 
+                    :placeholder="`${point.point_type}${index + 1}`"
+                  />
+                </el-col>
+                <el-col :span="10">
+                  <el-input 
+                    v-model="point.description" 
+                    placeholder="点位描述"
+                  />
+                </el-col>
+              </el-row>
+            </div>
+          </div>
+        </el-form-item>
+
         <el-form-item label="描述">
           <el-input
             v-model="deviceForm.description"
             type="textarea"
+            placeholder="如：EDB设备: 20个点位配置 (7DI + 3DO + 7DI + 3DI)"
             :rows="3"
           />
         </el-form-item>
@@ -313,5 +349,25 @@ export default {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+}
+
+/* 点位配置样式 */
+.points-list {
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 10px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+}
+
+.point-item {
+  margin-bottom: 10px;
+  padding: 10px;
+  background-color: #f5f7fa;
+  border-radius: 4px;
+}
+
+.point-item:last-child {
+  margin-bottom: 0;
 }
 </style> 

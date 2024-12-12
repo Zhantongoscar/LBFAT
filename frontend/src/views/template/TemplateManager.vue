@@ -7,295 +7,207 @@
         <template v-if="currentTemplate">
           <span class="value">{{ currentTemplate.name }}</span>
           <span class="sub-info">(图纸：{{ currentTemplate.drawingNo }}, 版本：V{{ currentTemplate.version }})</span>
+          <span class="update-time">最后更新：{{ currentTemplate.updateTime }}</span>
         </template>
         <span v-else class="no-file">未选择真值表</span>
+        <div class="action-buttons">
+          <el-button type="primary" size="small" @click="showOpenDialog">打开其他</el-button>
+          <el-button type="success" size="small" @click="showCreateDialog">新建真值表</el-button>
+        </div>
       </div>
     </el-card>
 
     <div class="main-content">
-      <!-- 上方：真值表管理区域 -->
-      <el-collapse v-model="isTemplateListExpanded" class="template-list-section">
-        <el-collapse-item name="templateList">
+      <!-- 编辑区域 -->
+      <el-collapse v-model="isEditSectionExpanded" class="edit-section">
+        <el-collapse-item name="editSection">
           <template #title>
             <div class="collapse-header">
-              <span>真值表管理</span>
+              <span>真值表编辑</span>
             </div>
           </template>
-          
-          <el-card class="template-list-card" shadow="never">
-            <template #header>
-              <div class="card-header">
-                <el-button type="primary" @click="showCreateDialog">新建真值表</el-button>
-              </div>
-            </template>
 
-            <!-- 真值表列表 -->
-            <el-table :data="templateList" style="width: 100%" height="250">
-              <el-table-column prop="id" label="ID" width="180" />
-              <el-table-column prop="drawingNo" label="图纸编号" width="180" />
-              <el-table-column prop="version" label="版本" width="100" />
-              <el-table-column prop="name" label="名称" />
-              <el-table-column prop="updateTime" label="更新时间" width="180" />
-              <el-table-column label="操作" width="150">
-                <template #default="scope">
-                  <el-button type="primary" link @click="editTemplate(scope.row)">编辑</el-button>
-                  <el-button type="danger" link @click="deleteTemplate(scope.row)">删除</el-button>
-                </template>
-              </el-table-column>
-            </el-table>
-          </el-card>
-        </el-collapse-item>
-      </el-collapse>
-
-      <!-- 下方：编辑区域和备选资源的左右布局 -->
-      <div class="bottom-section">
-        <!-- 左侧：真值表编辑区域 -->
-        <el-collapse v-model="isEditSectionExpanded" class="edit-section">
-          <el-collapse-item name="editSection">
-            <template #title>
-              <div class="collapse-header">
-                <span>真值表编辑</span>
-              </div>
-            </template>
-
-            <template v-if="currentTemplate">
-              <el-card class="edit-card" shadow="never">
-                <template #header>
-                  <div class="card-header">
-                    <span>真值表编辑</span>
-                    <div class="header-actions">
-                      <el-button-group>
-                        <el-button type="primary" @click="addNewTestGroup">新建测试组</el-button>
-                      </el-button-group>
-                      <el-button type="primary" @click="saveTemplate">保存</el-button>
-                    </div>
-                  </div>
-                </template>
-
-                <!-- 测试组列表 -->
-                <div class="test-groups">
-                  <el-collapse v-model="expandedGroups">
-                    <el-collapse-item
-                      v-for="group in testGroups"
-                      :key="group.testId"
-                      :name="group.testId"
-                    >
-                      <template #title>
-                        <div class="group-header">
-                          <span class="test-id">测试ID {{ group.testId }}: {{ group.description }}</span>
-                          <el-tag 
-                            :type="group.level === 1 ? 'danger' : 'info'"
-                            size="small"
-                            @click.stop="editGroupLevel(group)"
-                            style="cursor: pointer"
-                          >
-                            {{ group.level === 1 ? '安全类' : '普通类' }}
-                          </el-tag>
-                          <el-button 
-                            type="primary" 
-                            link 
-                            size="small"
-                            @click.stop="editGroup(group)"
-                          >
-                            编辑
-                          </el-button>
-                          <span class="item-count">({{ group.items.length }}个测试项)</span>
-                        </div>
-                      </template>
-
-                      <!-- 测试项表格 -->
-                      <div class="group-content">
-                        <div class="group-actions">
-                          <el-button-group>
-                            <el-button 
-                              type="primary" 
-                              link 
-                              @click="addTestItem(group.testId)"
-                            >
-                              添加测试项
-                            </el-button>
-                            <el-button 
-                              type="danger" 
-                              link 
-                              @click="deleteGroup(group.testId)"
-                            >
-                              删除组
-                            </el-button>
-                          </el-button-group>
-                        </div>
-
-                        <el-table :data="group.items" border style="width: 100%">
-                          <!-- 设备选择 -->
-                          <el-table-column label="设备" width="180">
-                            <template #default="scope">
-                              <el-select 
-                                v-model="scope.row.deviceId"
-                                placeholder="选择设备"
-                                @change="handleDeviceChange(scope.row)"
-                              >
-                                <el-option
-                                  v-for="device in deviceList"
-                                  :key="device.id"
-                                  :label="device.name"
-                                  :value="device.id"
-                                />
-                              </el-select>
-                            </template>
-                          </el-table-column>
-
-                          <!-- 单元选择 -->
-                          <el-table-column label="单元" width="180">
-                            <template #default="scope">
-                              <el-select 
-                                v-model="scope.row.unitId"
-                                placeholder="选择单元"
-                                :disabled="!scope.row.deviceId"
-                                @change="handleUnitChange(scope.row)"
-                              >
-                                <el-option
-                                  v-for="unit in getAvailableUnits(scope.row.deviceId)"
-                                  :key="unit.id"
-                                  :label="unit.name"
-                                  :value="unit.id"
-                                />
-                              </el-select>
-                            </template>
-                          </el-table-column>
-
-                          <!-- 设定值/期待值 -->
-                          <el-table-column label="设定值/期待值" width="180">
-                            <template #default="scope">
-                              <el-input-number
-                                v-if="isOutputType(scope.row.unitType)"
-                                v-model="scope.row.setValue"
-                                :precision="2"
-                                placeholder="设定值"
-                              />
-                              <el-input-number
-                                v-else
-                                v-model="scope.row.expectedValue"
-                                :precision="2"
-                                placeholder="期待值"
-                              />
-                            </template>
-                          </el-table-column>
-
-                          <!-- 使能状态 -->
-                          <el-table-column label="使能" width="80">
-                            <template #default="scope">
-                              <el-switch v-model="scope.row.enabled" />
-                            </template>
-                          </el-table-column>
-
-                          <!-- 描述列 ---->
-                          <el-table-column label="描述" min-width="200">
-                            <template #default="scope">
-                              <el-input 
-                                v-model="scope.row.description" 
-                                type="textarea"
-                                :rows="2"
-                                placeholder="测试项描述"
-                              />
-                            </template>
-                          </el-table-column>
-
-                          <!-- 错误提示列（仅DI/AI类型显示） -->
-                          <el-table-column label="错误提示" min-width="200" v-if="hasInputTypeItems">
-                            <template #default="scope">
-                              <el-input 
-                                v-if="scope.row.unitType === 'DI' || scope.row.unitType === 'AI'"
-                                v-model="scope.row.errorMessage" 
-                                type="textarea"
-                                :rows="2"
-                                placeholder="当采集值与预期不符时的错误提示"
-                              />
-                            </template>
-                          </el-table-column>
-
-                          <!-- 故障详情列 -->
-                          <el-table-column label="故障详情" min-width="250">
-                            <template #default="scope">
-                              <el-input 
-                                v-model="scope.row.faultDetails" 
-                                type="textarea"
-                                :rows="3"
-                                placeholder="故障详细信息和处理步骤"
-                                class="fault-details-input"
-                              />
-                            </template>
-                          </el-table-column>
-
-                          <!-- 操作 -->
-                          <el-table-column label="操作" width="120" fixed="right">
-                            <template #default="scope">
-                              <el-button 
-                                type="danger" 
-                                link
-                                @click="deleteTestItem(group.testId, scope.$index)"
-                              >
-                                删除
-                              </el-button>
-                            </template>
-                          </el-table-column>
-                        </el-table>
-                      </div>
-                    </el-collapse-item>
-                  </el-collapse>
-                </div>
-              </el-card>
-            </template>
-            <el-empty v-else description="请选择要编辑的真值表" />
-          </el-collapse-item>
-        </el-collapse>
-
-        <!-- 右侧：备选资源区域 -->
-        <el-collapse v-model="isResourceSectionExpanded" class="resource-section">
-          <el-collapse-item name="resourceSection">
-            <template #title>
-              <div class="collapse-header">
-                <span>备选资源</span>
-              </div>
-            </template>
-            
-            <el-card class="resource-card" shadow="never">
+          <template v-if="currentTemplate">
+            <el-card class="edit-card" shadow="never">
               <template #header>
                 <div class="card-header">
-                  <span>资源配置</span>
-                  <el-button type="primary" @click="addNewResource">添加资源</el-button>
+                  <span>真值表编辑</span>
+                  <div class="header-actions">
+                    <el-button-group>
+                      <el-button type="primary" @click="addNewTestGroup">新建测试组</el-button>
+                    </el-button-group>
+                    <el-button type="primary" @click="saveTemplate">保存</el-button>
+                  </div>
                 </div>
               </template>
 
-              <!-- 资源列表 -->
-              <el-table :data="resourceList" border style="width: 100%">
-                <el-table-column prop="id" label="资源ID" width="100" />
-                <el-table-column prop="name" label="资源名称" width="150" />
-                <el-table-column prop="type" label="类型" width="100" />
-                <el-table-column prop="description" label="描述" />
-                <el-table-column label="操作" width="150">
-                  <template #default="scope">
-                    <el-button-group>
-                      <el-button 
-                        type="primary" 
-                        link 
-                        @click="editResource(scope.row)"
-                      >
-                        编辑
-                      </el-button>
-                      <el-button 
-                        type="danger" 
-                        link 
-                        @click="deleteResource(scope.row)"
-                      >
-                        删除
-                      </el-button>
-                    </el-button-group>
-                  </template>
-                </el-table-column>
-              </el-table>
+              <!-- 测试组编辑区域 -->
+              <div class="test-groups">
+                <el-collapse v-model="expandedGroups">
+                  <el-collapse-item
+                    v-for="group in testGroups"
+                    :key="group.testId"
+                    :name="group.testId"
+                  >
+                    <template #title>
+                      <div class="group-header">
+                        <span class="group-title">
+                          {{ group.description }}
+                        </span>
+                        <el-tag 
+                          :type="group.level === 1 ? 'danger' : ''"
+                          size="small"
+                          @click.stop="editGroupLevel(group)"
+                        >
+                          {{ group.level === 1 ? '安全类' : '普通类' }}
+                        </el-tag>
+                      </div>
+                    </template>
+
+                    <!-- 测试组内容 -->
+                    <div class="group-content">
+                      <div class="group-actions">
+                        <el-button-group>
+                          <el-button 
+                            type="primary" 
+                            link 
+                            @click="addTestItem(group.testId)"
+                          >
+                            添加测试项
+                          </el-button>
+                          <el-button 
+                            type="danger" 
+                            link 
+                            @click="deleteGroup(group.testId)"
+                          >
+                            删除组
+                          </el-button>
+                        </el-button-group>
+                      </div>
+
+                      <!-- 测试项表格 -->
+                      <el-table :data="group.items" border style="width: 100%">
+                        <!-- 设备选择 -->
+                        <el-table-column label="设备" width="180">
+                          <template #default="scope">
+                            <el-select 
+                              v-model="scope.row.deviceId"
+                              placeholder="选择设备"
+                              @change="handleDeviceChange(scope.row)"
+                            >
+                              <el-option
+                                v-for="device in deviceList"
+                                :key="device.id"
+                                :label="device.name"
+                                :value="device.id"
+                              />
+                            </el-select>
+                          </template>
+                        </el-table-column>
+
+                        <!-- 单元选择 -->
+                        <el-table-column label="单元" width="180">
+                          <template #default="scope">
+                            <el-select 
+                              v-model="scope.row.unitId"
+                              placeholder="选择单元"
+                              :disabled="!scope.row.deviceId"
+                              @change="handleUnitChange(scope.row)"
+                            >
+                              <el-option
+                                v-for="unit in getAvailableUnits(scope.row.deviceId)"
+                                :key="unit.id"
+                                :label="unit.name"
+                                :value="unit.id"
+                              />
+                            </el-select>
+                          </template>
+                        </el-table-column>
+
+                        <!-- 设定值/期待值 -->
+                        <el-table-column label="设定值/期待值" width="180">
+                          <template #default="scope">
+                            <el-input-number
+                              v-if="isOutputType(scope.row.unitType)"
+                              v-model="scope.row.setValue"
+                              :precision="2"
+                              placeholder="设定值"
+                            />
+                            <el-input-number
+                              v-else
+                              v-model="scope.row.expectedValue"
+                              :precision="2"
+                              placeholder="期待值"
+                            />
+                          </template>
+                        </el-table-column>
+
+                        <!-- 使能状态 -->
+                        <el-table-column label="使能" width="80">
+                          <template #default="scope">
+                            <el-switch v-model="scope.row.enabled" />
+                          </template>
+                        </el-table-column>
+
+                        <!-- 描述 -->
+                        <el-table-column label="描述" min-width="200">
+                          <template #default="scope">
+                            <el-input 
+                              v-model="scope.row.description" 
+                              type="textarea"
+                              :rows="2"
+                              placeholder="请输入测试项描述"
+                            />
+                          </template>
+                        </el-table-column>
+
+                        <!-- 错误提示列（仅DI/AI类型显示） -->
+                        <el-table-column label="错误提示" min-width="200" v-if="hasInputTypeItems">
+                          <template #default="scope">
+                            <el-input 
+                              v-if="scope.row.unitType === 'DI' || scope.row.unitType === 'AI'"
+                              v-model="scope.row.errorMessage" 
+                              type="textarea"
+                              :rows="2"
+                              placeholder="当采集值与预期不符时的错误提示"
+                            />
+                          </template>
+                        </el-table-column>
+
+                        <!-- 故障详情 -->
+                        <el-table-column label="故障详情" min-width="200">
+                          <template #default="scope">
+                            <el-input 
+                              v-model="scope.row.faultDetails" 
+                              type="textarea"
+                              :rows="2"
+                              placeholder="故障原因分析和处理建议"
+                            />
+                          </template>
+                        </el-table-column>
+
+                        <!-- 操作 -->
+                        <el-table-column label="操作" width="120" fixed="right">
+                          <template #default="scope">
+                            <el-button 
+                              type="danger" 
+                              link
+                              @click="deleteTestItem(group.testId, scope.$index)"
+                            >
+                              删除
+                            </el-button>
+                          </template>
+                        </el-table-column>
+                      </el-table>
+                    </div>
+                  </el-collapse-item>
+                </el-collapse>
+              </div>
             </el-card>
-          </el-collapse-item>
-        </el-collapse>
-      </div>
+          </template>
+          <el-empty v-else description="请选择要编辑的真值表" />
+        </el-collapse-item>
+      </el-collapse>
     </div>
 
     <!-- 新建真值表对话框 -->
@@ -305,7 +217,7 @@
       width="500px"
     >
       <el-form :model="createDialog.form" label-width="100px">
-        <el-form-item label="图���编号" required>
+        <el-form-item label="图纸编号" required>
           <el-select
             v-model="createDialog.form.drawingNo"
             placeholder="请选择图纸"
@@ -376,11 +288,30 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- 打开文件对话框 -->
+    <el-dialog
+      v-model="openDialog.visible"
+      title="打开真值表"
+      width="600px"
+    >
+      <el-table :data="recentTemplates" style="width: 100%">
+        <el-table-column prop="drawingNo" label="图纸编号" width="120" />
+        <el-table-column prop="version" label="版本号" width="100" />
+        <el-table-column prop="name" label="名称" />
+        <el-table-column prop="updateTime" label="更新时间" width="160" />
+        <el-table-column label="操作" width="100">
+          <template #default="{ row }">
+            <el-button type="primary" link @click="openTemplate(row)">打开</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 // 折叠面板状态
@@ -437,7 +368,7 @@ const testGroups = ref([
   },
   {
     testId: 2,
-    level: 2, // 普通类
+    level: 2, // 普���类
     description: '电机控制测试组',
     items: [
       {
@@ -484,7 +415,7 @@ const unitTypes = {
   OUTPUT: ['DO', 'AO']
 }
 
-// 对话框状态
+// 对话框状��
 const groupDialog = ref({
   visible: false,
   isEdit: false,
@@ -517,6 +448,29 @@ const createDialog = ref({
 const resourceList = ref([
   { id: 'RES001', name: '资源1', type: 'DI', description: '数字输入资源' },
   { id: 'RES002', name: '资源2', type: 'DO', description: '数字输出资源' }
+])
+
+// 打开文件对话框状态
+const openDialog = ref({
+  visible: false
+})
+
+// 最近使用的模板列表
+const recentTemplates = ref([
+  {
+    id: 1,
+    drawingNo: 'DWG-001',
+    version: '1.0',
+    name: '测试模板1',
+    updateTime: '2024-01-20 10:00:00'
+  },
+  {
+    id: 2,
+    drawingNo: 'DWG-002',
+    version: '1.0',
+    name: '测试模板2',
+    updateTime: '2024-01-20 11:00:00'
+  }
 ])
 
 // 基本操作函数
@@ -711,6 +665,21 @@ const hasInputTypeItems = computed(() => {
     )
   )
 })
+
+// 显示打开文件对话框
+const showOpenDialog = () => {
+  openDialog.value.visible = true
+}
+
+// 打开模板
+const openTemplate = (template) => {
+  currentTemplate.value = template
+  openDialog.value.visible = false
+  // 默认展开第一个测试组
+  if (testGroups.value.length > 0) {
+    expandedGroups.value.add(testGroups.value[0].testId)
+  }
+}
 </script>
 
 <style scoped>
@@ -741,17 +710,29 @@ const hasInputTypeItems = computed(() => {
 }
 
 .value {
-  color: #409EFF;
+  font-size: 16px;
   margin-right: 10px;
 }
 
 .sub-info {
-  color: #909399;
+  color: #666;
+  margin-right: 10px;
+}
+
+.update-time {
+  color: #999;
+  font-size: 14px;
 }
 
 .no-file {
-  color: #909399;
+  color: #999;
   font-style: italic;
+}
+
+.action-buttons {
+  margin-left: auto;
+  display: flex;
+  gap: 10px;
 }
 
 .template-list-section {
@@ -773,12 +754,15 @@ const hasInputTypeItems = computed(() => {
 .bottom-section {
   display: flex;
   gap: 20px;
-  min-height: 600px;
+  margin-top: 20px;
 }
 
 .edit-section {
-  width: 75%;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  width: 100%;
+}
+
+.edit-card {
+  margin-bottom: 20px;
 }
 
 .group-header {
@@ -833,19 +817,38 @@ const hasInputTypeItems = computed(() => {
   line-height: 1.4;
 }
 
-.resource-section {
-  width: 25%;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-}
-
-.resource-card {
-  border: none;
-}
-
-/* 对话框样式 */
 .dialog-footer {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+}
+
+.custom-tree-node {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding-right: 8px;
+}
+
+.unit-type {
+  font-size: 12px;
+  padding: 2px 6px;
+  background-color: #f0f0f0;
+  border-radius: 4px;
+  color: #666;
+}
+
+.resource-card :deep(.el-tree-node__content) {
+  height: 32px;
+}
+
+.resource-card :deep(.el-tree-node.is-dragging .el-tree-node__content) {
+  background-color: #f5f7fa;
+  opacity: 0.8;
+}
+
+.resource-card :deep(.el-tree-node.is-drop-inner > .el-tree-node__content) {
+  background-color: #e6f1fc;
 }
 </style> 
