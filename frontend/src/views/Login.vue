@@ -46,6 +46,7 @@ import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import { ElMessage } from 'element-plus'
+import axios from 'axios'
 
 export default {
   name: 'Login',
@@ -54,6 +55,15 @@ export default {
     const userStore = useUserStore()
     const loginForm = ref(null)
     const loading = ref(false)
+    
+    // 配置 axios
+    const axiosInstance = axios.create({
+      baseURL: '/api',
+      timeout: 5000,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
     
     const formData = reactive({
       username: '',
@@ -76,17 +86,10 @@ export default {
         await loginForm.value.validate()
         loading.value = true
         
-        const response = await fetch('/api/users/login', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(formData)
-        })
+        const response = await axiosInstance.post('/users/login', formData)
+        const data = response.data
         
-        const data = await response.json()
-        
-        if (response.ok) {
+        if (response.status === 200 && data.code === 200) {
           console.log('登录响应数据:', data.data)
           console.log('用户信息:', data.data.user)
           userStore.setToken(data.data.token)
@@ -105,7 +108,8 @@ export default {
           ElMessage.error(data.message || '登录失败')
         }
       } catch (error) {
-        ElMessage.error('登录失败：' + error.message)
+        console.error('登录失败:', error)
+        ElMessage.error(error.response?.data?.message || '登录失败')
       } finally {
         loading.value = false
       }

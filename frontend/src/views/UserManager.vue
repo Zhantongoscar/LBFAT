@@ -130,8 +130,13 @@ export default {
       ]
     }
 
-    // 配置 axios 请求拦截器
-    axios.interceptors.request.use(config => {
+    // 配置 axios
+    const axiosInstance = axios.create({
+      baseURL: '/api'
+    })
+
+    // 配置请求拦截器
+    axiosInstance.interceptors.request.use(config => {
       const token = userStore.token
       if (token) {
         config.headers.Authorization = `Bearer ${token}`
@@ -139,11 +144,11 @@ export default {
       return config
     })
 
-    // 获取用户列表**************************************
+    // 获取用户列表
     const fetchUsers = async () => {
       loading.value = true
       try {
-        const response = await axios.get('/api/users')
+        const response = await axiosInstance.get('/users')
         if (response.data.code === 200) {
           users.value = response.data.data
         } else {
@@ -195,12 +200,16 @@ export default {
         }
       ).then(async () => {
         try {
-          await axios.delete(`/api/users/${row.id}`)
-          ElMessage.success('删除成功')
-          fetchUsers()
+          const response = await axiosInstance.delete(`/users/${row.id}`)
+          if (response.data.code === 200) {
+            ElMessage.success('删除成功')
+            fetchUsers()
+          } else {
+            ElMessage.error(response.data.message || '删除失败')
+          }
         } catch (error) {
-          ElMessage.error('删除失败')
           console.error('删除用户失败:', error)
+          ElMessage.error(error.response?.data?.message || '删除失败')
         }
       })
     }
@@ -212,26 +221,21 @@ export default {
       await userFormRef.value.validate(async (valid) => {
         if (valid) {
           try {
+            let response
             if (dialogType.value === 'add') {
               console.log('准备创建用户:', userForm.value)
-              const response = await axios.post('/api/users', userForm.value)
-              if (response.data.code === 200) {
-                ElMessage.success('添加成功')
-                dialogVisible.value = false
-                fetchUsers()
-              } else {
-                ElMessage.error(response.data.message || '添加失败')
-              }
+              response = await axiosInstance.post('/users', userForm.value)
             } else {
               console.log('准备更新用户:', userForm.value)
-              const response = await axios.put(`/api/users/${userForm.value.id}`, userForm.value)
-              if (response.data.code === 200) {
-                ElMessage.success('更新成功')
-                dialogVisible.value = false
-                fetchUsers()
-              } else {
-                ElMessage.error(response.data.message || '更新失败')
-              }
+              response = await axiosInstance.put(`/users/${userForm.value.id}`, userForm.value)
+            }
+
+            if (response.data.code === 200) {
+              ElMessage.success(dialogType.value === 'add' ? '添加成功' : '更新成功')
+              dialogVisible.value = false
+              fetchUsers()
+            } else {
+              ElMessage.error(response.data.message || (dialogType.value === 'add' ? '添加失败' : '更新失败'))
             }
           } catch (error) {
             console.error('操作失败:', error)

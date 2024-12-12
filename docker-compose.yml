@@ -58,15 +58,15 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=3000
-      - DB_HOST=mysql
+      - DB_HOST=lbfat_mysql
       - DB_PORT=3306
       - DB_USER=root
       - DB_PASSWORD=13701033228
       - DB_NAME=lbfat
-      - MQTT_HOST=emqx
+      - MQTT_HOST=lbfat_emqx
       - MQTT_PORT=1883
-      - HOST_IP=${HOST_IP:-localhost}
-      - CORS_ORIGIN=http://localhost:8080
+      - HOST_IP=${HOST_IP:-0.0.0.0}
+      - CORS_ORIGIN=*
     depends_on:
       mysql:
         condition: service_healthy
@@ -93,7 +93,7 @@ services:
     ports:
       - "8080:80"
     environment:
-      - VITE_API_URL=http://localhost:8080
+      - VITE_API_URL=/api
       - HOST_IP=${HOST_IP:-localhost}
     depends_on:
       - backend
