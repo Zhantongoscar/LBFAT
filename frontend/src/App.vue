@@ -68,21 +68,13 @@
             <el-icon><Document /></el-icon>
             <template #title>项目管理</template>
           </el-menu-item>
-          <el-menu-item index="/devices">
-            <el-icon><Monitor /></el-icon>
-            <template #title>设备管理</template>
-          </el-menu-item>
-          <el-menu-item index="/messages">
-            <el-icon><Message /></el-icon>
-            <template #title>消息管理</template>
-          </el-menu-item>
           <el-menu-item index="/device-config">
             <el-icon><Setting /></el-icon>
             <template #title>设备配置</template>
           </el-menu-item>
-          <el-menu-item index="/device-test">
-            <el-icon><Operation /></el-icon>
-            <template #title>设备测试</template>
+          <el-menu-item index="/devices">
+            <el-icon><Monitor /></el-icon>
+            <template #title>设备管理</template>
           </el-menu-item>
           <el-menu-item index="/users" v-if="userStore.isAdmin">
             <el-icon><User /></el-icon>
@@ -106,6 +98,14 @@
               <template #title>测试报告</template>
             </el-menu-item>
           </el-sub-menu>
+          <el-menu-item index="/messages">
+            <el-icon><Message /></el-icon>
+            <template #title>消息管理</template>
+          </el-menu-item>
+          <el-menu-item index="/device-test">
+            <el-icon><Operation /></el-icon>
+            <template #title>设备测试</template>
+          </el-menu-item>
         </el-menu>
       </el-aside>
       <el-main>

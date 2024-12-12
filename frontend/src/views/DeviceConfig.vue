@@ -61,6 +61,14 @@
             :min="1" 
             :max="100"
           />
+          <el-button 
+            type="primary" 
+            link 
+            @click="showQuickSetDialog"
+            style="margin-left: 10px"
+          >
+            快速设置
+          </el-button>
         </el-form-item>
         
         <!-- 点位配置列表 -->
@@ -68,6 +76,13 @@
           <div class="points-list">
             <div v-for="(point, index) in deviceForm.points" :key="index" class="point-item">
               <el-row :gutter="10">
+                <el-col :span="4">
+                  <el-input 
+                    v-model="point.point_index" 
+                    disabled
+                    placeholder="序号"
+                  />
+                </el-col>
                 <el-col :span="6">
                   <el-select v-model="point.point_type" placeholder="类型">
                     <el-option label="DI" value="DI" />
@@ -76,13 +91,7 @@
                     <el-option label="AO" value="AO" />
                   </el-select>
                 </el-col>
-                <el-col :span="8">
-                  <el-input 
-                    v-model="point.point_name" 
-                    :placeholder="`${point.point_type}${index + 1}`"
-                  />
-                </el-col>
-                <el-col :span="10">
+                <el-col :span="14">
                   <el-input 
                     v-model="point.description" 
                     placeholder="点位描述"
@@ -106,6 +115,37 @@
         <span class="dialog-footer">
           <el-button @click="dialogVisible = false">取消</el-button>
           <el-button type="primary" @click="handleSubmit">确定</el-button>
+        </span>
+      </template>
+    </el-dialog>
+
+    <!-- 快速设置对话框 -->
+    <el-dialog
+      v-model="quickSetDialog.visible"
+      title="快速设置点位"
+      width="500px"
+    >
+      <el-form :model="quickSetDialog.form" label-width="100px">
+        <el-form-item label="设置格式">
+          <el-input
+            v-model="quickSetDialog.form.format"
+            placeholder="例如：7DI + 3DO + 7DI + 3DI"
+          />
+        </el-form-item>
+        <div class="quick-set-tips">
+          <p>格式说明：</p>
+          <ul>
+            <li>使用数字+类型的格式，如 7DI</li>
+            <li>支持的类型：DI、DO、AI、AO</li>
+            <li>使用 + 号分隔不同组</li>
+            <li>例如：7DI + 3DO + 7DI + 3DI</li>
+          </ul>
+        </div>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="quickSetDialog.visible = false">取消</el-button>
+          <el-button type="primary" @click="handleQuickSet">确定</el-button>
         </span>
       </template>
     </el-dialog>
@@ -134,6 +174,14 @@ export default {
         point_name: '',
         description: ''
       }]
+    })
+
+    // 快速设置对话框
+    const quickSetDialog = ref({
+      visible: false,
+      form: {
+        format: ''
+      }
     })
 
     // 监听点位数量变化
@@ -272,8 +320,8 @@ export default {
         }
 
         // 验证点位配置
-        if (!deviceForm.value.points.every(p => p.point_name.trim())) {
-          ElMessage.warning('请填写所有点位的名称');
+        if (!deviceForm.value.points || !deviceForm.value.points.length) {
+          ElMessage.warning('请配置点位信息');
           return;
         }
 
@@ -281,8 +329,9 @@ export default {
         const formData = {
           ...deviceForm.value,
           points: deviceForm.value.points.map((p, index) => ({
-            ...p,
-            point_index: index + 1
+            point_index: index + 1,
+            point_type: p.point_type,
+            description: p.description || `${p.point_type}${index + 1}`
           }))
         };
 
@@ -304,6 +353,62 @@ export default {
       }
     }
 
+    // 显示快速设置对话框
+    const showQuickSetDialog = () => {
+      quickSetDialog.value.visible = true
+    }
+
+    // 处理快速设置
+    const handleQuickSet = () => {
+      const format = quickSetDialog.value.form.format.trim()
+      if (!format) {
+        ElMessage.warning('请输入设置格式')
+        return
+      }
+
+      try {
+        // 解析格式字符串
+        const groups = format.split('+').map(g => g.trim())
+        let totalPoints = 0
+        const newPoints = []
+        
+        // 验证格式
+        const validTypes = ['DI', 'DO', 'AI', 'AO']
+        for (const group of groups) {
+          const match = group.match(/^(\d+)(DI|DO|AI|AO)$/)
+          if (!match) {
+            throw new Error(`格式错误：${group}`)
+          }
+          
+          const [, count, type] = match
+          if (!validTypes.includes(type)) {
+            throw new Error(`不支持的类型：${type}`)
+          }
+          
+          // 创建点位
+          const pointCount = parseInt(count)
+          for (let i = 0; i < pointCount; i++) {
+            newPoints.push({
+              point_index: totalPoints + i + 1,
+              point_type: type,
+              description: `${type}${totalPoints + i + 1}`
+            })
+          }
+          totalPoints += pointCount
+        }
+
+        // 更新表单数据
+        deviceForm.value.point_count = totalPoints
+        deviceForm.value.points = newPoints
+        deviceForm.value.description = format
+
+        quickSetDialog.value.visible = false
+        ElMessage.success('设置成功')
+      } catch (error) {
+        ElMessage.error(error.message || '格式错误')
+      }
+    }
+
     onMounted(loadDeviceTypes)
 
     return {
@@ -317,7 +422,10 @@ export default {
       showAddDialog,
       handleEdit,
       handleDelete,
-      handleSubmit
+      handleSubmit,
+      quickSetDialog,
+      showQuickSetDialog,
+      handleQuickSet
     }
   }
 }
@@ -369,5 +477,27 @@ export default {
 
 .point-item:last-child {
   margin-bottom: 0;
+}
+
+.quick-set-tips {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: #f5f7fa;
+  border-radius: 4px;
+}
+
+.quick-set-tips p {
+  margin: 0 0 5px 0;
+  font-weight: bold;
+}
+
+.quick-set-tips ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.quick-set-tips li {
+  margin: 3px 0;
+  color: #606266;
 }
 </style> 

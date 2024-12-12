@@ -14,6 +14,11 @@
           <span>项目列表</span>
         </el-menu-item>
         
+        <el-menu-item index="/device-config">
+          <el-icon><setting /></el-icon>
+          <span>设备配置</span>
+        </el-menu-item>
+
         <el-menu-item index="/devices">
           <el-icon><monitor /></el-icon>
           <span>设备列表</span>
@@ -40,14 +45,15 @@
 
 <script>
 import { defineComponent } from 'vue'
-import { Document, Monitor, Tools } from '@element-plus/icons-vue'
+import { Document, Monitor, Tools, Setting } from '@element-plus/icons-vue'
 
 export default defineComponent({
   name: 'Layout',
   components: {
     Document,
     Monitor,
-    Tools
+    Tools,
+    Setting
   }
 })
 </script>
