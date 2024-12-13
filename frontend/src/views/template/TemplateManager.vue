@@ -218,18 +218,21 @@
     >
       <el-form :model="createDialog.form" label-width="100px">
         <el-form-item label="图纸编号" required>
-          <el-select
-            v-model="createDialog.form.drawingNo"
-            placeholder="请选择图纸"
-            @change="handleDrawingSelect"
-          >
-            <el-option
-              v-for="drawing in drawingList"
-              :key="drawing.id"
-              :label="drawing.drawingNo"
-              :value="drawing.drawingNo"
-            />
-          </el-select>
+          <div class="drawing-select">
+            <el-select
+              v-model="createDialog.form.drawingNo"
+              placeholder="请选择图纸"
+              @change="handleDrawingSelect"
+              style="width: 100%"
+            >
+              <el-option
+                v-for="drawing in drawingList"
+                :key="drawing.id"
+                :label="drawing.drawingNo"
+                :value="drawing.drawingNo"
+              />
+            </el-select>
+          </div>
         </el-form-item>
         <el-form-item label="版本" required>
           <el-input v-model="createDialog.form.version" placeholder="请输入版本号"/>
@@ -368,7 +371,7 @@ const testGroups = ref([
   },
   {
     testId: 2,
-    level: 2, // 普���类
+    level: 2, // 普通类
     description: '电机控制测试组',
     items: [
       {
@@ -415,7 +418,7 @@ const unitTypes = {
   OUTPUT: ['DO', 'AO']
 }
 
-// 对话框状��
+// 对话框状态
 const groupDialog = ref({
   visible: false,
   isEdit: false,
@@ -506,7 +509,7 @@ const deleteTemplate = (template) => {
   })
 }
 
-// 编辑组级别
+// 编辑组别
 const editGroupLevel = (group) => {
   group.level = group.level === 1 ? 2 : 1
 }
@@ -850,5 +853,13 @@ const openTemplate = (template) => {
 
 .resource-card :deep(.el-tree-node.is-drop-inner > .el-tree-node__content) {
   background-color: #e6f1fc;
+}
+
+.drawing-select {
+  width: 100%;
+}
+
+.drawing-select :deep(.el-select) {
+  width: 100%;
 }
 </style> 
