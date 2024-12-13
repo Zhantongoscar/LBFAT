@@ -5,6 +5,7 @@ const projectRoutes = require('./routes/project-routes');
 const deviceRoutes = require('./routes/device-routes');
 const deviceTypeRoutes = require('./routes/device-type-routes');
 const userRoutes = require('./routes/user-routes');
+const drawingRoutes = require('./routes/drawing-routes');
 const mqttService = require('./services/mqtt-service');
 const WebSocketService = require('./services/websocket-service');
 const db = require('./utils/db');
@@ -49,6 +50,9 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/devices', deviceRoutes);
 app.use('/api/deviceTypes', deviceTypeRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/drawings', drawingRoutes);
+// 同时支持不带/api前缀的路由
+app.use('/drawings', drawingRoutes);
 
 // 根路径
 app.get('/', (req, res) => {

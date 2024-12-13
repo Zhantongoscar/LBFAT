@@ -208,6 +208,89 @@
           <el-empty v-else description="请选择要编辑的真值表" />
         </el-collapse-item>
       </el-collapse>
+
+      <!-- 图纸维护区域 -->
+      <el-collapse v-model="isDrawingSectionExpanded" class="drawing-section">
+        <el-collapse-item name="drawingSection">
+          <template #title>
+            <div class="collapse-header">
+              <span>图纸维护</span>
+            </div>
+          </template>
+
+          <el-card class="drawing-card" shadow="never">
+            <template #header>
+              <div class="card-header">
+                <span>图纸列表</span>
+                <div class="header-actions">
+                  <el-button type="primary" @click="showNewDrawingDialog">新增图纸</el-button>
+                </div>
+              </div>
+            </template>
+
+            <!-- 图纸列表表格 -->
+            <el-table :data="drawingList" border style="width: 100%">
+              <el-table-column prop="drawing_number" label="图纸编号" width="180" />
+              <el-table-column prop="version" label="版本号" width="100" />
+              <el-table-column prop="description" label="描述" />
+              <el-table-column prop="created_at" label="创建时间" width="180">
+                <template #default="scope">
+                  {{ new Date(scope.row.created_at).toLocaleString() }}
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="150" fixed="right">
+                <template #default="scope">
+                  <el-button-group>
+                    <el-button 
+                      type="primary" 
+                      link
+                      @click="handleEditDrawing(scope.row)"
+                    >
+                      编辑
+                    </el-button>
+                    <el-button 
+                      type="danger" 
+                      link
+                      @click="handleDeleteDrawing(scope.row)"
+                    >
+                      删除
+                    </el-button>
+                  </el-button-group>
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-card>
+        </el-collapse-item>
+      </el-collapse>
+
+      <!-- 新建图纸对话框 -->
+      <el-dialog
+        v-model="drawingDialog.visible"
+        :title="drawingDialog.isEdit ? '编��图纸' : '新建图纸'"
+        width="500px"
+      >
+        <el-form :model="drawingDialog.form" label-width="100px">
+          <el-form-item label="图纸编号" required>
+            <el-input v-model="drawingDialog.form.drawing_number" placeholder="请输入图纸编号"/>
+          </el-form-item>
+          <el-form-item label="版本号" required>
+            <el-input v-model="drawingDialog.form.version" placeholder="请输入版本号，如：1.0"/>
+          </el-form-item>
+          <el-form-item label="描述">
+            <el-input
+              v-model="drawingDialog.form.description"
+              type="textarea"
+              placeholder="请输入图纸描述"
+            />
+          </el-form-item>
+        </el-form>
+        <template #footer>
+          <span class="dialog-footer">
+            <el-button @click="drawingDialog.visible = false">取消</el-button>
+            <el-button type="primary" @click="handleSaveDrawing">确定</el-button>
+          </span>
+        </template>
+      </el-dialog>
     </div>
 
     <!-- 新建真值表对话框 -->
@@ -270,7 +353,7 @@
             placeholder="请输入测试ID"
           />
         </el-form-item>
-        <el-form-item label="测试级别" required>
+        <el-form-item label="���试级别" required>
           <el-select v-model="groupDialog.form.level">
             <el-option :value="1" label="安全类" />
             <el-option :value="2" label="普通类" />
@@ -316,13 +399,15 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { getDrawings, createDrawing, updateDrawing, deleteDrawing } from '@/api/drawingApi'
 
 // 折叠面板状态
 const isTemplateListExpanded = ref(['templateList'])
 const isEditSectionExpanded = ref(['editSection'])
 const isResourceSectionExpanded = ref(['resourceSection'])
+const isDrawingSectionExpanded = ref(['drawingSection'])
 
-// 真值表列表
+// 真值表表
 const templateList = ref([
   {
     id: 1,
@@ -476,6 +561,18 @@ const recentTemplates = ref([
   }
 ])
 
+// 图纸对话框状态
+const drawingDialog = ref({
+  visible: false,
+  isEdit: false,
+  form: {
+    id: null,
+    drawing_number: '',
+    version: '',
+    description: ''
+  }
+})
+
 // 基本操作函数
 const showCreateDialog = () => {
   createDialog.value.visible = true
@@ -483,7 +580,7 @@ const showCreateDialog = () => {
 
 const editTemplate = (template) => {
   currentTemplate.value = template
-  // 默认展开第一个测试组
+  // 默认展开第一个测试��
   if (testGroups.value.length > 0) {
     expandedGroups.value.add(testGroups.value[0].testId)
   }
@@ -491,7 +588,7 @@ const editTemplate = (template) => {
 
 const deleteTemplate = (template) => {
   ElMessageBox.confirm(
-    `确定要删除真值表"${template.name}"吗？`,
+    `确定要删除真值表"${template.name}"？`,
     '警告',
     {
       confirmButtonText: '确定',
@@ -652,7 +749,7 @@ const createTemplate = () => {
   editTemplate(newTemplate)
 }
 
-// 处理图纸选择
+// 处理图���选择
 const handleDrawingSelect = () => {
   const drawing = drawingList.value.find(d => d.drawingNo === createDialog.value.form.drawingNo)
   if (drawing) {
@@ -683,6 +780,107 @@ const openTemplate = (template) => {
     expandedGroups.value.add(testGroups.value[0].testId)
   }
 }
+
+// 显示新建图纸对话框
+const showNewDrawingDialog = () => {
+  drawingDialog.value.isEdit = false
+  drawingDialog.value.form = {
+    id: null,
+    drawing_number: '',
+    version: '',
+    description: ''
+  }
+  drawingDialog.value.visible = true
+}
+
+// 编辑图纸
+const handleEditDrawing = (drawing) => {
+  drawingDialog.value.isEdit = true
+  drawingDialog.value.form = {
+    id: drawing.id,
+    drawing_number: drawing.drawing_number,
+    version: drawing.version,
+    description: drawing.description
+  }
+  drawingDialog.value.visible = true
+}
+
+// 保存图纸
+const handleSaveDrawing = async () => {
+  try {
+    const { id, drawing_number, version, description } = drawingDialog.value.form
+    
+    // 验证必填字段
+    if (!drawing_number || !version) {
+      ElMessage.warning('请填写必填字段')
+      return
+    }
+
+    if (drawingDialog.value.isEdit) {
+      // 更新图纸
+      await updateDrawing(id, {
+        drawing_number,
+        version,
+        description
+      })
+      ElMessage.success('图纸更新成功')
+    } else {
+      // 创建图纸
+      await createDrawing({
+        drawing_number,
+        version,
+        description
+      })
+      ElMessage.success('图纸创建成功')
+    }
+
+    drawingDialog.value.visible = false
+    loadDrawingList()
+  } catch (error) {
+    console.error('保存图纸失败:', error)
+    ElMessage.error(error.message || '保存图纸失败')
+  }
+}
+
+// 删除图纸
+const handleDeleteDrawing = async (drawing) => {
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除图纸"${drawing.drawing_number} (V${drawing.version})"吗？`,
+      '警告',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+
+    await deleteDrawing(drawing.id)
+    ElMessage.success('图纸删除成功')
+    loadDrawingList()
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('删除图纸失败:', error)
+      ElMessage.error(error.message || '删除图纸失败')
+    }
+  }
+}
+
+// 加载图纸列表
+const loadDrawingList = async () => {
+  try {
+    const response = await getDrawings()
+    drawingList.value = response.data.data
+  } catch (error) {
+    console.error('加载图纸列表失败:', error)
+    ElMessage.error(error.message || '加载图纸列表失败')
+  }
+}
+
+// 在组件挂载时加载图纸列表
+onMounted(() => {
+  loadDrawingList()
+})
 </script>
 
 <style scoped>
@@ -861,5 +1059,24 @@ const openTemplate = (template) => {
 
 .drawing-select :deep(.el-select) {
   width: 100%;
+}
+
+.drawing-section {
+  margin-top: 20px;
+}
+
+.drawing-card {
+  margin-bottom: 20px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
 }
 </style> 

@@ -198,5 +198,16 @@ INSERT INTO device_type_points (device_type_id, point_index, point_type, point_n
 (1, 19, 'DI', 'DI16', 'EDB数字输入点16 - 后段'),
 (1, 20, 'DI', 'DI17', 'EDB数字输入点17 - 后段');
 
--- 开启���键检查
+-- 开启键检查
 SET FOREIGN_KEY_CHECKS = 1;
+
+-- 创建图纸表
+CREATE TABLE IF NOT EXISTS drawings (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  drawing_number VARCHAR(50) NOT NULL COMMENT '图纸编号',
+  version VARCHAR(20) NOT NULL COMMENT '版本号',
+  description TEXT COMMENT '描述',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  UNIQUE KEY uk_drawing_version (drawing_number, version)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='图纸表';
