@@ -226,7 +226,7 @@ CREATE TABLE IF NOT EXISTS truth_tables (
   FOREIGN KEY (drawing_id) REFERENCES drawings(id) ON DELETE RESTRICT,
   FOREIGN KEY (created_by) REFERENCES users(id),
   FOREIGN KEY (updated_by) REFERENCES users(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='真值表主表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='真值表主���';
 
 -- 测试组表
 CREATE TABLE IF NOT EXISTS test_groups (

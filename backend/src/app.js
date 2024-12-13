@@ -49,11 +49,11 @@ app.use((req, res, next) => {
 console.log('=== 开始注册路由 ===');
 
 // 添加路由前缀
-app.use('/projects', projectRoutes);
-app.use('/devices', deviceRoutes);
-app.use('/deviceTypes', deviceTypeRoutes);
-app.use('/users', userRoutes);
-app.use('/drawings', drawingRoutes);
+app.use('/api/projects', projectRoutes);
+app.use('/api/devices', deviceRoutes);
+app.use('/api/deviceTypes', deviceTypeRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/drawings', drawingRoutes);
 
 console.log('=== 路由注册完成 ===');
 
