@@ -31,7 +31,7 @@
 <script>
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import axios from 'axios'
+import api from '../utils/api'
 
 export default {
   name: 'DeviceList',
@@ -44,7 +44,7 @@ export default {
       loading.value = true
       try {
         console.log('开始加载设备列表')
-        const response = await axios.get(import.meta.env.VITE_API_URL + '/api/devices')
+        const response = await api.get('/api/devices')
         console.log('获取到的数据:', response.data)
         if (response.data.code === 200) {
           devices.value = response.data.data

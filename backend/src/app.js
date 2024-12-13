@@ -46,11 +46,16 @@ app.use((req, res, next) => {
 });
 
 // API路由
-app.use('/api/projects', projectRoutes);
-app.use('/api/devices', deviceRoutes);
-app.use('/api/deviceTypes', deviceTypeRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/drawings', drawingRoutes);
+console.log('=== 开始注册路由 ===');
+
+// 添加路由前缀
+app.use('/projects', projectRoutes);
+app.use('/devices', deviceRoutes);
+app.use('/deviceTypes', deviceTypeRoutes);
+app.use('/users', userRoutes);
+app.use('/drawings', drawingRoutes);
+
+console.log('=== 路由注册完成 ===');
 
 // 根路径
 app.get('/', (req, res) => {
@@ -95,7 +100,7 @@ async function initializeServices() {
         // 启动HTTP服务器
         server.listen(PORT, '0.0.0.0', () => {
             console.log(`服务器正在运行: http://0.0.0.0:${PORT}`);
-            console.log(`进程ID: ${process.pid}`);
+            console.log(`程ID: ${process.pid}`);
             console.log('所有服务初始化完成');
         });
     } catch (error) {

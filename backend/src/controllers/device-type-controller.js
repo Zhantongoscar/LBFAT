@@ -4,7 +4,9 @@ const deviceTypeController = {
     // 获取所有设备类型
     async getAllTypes(req, res) {
         try {
-            console.log('开始查询设备类型...');
+            console.log('=== 开始获取设备类型列表 ===');
+            console.log('请求头:', req.headers);
+            console.log('请求参数:', req.query);
             
             const deviceTypes = await db.query(`
                 SELECT 
@@ -17,9 +19,12 @@ const deviceTypeController = {
                 FROM device_types dt
                 ORDER BY dt.id
             `);
+            console.log('查询结果:', deviceTypes);
+            console.log(`获取到 ${deviceTypes.length} 个设备类型`);
 
             // 分别查询每个设备类型的点位配置
             const result = await Promise.all(deviceTypes.map(async (type) => {
+                console.log(`正在查询设备类型 ${type.id} 的点位配置`);
                 const points = await db.query(`
                     SELECT 
                         point_index,
@@ -30,6 +35,7 @@ const deviceTypeController = {
                     WHERE device_type_id = ? 
                     ORDER BY point_index
                 `, [type.id]);
+                console.log(`设备类型 ${type.id} 有 ${points.length} 个点位配置`);
 
                 return {
                     ...type,
@@ -37,10 +43,8 @@ const deviceTypeController = {
                 };
             }));
 
-            console.log('查询结果:', {
-                deviceTypesCount: deviceTypes.length,
-                resultCount: result.length
-            });
+            console.log('=== 查询完成 ===');
+            console.log('最终结果:', result);
 
             res.json({
                 code: 200,
@@ -49,6 +53,7 @@ const deviceTypeController = {
             });
         } catch (error) {
             console.error('获取设备类型失败:', error);
+            console.error('错误堆栈:', error.stack);
             res.status(500).json({
                 code: 500,
                 message: error.message || '获取设备类型失败'
@@ -135,7 +140,7 @@ const deviceTypeController = {
             const deviceTypeId = result.insertId;
             console.log('设备类型已创建, ID:', deviceTypeId);
 
-            // 插入点位配置
+            // 插入��位配置
             if (Array.isArray(points) && points.length > 0) {
                 for (const point of points) {
                     await connection.execute(

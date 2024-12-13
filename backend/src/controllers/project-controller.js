@@ -4,16 +4,25 @@ const mqttService = require('../services/mqtt-service');
 // 获取所有项目
 exports.getAllProjects = async (req, res) => {
     try {
+        console.log('=== 开始获取项目列表 ===');
+        console.log('请求头:', req.headers);
+        console.log('请求参数:', req.query);
+        
         const projects = await Project.findAll();
+        console.log('查询结果:', projects);
+        console.log(`获取到 ${projects.length} 个项目`);
+        
         res.json({
             code: 200,
             message: 'success',
             data: projects
         });
     } catch (error) {
+        console.error('获取项目列表失败:', error);
+        console.error('错误堆栈:', error.stack);
         res.status(500).json({
             code: 500,
-            message: error.message
+            message: error.message || '获取项目列表失败'
         });
     }
 };
@@ -135,7 +144,7 @@ exports.deleteProject = async (req, res) => {
             message: 'Project deleted successfully'
         });
     } catch (error) {
-        console.error('删除项目���败:', error);
+        console.error('删除项目失败:', error);
         res.status(500).json({
             code: 500,
             message: error.message
