@@ -51,8 +51,6 @@ app.use('/api/devices', deviceRoutes);
 app.use('/api/deviceTypes', deviceTypeRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/drawings', drawingRoutes);
-// 同时支持不带/api前缀的路由
-app.use('/drawings', drawingRoutes);
 
 // 根路径
 app.get('/', (req, res) => {

@@ -211,3 +211,61 @@ CREATE TABLE IF NOT EXISTS drawings (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   UNIQUE KEY uk_drawing_version (drawing_number, version)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='图纸表';
+
+-- 真值表主表
+CREATE TABLE IF NOT EXISTS truth_tables (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  name VARCHAR(100) NOT NULL COMMENT '真值表名称',
+  drawing_id INT NOT NULL COMMENT '关联图纸ID',
+  version VARCHAR(20) NOT NULL COMMENT '版本号',
+  description TEXT COMMENT '描述',
+  created_by INT COMMENT '创建人ID',
+  updated_by INT COMMENT '最后修改人ID',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  FOREIGN KEY (drawing_id) REFERENCES drawings(id) ON DELETE RESTRICT,
+  FOREIGN KEY (created_by) REFERENCES users(id),
+  FOREIGN KEY (updated_by) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='真值表主表';
+
+-- 测试组表
+CREATE TABLE IF NOT EXISTS test_groups (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  truth_table_id INT NOT NULL COMMENT '所属真值表ID',
+  test_id INT NOT NULL COMMENT '测试ID',
+  level TINYINT NOT NULL DEFAULT 2 COMMENT '测试级别：1-安全类，2-普通类',
+  description TEXT COMMENT '描述',
+  sequence INT NOT NULL DEFAULT 0 COMMENT '显示顺序',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  FOREIGN KEY (truth_table_id) REFERENCES truth_tables(id) ON DELETE CASCADE,
+  UNIQUE KEY uk_truth_table_test_id (truth_table_id, test_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='测试组表';
+
+-- 测试项表
+CREATE TABLE IF NOT EXISTS test_items (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  group_id INT NOT NULL COMMENT '所属测试组ID',
+  device_id VARCHAR(50) NOT NULL COMMENT '设备ID',
+  unit_id VARCHAR(50) NOT NULL COMMENT '单元ID',
+  unit_type ENUM('DI', 'DO', 'AI', 'AO') NOT NULL COMMENT '单元类型',
+  set_value FLOAT NULL COMMENT '设定值',
+  expected_value FLOAT NULL COMMENT '期望值',
+  enabled BOOLEAN NOT NULL DEFAULT true COMMENT '是否启用',
+  description TEXT COMMENT '描述',
+  error_message TEXT COMMENT '错误提示',
+  fault_details TEXT COMMENT '故障详情',
+  sequence INT NOT NULL DEFAULT 0 COMMENT '显示顺序',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  FOREIGN KEY (group_id) REFERENCES test_groups(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='测试项表';
+
+-- 插入示例数据
+INSERT INTO drawings (drawing_number, version, description) VALUES
+('DWG-001', '1.0', '示例图纸1'),
+('DWG-002', '1.0', '示例图纸2');
+
+INSERT INTO truth_tables (name, drawing_id, version, description) VALUES
+('安全开关测试', 1, '1.0', '安全开关功能测试真值表'),
+('电机控制测试', 2, '1.0', '电机控制功能测试真值表');
