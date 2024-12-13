@@ -300,28 +300,32 @@
       width="500px"
     >
       <el-form :model="createDialog.form" label-width="100px">
-        <el-form-item label="图纸编号" required>
-          <div class="drawing-select">
-            <el-select
-              v-model="createDialog.form.drawingNo"
-              placeholder="请选择图纸"
-              @change="handleDrawingSelect"
-              style="width: 100%"
-            >
-              <el-option
-                v-for="drawing in drawingList"
-                :key="drawing.id"
-                :label="drawing.drawingNo"
-                :value="drawing.drawingNo"
-              />
-            </el-select>
-          </div>
-        </el-form-item>
-        <el-form-item label="版本" required>
-          <el-input v-model="createDialog.form.version" placeholder="请输入版本号"/>
-        </el-form-item>
         <el-form-item label="名称" required>
           <el-input v-model="createDialog.form.name" placeholder="请输入真值表名称"/>
+        </el-form-item>
+        <el-form-item label="关联图纸" required>
+          <el-select
+            v-model="createDialog.form.drawingNo"
+            placeholder="请选择图纸"
+            @change="handleDrawingSelect"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="drawing in drawingList"
+              :key="drawing.id"
+              :label="`${drawing.drawing_number} (V${drawing.version})`"
+              :value="drawing.drawing_number"
+            >
+              <div style="display: flex; justify-content: space-between; align-items: center">
+                <span>{{ drawing.drawing_number }}</span>
+                <span style="color: #8492a6; font-size: 13px">V{{ drawing.version }}</span>
+              </div>
+              <div style="font-size: 12px; color: #8492a6">{{ drawing.description || '无描述' }}</div>
+            </el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="版本号">
+          <el-input v-model="createDialog.form.version" placeholder="自动填充" disabled/>
         </el-form-item>
         <el-form-item label="描述">
           <el-input
@@ -353,7 +357,7 @@
             placeholder="请输入测试ID"
           />
         </el-form-item>
-        <el-form-item label="���试级别" required>
+        <el-form-item label="测试级别" required>
           <el-select v-model="groupDialog.form.level">
             <el-option :value="1" label="安全类" />
             <el-option :value="2" label="普通类" />
@@ -405,7 +409,7 @@ import { getDrawings, createDrawing, updateDrawing, deleteDrawing } from '@/api/
 const isTemplateListExpanded = ref(['templateList'])
 const isEditSectionExpanded = ref(['editSection'])
 const isResourceSectionExpanded = ref(['resourceSection'])
-const isDrawingSectionExpanded = ref(['drawingSection'])
+const isDrawingSectionExpanded = ref([])
 
 // 真值表表
 const templateList = ref([
@@ -525,9 +529,9 @@ const drawingList = ref([
 const createDialog = ref({
   visible: false,
   form: {
+    name: '',
     drawingNo: '',
     version: '',
-    name: '',
     description: ''
   }
 })
@@ -576,11 +580,12 @@ const drawingDialog = ref({
 // 基本操作函数
 const showCreateDialog = () => {
   createDialog.value.visible = true
+  loadDrawingList()
 }
 
 const editTemplate = (template) => {
   currentTemplate.value = template
-  // 默认展开第一个测试��
+  // 默认展开第一个测试组
   if (testGroups.value.length > 0) {
     expandedGroups.value.add(testGroups.value[0].testId)
   }
@@ -734,26 +739,45 @@ const deleteResource = (resource) => {
 }
 
 // 创建真值表
-const createTemplate = () => {
-  const { drawingNo, version, name, description } = createDialog.value.form
-  const newTemplate = {
-    id: templateList.value.length + 1,
-    drawingNo,
-    version,
-    name,
-    description,
-    updateTime: new Date().toLocaleString()
+const createTemplate = async () => {
+  try {
+    const { name, drawingNo, version, description } = createDialog.value.form
+    
+    // 验证必填字段
+    if (!name) {
+      ElMessage.warning('请输入真值表名称')
+      return
+    }
+    if (!drawingNo) {
+      ElMessage.warning('请选择关联图纸')
+      return
+    }
+
+    const newTemplate = {
+      id: templateList.value.length + 1,
+      name,
+      drawingNo,
+      version,
+      description,
+      updateTime: new Date().toLocaleString()
+    }
+    
+    templateList.value.push(newTemplate)
+    createDialog.value.visible = false
+    editTemplate(newTemplate)
+    ElMessage.success('创建成功')
+  } catch (error) {
+    console.error('创建真值表失败:', error)
+    ElMessage.error(error.message || '创建失败')
   }
-  templateList.value.push(newTemplate)
-  createDialog.value.visible = false
-  editTemplate(newTemplate)
 }
 
-// 处理图���选择
-const handleDrawingSelect = () => {
-  const drawing = drawingList.value.find(d => d.drawingNo === createDialog.value.form.drawingNo)
+// 处理图纸选择
+const handleDrawingSelect = async () => {
+  const drawing = drawingList.value.find(d => d.drawing_number === createDialog.value.form.drawingNo)
   if (drawing) {
-    createDialog.value.form.name = drawing.name
+    createDialog.value.form.version = drawing.version
+    ElMessage.success(`已选择图纸: ${drawing.drawing_number} (V${drawing.version})`)
   }
 }
 
@@ -1000,7 +1024,7 @@ onMounted(() => {
   width: 100%;
 }
 
-/* 确保表格内的输入控件样式正确 */
+/* 确保表格内的入控件样式正确 */
 :deep(.el-input),
 :deep(.el-select),
 :deep(.el-input-number) {
