@@ -90,20 +90,16 @@ export default {
         const data = response.data
         
         if (response.status === 200 && data.code === 200) {
-          console.log('登录响应数据:', data.data)
-          console.log('用户信息:', data.data.user)
           userStore.setToken(data.data.token)
           userStore.setUser(data.data.user)
-          console.log('Store中的用户信息:', userStore.user)
-          console.log('是否是管理员:', userStore.isAdmin)
           ElMessage.success('登录成功')
           
-          // 获取重定向路径
-          const redirectPath = userStore.redirectPath
+          // 获取重定向路径，如果没有则默认跳转到项目列表页面
+          const redirectPath = userStore.redirectPath || '/projects'
           // 重置重定向路径
           userStore.setRedirectPath('/')
-          // 跳转到目标页面
-          router.push(redirectPath)
+          // 使用 replace 而不是 push，这样可以防止用户点击返回时回到登录页
+          await router.replace(redirectPath)
         } else {
           ElMessage.error(data.message || '登录失败')
         }

@@ -6,6 +6,7 @@ const deviceRoutes = require('./routes/device-routes');
 const deviceTypeRoutes = require('./routes/device-type-routes');
 const userRoutes = require('./routes/user-routes');
 const drawingRoutes = require('./routes/drawing-routes');
+const truthTableRoutes = require('./routes/truth-table.js');
 const mqttService = require('./services/mqtt-service');
 const WebSocketService = require('./services/websocket-service');
 const db = require('./utils/db');
@@ -54,6 +55,7 @@ app.use('/api/devices', deviceRoutes);
 app.use('/api/deviceTypes', deviceTypeRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/drawings', drawingRoutes);
+app.use('/api/truth-tables', truthTableRoutes);
 
 console.log('=== 路由注册完成 ===');
 

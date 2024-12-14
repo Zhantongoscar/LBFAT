@@ -6,6 +6,7 @@ import DeviceList from '../views/DeviceList.vue'
 import DeviceConfig from '../views/DeviceConfig.vue'
 import MessageList from '../views/MessageList.vue'
 import DeviceTest from '../views/DeviceTest.vue'
+import DrawingManager from '../views/DrawingManager.vue'
 import { useUserStore } from '../stores/user'
 
 const routes = [
@@ -54,6 +55,13 @@ const routes = [
     component: DeviceTest,
     meta: { requiresAuth: true }
   },
+  // 图纸管理
+  {
+    path: '/drawings',
+    name: 'DrawingManager',
+    component: DrawingManager,
+    meta: { requiresAuth: true }
+  },
   // 用户管理（仅管理员可访问）
   {
     path: '/users',
@@ -96,28 +104,29 @@ const router = createRouter({
 // 路由守卫
 router.beforeEach((to, from, next) => {
   const userStore = useUserStore()
-  const isAuthenticated = userStore.isAuthenticated
-  const isAdmin = userStore.isAdmin
   
-  // 如果需要认证
-  if (to.meta.requiresAuth) {
-    if (!isAuthenticated) {
-      // 保存用户想要访问的页面
-      userStore.setRedirectPath(to.fullPath)
-      next('/login')
-      return
-    }
-    
-    // 如果需要管理员权限
-    if (to.meta.requiresAdmin && !isAdmin) {
-      next('/')
-      return
-    }
+  // 如果用户已登录且要去登录页，重定向到首页
+  if (to.path === '/login' && userStore.isAuthenticated) {
+    next('/projects')
+    return
   }
   
-  // 如果已登录用户访问登录页，重定向到首页
-  if (to.path === '/login' && isAuthenticated) {
-    next('/')
+  // 不需要认证的路由直接放行
+  if (!to.meta.requiresAuth) {
+    next()
+    return
+  }
+  
+  // 未登录跳转到登录页
+  if (!userStore.isAuthenticated) {
+    userStore.setRedirectPath(to.fullPath)
+    next('/login')
+    return
+  }
+  
+  // 需要管理员权限但不是管理员
+  if (to.meta.requiresAdmin && !userStore.isAdmin) {
+    next('/projects')
     return
   }
   

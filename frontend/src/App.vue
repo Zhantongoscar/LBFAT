@@ -106,6 +106,10 @@
             <el-icon><Operation /></el-icon>
             <template #title>设备测试</template>
           </el-menu-item>
+          <el-menu-item index="/drawings">
+            <el-icon><Picture /></el-icon>
+            <template #title>图纸管理</template>
+          </el-menu-item>
         </el-menu>
       </el-aside>
       <el-main>
@@ -132,7 +136,8 @@ import {
   Fold,
   User,
   ArrowDown,
-  SwitchButton
+  SwitchButton,
+  Picture
 } from '@element-plus/icons-vue'
 import { ElMessageBox } from 'element-plus'
 
@@ -150,7 +155,8 @@ export default {
     Fold,
     User,
     ArrowDown,
-    SwitchButton
+    SwitchButton,
+    Picture
   },
   setup() {
     const router = useRouter()

@@ -1,28 +1,22 @@
-<!-- 真值表管理页面 -->
+<!-- 图纸管理页面 -->
 <template>
-  <div class="truth-table-manager">
+  <div class="drawing-manager">
     <el-card class="list-card">
       <template #header>
         <div class="card-header">
-          <span>真值表列表</span>
-          <el-button type="primary" @click="showCreateDialog">新建真值表</el-button>
+          <span>图纸列表</span>
+          <el-button type="primary" @click="showDrawingDialog">新建图纸</el-button>
         </div>
       </template>
 
-      <!-- 真值表列表 -->
-      <el-table :data="truthTables" style="width: 100%" v-loading="loading">
-        <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="name" label="名称" />
-        <el-table-column label="图纸编号" width="120">
-          <template #default="{ row }">
-            {{ getDrawingNumber(row.drawing_id) }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="version" label="版本" width="100" />
+      <!-- 图纸列表 -->
+      <el-table :data="drawings" style="width: 100%" v-loading="loading">
+        <el-table-column prop="drawing_number" label="图纸编号" width="150" />
+        <el-table-column prop="version" label="版本号" width="100" />
         <el-table-column prop="description" label="描述" show-overflow-tooltip />
-        <el-table-column prop="updated_at" label="更新时间" width="180">
+        <el-table-column prop="created_at" label="创建时间" width="180">
           <template #default="{ row }">
-            {{ formatDate(row.updated_at) }}
+            {{ formatDate(row.created_at) }}
           </template>
         </el-table-column>
         <el-table-column label="操作" width="200" fixed="right">
@@ -36,28 +30,18 @@
       </el-table>
     </el-card>
 
-    <!-- 真值表新建/编辑对话框 -->
+    <!-- 图纸新建/编辑对话框 -->
     <el-dialog
       :title="dialogTitle"
       v-model="dialogVisible"
-      width="60%"
+      width="50%"
       :close-on-click-modal="false"
     >
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
-        <el-form-item label="名称" prop="name">
-          <el-input v-model="form.name" placeholder="请输入真值表名称" />
+        <el-form-item label="图纸编号" prop="drawing_number">
+          <el-input v-model="form.drawing_number" placeholder="请输入图纸编号" />
         </el-form-item>
-        <el-form-item label="图纸" prop="drawing_id">
-          <el-select v-model="form.drawing_id" placeholder="请选择图纸">
-            <el-option
-              v-for="drawing in drawings"
-              :key="drawing.id"
-              :label="drawing.drawing_number"
-              :value="drawing.id"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="版本" prop="version">
+        <el-form-item label="版本号" prop="version">
           <el-input v-model="form.version" placeholder="请输入版本号" />
         </el-form-item>
         <el-form-item label="描述" prop="description">
@@ -85,10 +69,9 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import api from '@/utils/api'
 
 export default {
-  name: 'TruthTableManager',
+  name: 'DrawingManager',
   setup() {
-    // 真值表数据
-    const truthTables = ref([])
+    // 数据列表
     const drawings = ref([])
     const loading = ref(false)
 
@@ -101,52 +84,38 @@ export default {
     const formRef = ref(null)
     const form = ref({
       id: null,
-      name: '',
-      drawing_id: '',
+      drawing_number: '',
       version: '',
       description: ''
     })
 
     // 表单验证规则
     const rules = {
-      name: [{ required: true, message: '请输入真值表名称', trigger: 'blur' }],
-      drawing_id: [{ required: true, message: '请选择图纸', trigger: 'change' }],
+      drawing_number: [{ required: true, message: '请输入图纸编号', trigger: 'blur' }],
       version: [{ required: true, message: '请输入版本号', trigger: 'blur' }]
-    }
-
-    // 获取真值表列表
-    const fetchTruthTables = async () => {
-      loading.value = true
-      try {
-        const res = await api.get('/truth-tables')
-        truthTables.value = res.data.data
-      } catch (error) {
-        console.error('获取真值表列表失败:', error)
-        ElMessage.error('获取真值表列表失败')
-      } finally {
-        loading.value = false
-      }
     }
 
     // 获取图纸列表
     const fetchDrawings = async () => {
+      loading.value = true
       try {
         const res = await api.get('/drawings')
         drawings.value = res.data.data
       } catch (error) {
         console.error('获取图纸列表失败:', error)
         ElMessage.error('获取图纸列表失败')
+      } finally {
+        loading.value = false
       }
     }
 
     // 显示创建对话框
-    const showCreateDialog = () => {
+    const showDrawingDialog = () => {
       isEdit.value = false
-      dialogTitle.value = '新建真值表'
+      dialogTitle.value = '新建图纸'
       form.value = {
         id: null,
-        name: '',
-        drawing_id: '',
+        drawing_number: '',
         version: '',
         description: ''
       }
@@ -156,7 +125,7 @@ export default {
     // 显示编辑对话框
     const handleEdit = (row) => {
       isEdit.value = true
-      dialogTitle.value = '编辑真值表'
+      dialogTitle.value = '编辑图纸'
       form.value = { ...row }
       dialogVisible.value = true
     }
@@ -164,16 +133,17 @@ export default {
     // 处理删除
     const handleDelete = async (row) => {
       try {
-        await ElMessageBox.confirm('确定要删除这个真值表吗？', '提示', {
-          type: 'warning'
+        await ElMessageBox.confirm('确定要删除这个图纸吗？', '提示', {
+          type: 'warning',
+          message: '删除图纸将同时删除与之关联的真值表，是否继续？'
         })
-        await api.delete(`/truth-tables/${row.id}`)
+        await api.delete(`/drawings/${row.id}`)
         ElMessage.success('删除成功')
-        fetchTruthTables()
+        fetchDrawings()
       } catch (error) {
         if (error !== 'cancel') {
-          console.error('删除真值表失败:', error)
-          ElMessage.error('删除真值表失败')
+          console.error('删除图纸失败:', error)
+          ElMessage.error('删除图纸失败')
         }
       }
     }
@@ -186,27 +156,21 @@ export default {
         await formRef.value.validate()
 
         if (isEdit.value) {
-          await api.put(`/truth-tables/${form.value.id}`, form.value)
+          await api.put(`/drawings/${form.value.id}`, form.value)
           ElMessage.success('更新成功')
         } else {
-          await api.post('/truth-tables', form.value)
+          await api.post('/drawings', form.value)
           ElMessage.success('创建成功')
         }
 
         dialogVisible.value = false
-        fetchTruthTables()
+        fetchDrawings()
       } catch (error) {
         if (error !== 'cancel') {
-          console.error('保存真值表失败:', error)
-          ElMessage.error('保存真值表失败')
+          console.error('保存图纸失败:', error)
+          ElMessage.error('保存图纸失败')
         }
       }
-    }
-
-    // 获取图纸编号
-    const getDrawingNumber = (drawingId) => {
-      const drawing = drawings.value.find(d => d.id === drawingId)
-      return drawing ? drawing.drawing_number : '-'
     }
 
     // 格式化日期
@@ -215,29 +179,21 @@ export default {
     }
 
     onMounted(() => {
-      fetchTruthTables()
       fetchDrawings()
     })
 
     return {
-      // 数据
-      truthTables,
       drawings,
       loading,
-
-      // 对话框
       dialogVisible,
       dialogTitle,
       form,
       formRef,
       rules,
-
-      // 方法
-      showCreateDialog,
+      showDrawingDialog,
       handleEdit,
       handleDelete,
       handleSubmit,
-      getDrawingNumber,
       formatDate
     }
   }
@@ -245,7 +201,7 @@ export default {
 </script>
 
 <style scoped>
-.truth-table-manager {
+.drawing-manager {
   padding: 20px;
 }
 
