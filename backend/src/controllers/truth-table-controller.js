@@ -88,8 +88,8 @@ exports.getTable = async (req, res) => {
 exports.createTable = async (req, res) => {
     let connection;
     try {
-        const { name, drawing_id, version, description, groups } = req.body;
-        const userId = req.user?.id;
+        const { name, drawing_id, version, description = null, groups = [] } = req.body;
+        const userId = req.user?.id || null;
 
         // 验证必填字段
         if (!name || !drawing_id || !version) {
@@ -103,12 +103,33 @@ exports.createTable = async (req, res) => {
         connection = await db.getConnection();
         await connection.beginTransaction();
 
-        // 创建真值表
+        // 验证图纸ID和版本是否存在
+        const [drawing] = await connection.execute(
+            'SELECT id, drawing_number, version FROM drawings WHERE id = ? AND version = ?',
+            [drawing_id, version]
+        );
+
+        if (!drawing) {
+            await connection.rollback();
+            return res.status(400).json({
+                code: 400,
+                message: '指定的图纸ID和版本不存在'
+            });
+        }
+
+        // 创建真值表，确保所有参数都有默认值
         const [result] = await connection.execute(
             `INSERT INTO truth_tables 
             (name, drawing_id, version, description, created_by, updated_by) 
             VALUES (?, ?, ?, ?, ?, ?)`,
-            [name, drawing_id, version, description, userId, userId]
+            [
+                name || '',
+                drawing_id || null,
+                version || '',
+                description || null,
+                userId || null,
+                userId || null
+            ]
         );
 
         const truthTableId = result.insertId;
@@ -120,7 +141,13 @@ exports.createTable = async (req, res) => {
                     `INSERT INTO test_groups 
                     (truth_table_id, test_id, level, description, sequence) 
                     VALUES (?, ?, ?, ?, ?)`,
-                    [truthTableId, group.test_id, group.level, group.description, group.sequence]
+                    [
+                        truthTableId,
+                        group.test_id || null,
+                        group.level || null,
+                        group.description || null,
+                        group.sequence || 0
+                    ]
                 );
 
                 const groupId = groupResult.insertId;
@@ -133,10 +160,19 @@ exports.createTable = async (req, res) => {
                             expected_value, enabled, description, error_message, 
                             fault_details, sequence) 
                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                            [groupId, item.device_id, item.unit_id, item.unit_type,
-                            item.set_value, item.expected_value, item.enabled,
-                            item.description, item.error_message, item.fault_details,
-                            item.sequence]
+                            [
+                                groupId,
+                                item.device_id || null,
+                                item.unit_id || null,
+                                item.unit_type || null,
+                                item.set_value || null,
+                                item.expected_value || null,
+                                item.enabled || false,
+                                item.description || null,
+                                item.error_message || null,
+                                item.fault_details || null,
+                                item.sequence || 0
+                            ]
                         );
                     }
                 }
@@ -272,5 +308,34 @@ exports.deleteTable = async (req, res) => {
         if (connection) {
             connection.release();
         }
+    }
+};
+
+// 获取可用的图纸和版本列表
+exports.getAvailableDrawings = async (req, res) => {
+    try {
+        const sql = `
+            SELECT 
+                id,
+                drawing_number,
+                version,
+                description
+            FROM drawings 
+            ORDER BY drawing_number, version DESC
+        `;
+        
+        const drawings = await db.query(sql);
+        
+        res.json({
+            code: 200,
+            message: 'success',
+            data: drawings
+        });
+    } catch (error) {
+        console.error('获取可用图纸列表失败:', error);
+        res.status(500).json({
+            code: 500,
+            message: error.message || '获取可用图纸列表失败'
+        });
     }
 }; 

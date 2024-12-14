@@ -1,5 +1,10 @@
 import api from '@/utils/api'
 
+// 获取可用的图纸和版本列表
+export function getAvailableDrawings() {
+    return api.get('/api/truth-tables/available-drawings')
+}
+
 // 获取真值表列表
 export function getTruthTables() {
     return api.get('/api/truth-tables')

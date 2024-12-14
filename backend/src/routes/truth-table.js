@@ -3,6 +3,9 @@ const router = express.Router();
 const truthTableController = require('../controllers/truth-table-controller');
 // const auth = require('../middleware/auth');  // 暂时注释掉认证中间件
 
+// 获取可用的图纸和版本列表
+router.get('/available-drawings', truthTableController.getAvailableDrawings);
+
 // 获取所有真值表
 router.get('/', truthTableController.getAllTables);
 

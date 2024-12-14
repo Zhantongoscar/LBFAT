@@ -38,147 +38,58 @@ class MQTTService {
         }
     }
 
-    async connect() {
-        const host = process.env.MQTT_HOST || 'emqx';
+    async connect(retries = 5, delay = 5000) {
+        const host = process.env.MQTT_HOST || 'lbfat_emqx';
         const port = process.env.MQTT_PORT || 1883;
         const url = `mqtt://${host}:${port}`;
 
         logger.info(`Connecting to MQTT broker at ${url}`);
 
-        return new Promise((resolve, reject) => {
-            this.client = mqtt.connect(url);
-
-            this.client.on('connect', async () => {
-                logger.info('MQTT connected successfully');
-                try {
-                    await this.subscribe();
-                    // 连接成功后立即发送主题列表
-                    WebSocketService.updateTopicList(this.subscriptions);
-                    resolve();
-                } catch (error) {
-                    logger.error('MQTT初始订阅失败:', error);
-                    reject(error);
-                }
-            });
-
-            this.client.on('message', async (topic, message) => {
-                try {
-                    const messageStr = message.toString();
-                    let payload;
-                    try {
-                        payload = JSON.parse(messageStr);
-                    } catch (error) {
-                        logger.error('解析MQTT消息失败', { topic, message: messageStr, error: error.message });
-                        return;
-                    }
-
-                    const parts = topic.split('/');
-                    if (parts.length < 4) {
-                        logger.warn('无效的格式', { topic, parts });
-                        return;
-                    }
-
-                    const projectName = parts[0];
-                    const moduleType = parts[1];
-                    const serialNumber = parts[2];
-
-                    // 处理状态消息
-                    if (topic.endsWith('/status')) {
-                        logger.info('处理设备状态消息', {
-                            topic,
-                            deviceId: `${projectName}/${moduleType}/${serialNumber}`,
-                            status: payload.status,
-                            rssi: payload.rssi
-                        });
-
-                        // 更新数据库中的设备状态
-                        try {
-                            await Device.upsert({
-                                projectName,
-                                moduleType,
-                                serialNumber,
-                                status: payload.status,
-                                rssi: payload.rssi
-                            });
-                            logger.info('设备状态已更新到数据库', {
-                                deviceId: `${projectName}/${moduleType}/${serialNumber}`,
-                                status: payload.status
-                            });
-                        } catch (error) {
-                            logger.error('更新设备状态失败', {
-                                deviceId: `${projectName}/${moduleType}/${serialNumber}`,
-                                error: error.message
-                            });
-                        }
-
-                        // 广播到WebSocket
-                        WebSocketService.broadcastDeviceStatus({
-                            type: 'device_status',
-                            topic,
-                            rawMessage: messageStr,
-                            device: {
-                                projectName,
-                                moduleType,
-                                serialNumber,
-                                status: payload.status,
-                                rssi: payload.rssi
-                            }
-                        });
-                    }
-                    
-                    // 处理响应消息
-                    else if (topic.endsWith('/response')) {
-                        const channel = parts[3];
-                        const deviceId = `${projectName}/${moduleType}/${serialNumber}`;
-                        
-                        logger.info('处理设备响应消息', {
-                            topic,
-                            deviceId,
-                            channel,
-                            command: payload.command,
-                            status: payload.status,
-                            value: payload.value
-                        });
-
-                        // 转发响应消息到WebSocket
-                        WebSocketService.broadcast({
-                            type: 'mqtt_message',
-                            messageType: 'response',
-                            topic,
-                            payload,
-                            device: {
-                                projectName,
-                                moduleType,
-                                serialNumber,
-                                channel
-                            },
-                            timestamp: new Date().toISOString()
-                        });
-                        
-                        logger.info('已转发设备响应消息到WebSocket', { 
-                            deviceId, 
-                            channel,
-                            status: payload.status
-                        });
-                    }
-                } catch (error) {
-                    logger.error('处理MQTT消息失败', {
-                        topic,
-                        message: message.toString(),
-                        error: error.message
+        for (let i = 0; i < retries; i++) {
+            try {
+                await new Promise((resolve, reject) => {
+                    this.client = mqtt.connect(url, {
+                        clientId: `backend_${process.pid}_${Date.now()}`,
+                        clean: true,
+                        connectTimeout: 4000,
+                        reconnectPeriod: 1000
                     });
+
+                    this.client.on('connect', async () => {
+                        logger.info('MQTT connected successfully');
+                        try {
+                            await this.subscribe();
+                            // 连接成功后立即发送主题列表
+                            WebSocketService.updateTopicList(this.subscriptions);
+                            resolve();
+                        } catch (error) {
+                            logger.error('MQTT初始订阅失败:', error);
+                            reject(error);
+                        }
+                    });
+
+                    this.client.on('error', (err) => {
+                        logger.error('MQTT connection error:', err);
+                        reject(err);
+                    });
+
+                    this.client.on('close', () => {
+                        logger.warn('MQTT connection closed');
+                    });
+                });
+
+                // 如果成功连接，直接返回
+                return;
+            } catch (error) {
+                logger.error(`MQTT连接尝试 ${i + 1}/${retries} 失败:`, error);
+                if (i < retries - 1) {
+                    logger.info(`等待 ${delay/1000} 秒后重试...`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                } else {
+                    throw error;
                 }
-            });
-
-            this.client.on('error', (err) => {
-                logger.error('MQTT connection error:', err);
-                reject(err);
-            });
-
-            this.client.on('close', () => {
-                logger.warn('MQTT connection closed');
-            });
-        });
+            }
+        }
     }
 
     async subscribe() {
@@ -292,7 +203,7 @@ class MQTTService {
     // 发布MQTT消息
     async publish(topic, payload) {
         if (!this.client) {
-            logger.error('MQTT客户端未连接，无法发布��息');
+            logger.error('MQTT客户端未连接，无法发布息');
             throw new Error('MQTT client not connected');
         }
 

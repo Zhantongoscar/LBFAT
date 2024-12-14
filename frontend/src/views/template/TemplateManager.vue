@@ -48,9 +48,14 @@
           <el-input v-model="form.name" placeholder="请输入真值表名称" />
         </el-form-item>
         <el-form-item label="图纸" prop="drawing_id">
-          <el-select v-model="form.drawing_id" placeholder="请选择图纸">
+          <el-select 
+            v-model="form.drawing_id" 
+            placeholder="请选择图纸"
+            @change="handleDrawingChange"
+            filterable
+          >
             <el-option
-              v-for="drawing in drawings"
+              v-for="drawing in availableDrawings"
               :key="drawing.id"
               :label="drawing.drawing_number"
               :value="drawing.id"
@@ -58,7 +63,18 @@
           </el-select>
         </el-form-item>
         <el-form-item label="版本" prop="version">
-          <el-input v-model="form.version" placeholder="请输入版本号" />
+          <el-select 
+            v-model="form.version" 
+            placeholder="请选择版本"
+            :disabled="!form.drawing_id"
+          >
+            <el-option
+              v-for="version in availableVersions"
+              :key="version"
+              :label="version"
+              :value="version"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="描述" prop="description">
           <el-input
@@ -82,14 +98,15 @@
 <script>
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import api from '@/utils/api'
+import { getAvailableDrawings, getTruthTables, createTruthTable, updateTruthTable, deleteTruthTable } from '@/api/truthTable'
 
 export default {
   name: 'TruthTableManager',
   setup() {
     // 真值表数据
     const truthTables = ref([])
-    const drawings = ref([])
+    const availableDrawings = ref([])
+    const availableVersions = ref([])
     const loading = ref(false)
 
     // 对话框控制
@@ -111,14 +128,14 @@ export default {
     const rules = {
       name: [{ required: true, message: '请输入真值表名称', trigger: 'blur' }],
       drawing_id: [{ required: true, message: '请选择图纸', trigger: 'change' }],
-      version: [{ required: true, message: '请输入版本号', trigger: 'blur' }]
+      version: [{ required: true, message: '请选择版本', trigger: 'change' }]
     }
 
     // 获取真值表列表
     const fetchTruthTables = async () => {
       loading.value = true
       try {
-        const res = await api.get('/api/truth-tables')
+        const res = await getTruthTables()
         truthTables.value = res.data.data
       } catch (error) {
         console.error('获取真值表列表失败:', error)
@@ -128,14 +145,31 @@ export default {
       }
     }
 
-    // 获取图纸列表
-    const fetchDrawings = async () => {
+    // 获取可用图纸列表
+    const fetchAvailableDrawings = async () => {
       try {
-        const res = await api.get('/api/drawings')
-        drawings.value = res.data.data
+        const res = await getAvailableDrawings()
+        availableDrawings.value = res.data.data
       } catch (error) {
-        console.error('获取图纸列表失败:', error)
-        ElMessage.error('获取图纸列表失败')
+        console.error('获取可用图纸列表失败:', error)
+        ElMessage.error('获取可用图纸列表失败')
+      }
+    }
+
+    // 处理图纸选择变化
+    const handleDrawingChange = (drawingId) => {
+      form.value.version = '' // 清空版本选择
+      if (drawingId) {
+        const selectedDrawing = availableDrawings.value.find(d => d.id === drawingId)
+        if (selectedDrawing) {
+          // 获取选中图纸的所有版本
+          const versions = availableDrawings.value
+            .filter(d => d.drawing_number === selectedDrawing.drawing_number)
+            .map(d => d.version)
+          availableVersions.value = versions
+        }
+      } else {
+        availableVersions.value = []
       }
     }
 
@@ -150,6 +184,7 @@ export default {
         version: '',
         description: ''
       }
+      availableVersions.value = []
       dialogVisible.value = true
     }
 
@@ -158,6 +193,7 @@ export default {
       isEdit.value = true
       dialogTitle.value = '编辑真值表'
       form.value = { ...row }
+      handleDrawingChange(row.drawing_id)
       dialogVisible.value = true
     }
 
@@ -167,7 +203,7 @@ export default {
         await ElMessageBox.confirm('确定要删除这个真值表吗？', '提示', {
           type: 'warning'
         })
-        await api.delete(`/api/truth-tables/${row.id}`)
+        await deleteTruthTable(row.id)
         ElMessage.success('删除成功')
         fetchTruthTables()
       } catch (error) {
@@ -185,11 +221,20 @@ export default {
       try {
         await formRef.value.validate()
 
+        // 处理表单数据，确保没有undefined值
+        const formData = {
+          id: form.value.id || null,
+          name: form.value.name || '',
+          drawing_id: form.value.drawing_id || null,
+          version: form.value.version || '',
+          description: form.value.description || ''
+        }
+
         if (isEdit.value) {
-          await api.put(`/api/truth-tables/${form.value.id}`, form.value)
+          await updateTruthTable(formData.id, formData)
           ElMessage.success('更新成功')
         } else {
-          await api.post('/api/truth-tables', form.value)
+          await createTruthTable(formData)
           ElMessage.success('创建成功')
         }
 
@@ -205,7 +250,7 @@ export default {
 
     // 获取图纸编号
     const getDrawingNumber = (drawingId) => {
-      const drawing = drawings.value.find(d => d.id === drawingId)
+      const drawing = availableDrawings.value.find(d => d.id === drawingId)
       return drawing ? drawing.drawing_number : '-'
     }
 
@@ -216,13 +261,14 @@ export default {
 
     onMounted(() => {
       fetchTruthTables()
-      fetchDrawings()
+      fetchAvailableDrawings()
     })
 
     return {
       // 数据
       truthTables,
-      drawings,
+      availableDrawings,
+      availableVersions,
       loading,
 
       // 对话框
@@ -237,6 +283,7 @@ export default {
       handleEdit,
       handleDelete,
       handleSubmit,
+      handleDrawingChange,
       getDrawingNumber,
       formatDate
     }
