@@ -11,8 +11,34 @@ export function getTruthTables() {
 }
 
 // 获取真值表详情
-export function getTruthTable(id) {
-    return api.get(`/api/truth-tables/${id}`)
+export async function getTruthTable(id) {
+  try {
+    console.log('调用 getTruthTable API, ID:', id);
+    console.log('请求URL:', `/api/truth-tables/${id}`);
+    
+    const response = await api.get(`/api/truth-tables/${id}`);
+    console.log('getTruthTable API 响应:', {
+      status: response.status,
+      statusText: response.statusText,
+      data: response.data,
+      headers: response.headers
+    });
+    return response;
+  } catch (error) {
+    console.error('getTruthTable API 错误:', {
+      message: error.message,
+      code: error.code,
+      response: error.response?.data,
+      status: error.response?.status,
+      config: {
+        url: error.config?.url,
+        method: error.config?.method,
+        baseURL: error.config?.baseURL,
+        headers: error.config?.headers
+      }
+    });
+    throw error;
+  }
 }
 
 // 创建真值表

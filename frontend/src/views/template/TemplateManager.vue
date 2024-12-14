@@ -43,11 +43,30 @@
                     </template>
                   </el-table-column>
                   <el-table-column prop="version" label="版本" width="80" />
-                  <el-table-column label="操作" width="120" fixed="right">
+                  <el-table-column label="操作" width="280" fixed="right">
                     <template #default="{ row }">
                       <el-button-group>
-                        <el-button type="primary" size="small" @click="handleEdit(row)">编辑</el-button>
-                        <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+                        <el-button 
+                          type="success" 
+                          size="small" 
+                          @click="handleSelectTable(row)"
+                        >
+                          设为当前编辑表
+                        </el-button>
+                        <el-button 
+                          type="primary" 
+                          size="small" 
+                          @click="handleEdit(row)"
+                        >
+                          编辑
+                        </el-button>
+                        <el-button 
+                          type="danger" 
+                          size="small" 
+                          @click="handleDelete(row)"
+                        >
+                          删除
+                        </el-button>
                       </el-button-group>
                     </template>
                   </el-table-column>
@@ -98,21 +117,6 @@
           <template #header>
             <div class="card-header">
               <span>编辑工作区 - {{ currentTable.name }}</span>
-              <div class="header-actions">
-                <el-button type="primary" size="small">保存</el-button>
-                <el-tooltip
-                  content="切换到测试执行界面"
-                  placement="top"
-                >
-                  <el-button 
-                    type="success" 
-                    size="small"
-                    @click="handleRunTest"
-                  >
-                    运行测试
-                  </el-button>
-                </el-tooltip>
-              </div>
             </div>
           </template>
           <!-- 这里添加真值表编辑的具体内容 -->
@@ -315,7 +319,7 @@ import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowDown, ArrowRight } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
-import { getAvailableDrawings, getTruthTables, createTruthTable, updateTruthTable, deleteTruthTable, createTestGroup, updateTestGroup, deleteTestGroup } from '@/api/truthTable'
+import { getAvailableDrawings, getTruthTables, createTruthTable, updateTruthTable, deleteTruthTable, createTestGroup, updateTestGroup, deleteTestGroup, getTruthTable } from '@/api/truthTable'
 
 export default {
   name: 'TruthTableManager',
@@ -333,6 +337,7 @@ export default {
     const loading = ref(false)
     const isCollapse = ref(false)
     const currentTable = ref(null)
+    const testGroups = ref([])
 
     // 对话框控制
     const dialogVisible = ref(false)
@@ -357,7 +362,6 @@ export default {
     }
 
     // 测试组数据
-    const testGroups = ref([])
     const editingGroup = ref(null)
     const groupDialogVisible = ref(false)
     const groupForm = ref({
@@ -420,7 +424,6 @@ export default {
     const handleCurrentChange = (row) => {
       currentTable.value = row
       if (row) {
-        localStorage.setItem('lastSelectedTruthTableId', row.id)
         fetchTestGroups(row.id)
       } else {
         testGroups.value = []
@@ -575,14 +578,102 @@ export default {
       })
     }
 
+    // 选择当前真值表
+    const handleSelectTable = async (row) => {
+        try {
+            console.log('开始选择真值表，数据:', row);
+            
+            // 更新本地状态
+            currentTable.value = row
+            localStorage.setItem('lastSelectedTruthTableId', row.id)
+            
+            // 存储当前选中的真值表信息到 localStorage
+            const tableInfo = {
+                id: row.id,
+                name: row.name,
+                drawing_id: row.drawing_id,
+                version: row.version,
+                drawingNumber: getDrawingNumber(row.drawing_id)
+            }
+            localStorage.setItem('selectedTruthTable', JSON.stringify(tableInfo))
+            
+            // 获取测试组数据
+            console.log('开始获取真值表详情，ID:', row.id)
+            try {
+                console.log('调用 getTruthTable API...')
+                const res = await getTruthTable(row.id)
+                console.log('获取到的真值表详情:', res)
+                
+                if (res.data && res.data.data) {
+                    const tableData = res.data.data
+                    if (Array.isArray(tableData.groups)) {
+                        testGroups.value = tableData.groups
+                        ElMessage.success('已设置为当前编辑表')
+                    } else {
+                        console.warn('真值表数据中没有 groups 数组:', tableData)
+                        testGroups.value = []
+                        ElMessage({
+                            message: '已设置为当前编辑表，但该真值表暂无测试组数据',
+                            type: 'warning'
+                        })
+                    }
+                } else {
+                    console.error('API 响应格式不正确:', res)
+                    testGroups.value = []
+                    ElMessage({
+                        message: '获取真值表数据格式不正确',
+                        type: 'error'
+                    })
+                }
+            } catch (apiError) {
+                console.error('调用 getTruthTable API 失败:', apiError)
+                console.error('错误详情:', {
+                    message: apiError.message,
+                    response: apiError.response,
+                    request: apiError.request,
+                    config: apiError.config
+                })
+                throw apiError
+            }
+        } catch (error) {
+            console.error('设置当前编辑表失败:', error)
+            console.error('错误类型:', error.constructor.name)
+            console.error('错误消息:', error.message)
+            console.error('错误堆栈:', error.stack)
+            if (error.response) {
+                console.error('服务器响应:', {
+                    status: error.response.status,
+                    statusText: error.response.statusText,
+                    data: error.response.data
+                })
+            }
+            
+            ElMessage.error(error.response?.data?.message || '设置当前编辑表失败')
+            
+            // 发生错误时回滚状态
+            currentTable.value = null
+            localStorage.removeItem('selectedTruthTable')
+            localStorage.removeItem('lastSelectedTruthTableId')
+            testGroups.value = []
+        }
+    }
+
     // 获取真值表的测试组
     const fetchTestGroups = async (tableId) => {
       try {
+        console.log('开始获取测试组数据，真值表ID:', tableId)
         const res = await getTruthTable(tableId)
-        testGroups.value = res.data.data.groups || []
+        console.log('获取到的测试组数据:', res.data)
+        if (res.data && res.data.data && res.data.data.groups) {
+          testGroups.value = res.data.data.groups
+        } else {
+          console.warn('获取到的测试组数据格式不正确:', res)
+          testGroups.value = []
+        }
       } catch (error) {
         console.error('获取测试组失败:', error)
-        ElMessage.error('获取测试组失败')
+        testGroups.value = []
+        throw new Error('获取测试组数据失败：' + (error.message || '未知错误'))
       }
     }
 
@@ -652,7 +743,7 @@ export default {
             testGroups.value[index] = res.data.data
           }
         } else {
-          // 创建新测试组
+          // 新建新测试组
           res = await createTestGroup(saveData)
           testGroups.value.push(res.data.data)
         }
@@ -776,6 +867,7 @@ export default {
       handleEditItem,
       handleDeleteItem,
       handleSaveItem,
+      handleSelectTable,
     }
   }
 }

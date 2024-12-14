@@ -57,7 +57,7 @@ app.use('/api/deviceTypes', deviceTypeRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/drawings', drawingRoutes);
 app.use('/api/truth-tables', truthTableRoutes);
-app.use('/api', testGroupRoutes)
+app.use('/api/test-groups', testGroupRoutes);
 
 console.log('=== 路由注册完成 ===');
 
@@ -104,7 +104,7 @@ async function initializeServices() {
         // 启动HTTP服务器
         server.listen(PORT, '0.0.0.0', () => {
             console.log(`服务器正在运行: http://0.0.0.0:${PORT}`);
-            console.log(`��ID: ${process.pid}`);
+            console.log(`ID: ${process.pid}`);
             console.log('所有服务初始化完成');
         });
     } catch (error) {

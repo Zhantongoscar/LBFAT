@@ -18,12 +18,18 @@ api.interceptors.request.use(
             method: config.method,
             data: config.data,
             params: config.params,
-            baseURL: config.baseURL
+            baseURL: config.baseURL,
+            headers: config.headers,
+            fullURL: `${config.baseURL}${config.url}`
         });
         return config;
     },
     error => {
-        console.error('请求错误:', error);
+        console.error('请求错误:', {
+            message: error.message,
+            config: error.config,
+            stack: error.stack
+        });
         return Promise.reject(error);
     }
 );
@@ -34,8 +40,11 @@ api.interceptors.response.use(
         console.log('收到响应:', {
             url: response.config.url,
             status: response.status,
+            statusText: response.statusText,
             data: response.data,
-            baseURL: response.config.baseURL
+            headers: response.headers,
+            baseURL: response.config.baseURL,
+            fullURL: `${response.config.baseURL}${response.config.url}`
         });
 
         return response;
@@ -44,11 +53,14 @@ api.interceptors.response.use(
         console.error('响应错误:', {
             url: error.config?.url,
             status: error.response?.status,
+            statusText: error.response?.statusText,
             data: error.response?.data,
             message: error.message,
             baseURL: error.config?.baseURL,
             code: error.code,
-            stack: error.stack
+            stack: error.stack,
+            fullURL: error.config ? `${error.config.baseURL}${error.config.url}` : null,
+            headers: error.response?.headers
         });
 
         // 构造详细的错误信息

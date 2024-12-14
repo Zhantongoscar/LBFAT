@@ -314,6 +314,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { Monitor, Cpu, Connection, ArrowDown, ArrowRight } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { getTruthTables, getTruthTable } from '@/api/truthTable'
 
 export default {
   name: 'TestExecution',
@@ -491,22 +492,77 @@ export default {
 
     // 真值表相关
     const selectedTemplate = ref(null)
-    const templateList = ref([
-      {
-        id: 1,
-        drawingNo: 'DWG-001',
-        version: '1.0',
-        name: '测试模板1',
-        updateTime: '2023-12-09 10:00:00'
-      },
-      {
-        id: 2,
-        drawingNo: 'DWG-002',
-        version: '1.0',
-        name: '测试模板2',
-        updateTime: '2023-12-09 11:00:00'
+    const templateList = ref([])
+
+    // 获取真值表列表
+    const fetchTemplateList = async () => {
+      try {
+        const res = await getTruthTables()
+        if (res.data && res.data.data) {
+          templateList.value = res.data.data.map(table => ({
+            id: table.id,
+            name: table.name,
+            drawingNo: table.drawing_number,
+            version: table.version
+          }))
+
+          // 如果有上次选择的真值表，自动选中
+          const savedTemplate = localStorage.getItem('selectedTruthTable')
+          if (savedTemplate) {
+            const template = JSON.parse(savedTemplate)
+            const found = templateList.value.find(t => t.id === template.id)
+            if (found) {
+              selectedTemplate.value = found
+              await loadTemplate(found)
+            }
+          }
+        } else {
+          console.warn('获取真值表列表数据格式不正确:', res)
+          templateList.value = []
+        }
+      } catch (error) {
+        console.error('获取真值表列表失败:', error)
+        ElMessage.error('获取真值表列表失败')
       }
-    ])
+    }
+
+    // 加载真值表
+    const loadTemplate = async (template) => {
+      if (!template) return
+      selectedTemplate.value = template
+      
+      try {
+        const res = await getTruthTable(template.id)
+        if (res.data && res.data.data) {
+          const tableData = res.data.data
+          
+          // 转换测试组数据格式
+          testGroups.value = tableData.groups.map(group => ({
+            testId: group.test_id,
+            level: group.level,
+            description: group.description,
+            items: group.items.map(item => ({
+              deviceId: item.device_id || 'device1', // 临时使用默认值
+              unitId: item.unit_id || 'DI1', // 临时使用默认值
+              unitType: item.unit_type || 'DI', // 临时使用默认值
+              expectedValue: item.expected_result,
+              setValue: item.action,
+              enabled: true,
+              description: item.description || '',
+              errorMessage: '操作未达到预期结果',
+              faultDetails: '请检查设备连接和控制回路'
+            }))
+          }))
+        } else {
+          console.warn('获取真值表详情数据格式不正确:', res)
+          testGroups.value = []
+        }
+      } catch (error) {
+        console.error('加载真值表失败:', error)
+        ElMessage.error('加载真值表失败')
+        testGroups.value = []
+      }
+    }
 
     // 测试组和测试项
     const testGroups = ref([])
@@ -514,57 +570,6 @@ export default {
     const currentTestItem = ref(null)
     const testStatus = ref('ready') // ready, running, paused, completed
     const testResults = ref([])
-
-    // 加载真值表
-    const loadTemplate = async (template) => {
-      selectedTemplate.value = template
-      // 这里应该从后端加载真值表详细数据
-      testGroups.value = [
-        {
-          testId: 1,
-          level: 1,
-          description: '安全开关检查组',
-          items: [
-            {
-              deviceId: 'device1',
-              unitId: 'DI1',
-              unitType: 'DI',
-              expectedValue: 1,
-              enabled: true,
-              description: '安全开关检查',
-              errorMessage: '安全开关状态异常，请检查开关位置是否正确',
-              faultDetails: '1. 检查安全开关物理连接\n2. 检查安全回路是否完整\n3. 检查控制电源是否正常'
-            }
-          ]
-        },
-        {
-          testId: 2,
-          level: 2,
-          description: '电机控制测试组',
-          items: [
-            {
-              deviceId: 'device1',
-              unitId: 'DO1',
-              unitType: 'DO',
-              setValue: 1,
-              enabled: true,
-              description: '启动电机',
-              faultDetails: '检查电机启动电路和控制回路'
-            },
-            {
-              deviceId: 'device1',
-              unitId: 'DI2',
-              unitType: 'DI',
-              expectedValue: 1,
-              enabled: true,
-              description: '检查电机运行状态',
-              errorMessage: '电机未按预期运行，请检查电机控制回路',
-              faultDetails: '1. 检查电机运行反馈信号\n2. 检查电机过载保护状态\n3. 检查变频器运行状态'
-            }
-          ]
-        }
-      ]
-    }
 
     // 开始测试
     const startTest = async () => {
@@ -611,6 +616,11 @@ export default {
         currentTestItem.value = null
       })
     }
+
+    onMounted(() => {
+      // 在组件挂载时获取真值表列表
+      fetchTemplateList()
+    })
 
     return {
       productInfo,

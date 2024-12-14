@@ -226,7 +226,7 @@ CREATE TABLE IF NOT EXISTS truth_tables (
   FOREIGN KEY (drawing_id) REFERENCES drawings(id) ON DELETE RESTRICT,
   FOREIGN KEY (created_by) REFERENCES users(id),
   FOREIGN KEY (updated_by) REFERENCES users(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='真值表主���';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='真值表主表';
 
 -- 测试组表
 CREATE TABLE IF NOT EXISTS test_groups (
@@ -254,11 +254,28 @@ CREATE TABLE IF NOT EXISTS test_items (
   FOREIGN KEY (test_group_id) REFERENCES test_groups(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='测试项表';
 
--- 插入示例数据
+-- 插入测试图纸数据
 INSERT INTO drawings (drawing_number, version, description) VALUES
-('DWG-001', '1.0', '示例图纸1'),
-('DWG-002', '1.0', '示例图纸2');
+('DWG-001', '1.0', '安全开关测试图纸'),
+('DWG-002', '1.0', '电机控制测试图纸');
 
+-- 插入测试真值表数据
 INSERT INTO truth_tables (name, drawing_id, version, description) VALUES
 ('安全开关测试', 1, '1.0', '安全开关功能测试真值表'),
 ('电机控制测试', 2, '1.0', '电机控制功能测试真值表');
+
+-- 插入测试组数据
+INSERT INTO test_groups (truth_table_id, test_id, level, description, sequence) VALUES
+(1, 'SAFETY-001', 1, '安全开关检查组', 0),
+(1, 'SAFETY-002', 2, '安全联锁测试组', 1),
+(2, 'MOTOR-001', 1, '电机启动测试组', 0),
+(2, 'MOTOR-002', 2, '电机运行测试组', 1);
+
+-- 插入测试项数据
+INSERT INTO test_items (test_group_id, action, expected_result, sequence) VALUES
+(1, '检查安全开关状态', '安全开关处于闭合状态', 0),
+(1, '打开安全开关', '安全开关处于打开状态', 1),
+(2, '检查安全联锁', '电机无法启动', 0),
+(3, '启动电机', '电机正常启动', 0),
+(3, '检查运行状态', '电机运行指示灯亮起', 1),
+(4, '检查电机转速', '电机转速达到额定值', 0);
