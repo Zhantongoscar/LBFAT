@@ -28,4 +28,19 @@ export function updateTruthTable(id, data) {
 // 删除真值表
 export function deleteTruthTable(id) {
     return api.delete(`/api/truth-tables/${id}`)
+}
+
+// 创建测试组
+export function createTestGroup(data) {
+  return api.post('/api/test-groups', data)
+}
+
+// 更新测试组
+export function updateTestGroup(id, data) {
+  return api.put(`/api/test-groups/${id}`, data)
+}
+
+// 删除测试组
+export function deleteTestGroup(id) {
+  return api.delete(`/api/test-groups/${id}`)
 } 
