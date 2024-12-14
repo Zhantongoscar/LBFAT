@@ -99,7 +99,7 @@ export default {
     const fetchDrawings = async () => {
       loading.value = true
       try {
-        const res = await api.get('/drawings')
+        const res = await api.get('/api/drawings')
         drawings.value = res.data.data
       } catch (error) {
         console.error('获取图纸列表失败:', error)
@@ -137,7 +137,7 @@ export default {
           type: 'warning',
           message: '删除图纸将同时删除与之关联的真值表，是否继续？'
         })
-        await api.delete(`/drawings/${row.id}`)
+        await api.delete(`/api/drawings/${row.id}`)
         ElMessage.success('删除成功')
         fetchDrawings()
       } catch (error) {
@@ -156,10 +156,10 @@ export default {
         await formRef.value.validate()
 
         if (isEdit.value) {
-          await api.put(`/drawings/${form.value.id}`, form.value)
+          await api.put(`/api/drawings/${form.value.id}`, form.value)
           ElMessage.success('更新成功')
         } else {
-          await api.post('/drawings', form.value)
+          await api.post('/api/drawings', form.value)
           ElMessage.success('创建成功')
         }
 

@@ -118,7 +118,7 @@ export default {
     const fetchTruthTables = async () => {
       loading.value = true
       try {
-        const res = await api.get('/truth-tables')
+        const res = await api.get('/api/truth-tables')
         truthTables.value = res.data.data
       } catch (error) {
         console.error('获取真值表列表失败:', error)
@@ -131,7 +131,7 @@ export default {
     // 获取图纸列表
     const fetchDrawings = async () => {
       try {
-        const res = await api.get('/drawings')
+        const res = await api.get('/api/drawings')
         drawings.value = res.data.data
       } catch (error) {
         console.error('获取图纸列表失败:', error)
@@ -167,7 +167,7 @@ export default {
         await ElMessageBox.confirm('确定要删除这个真值表吗？', '提示', {
           type: 'warning'
         })
-        await api.delete(`/truth-tables/${row.id}`)
+        await api.delete(`/api/truth-tables/${row.id}`)
         ElMessage.success('删除成功')
         fetchTruthTables()
       } catch (error) {
@@ -186,10 +186,10 @@ export default {
         await formRef.value.validate()
 
         if (isEdit.value) {
-          await api.put(`/truth-tables/${form.value.id}`, form.value)
+          await api.put(`/api/truth-tables/${form.value.id}`, form.value)
           ElMessage.success('更新成功')
         } else {
-          await api.post('/truth-tables', form.value)
+          await api.post('/api/truth-tables', form.value)
           ElMessage.success('创建成功')
         }
 
