@@ -3,7 +3,7 @@ const logger = require('../utils/logger')
 
 // 创建测试组
 async function createTestGroup(req, res) {
-    const { truth_table_id, test_id, level, description, sequence, items } = req.body
+    const { truth_table_id, level, description, sequence, items } = req.body
 
     try {
         // 开始事务
@@ -13,8 +13,8 @@ async function createTestGroup(req, res) {
         try {
             // 插入测试组
             const [result] = await connection.execute(
-                'INSERT INTO test_groups (truth_table_id, test_id, level, description, sequence) VALUES (?, ?, ?, ?, ?)',
-                [truth_table_id, test_id, level, description, sequence]
+                'INSERT INTO test_groups (truth_table_id, level, description, sequence) VALUES (?, ?, ?, ?)',
+                [truth_table_id, level, description, sequence]
             )
             
             const groupId = result.insertId
@@ -71,7 +71,7 @@ async function createTestGroup(req, res) {
         logger.error('创建测试组失败:', error)
         res.status(500).json({
             code: 500,
-            message: '���建测试组失败',
+            message: '创建测试组失败',
             error: error.message
         })
     }
@@ -80,7 +80,7 @@ async function createTestGroup(req, res) {
 // 更新测试组
 async function updateTestGroup(req, res) {
     const { id } = req.params
-    const { test_id, level, description, sequence, items } = req.body
+    const { level, description, sequence, items } = req.body
 
     try {
         const connection = await db.getConnection()
@@ -89,8 +89,8 @@ async function updateTestGroup(req, res) {
         try {
             // 更新测试组
             await connection.execute(
-                'UPDATE test_groups SET test_id = ?, level = ?, description = ?, sequence = ? WHERE id = ?',
-                [test_id, level, description, sequence, id]
+                'UPDATE test_groups SET level = ?, description = ?, sequence = ? WHERE id = ?',
+                [level, description, sequence, id]
             )
 
             // 删除原有的测试项

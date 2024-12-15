@@ -232,14 +232,12 @@ CREATE TABLE IF NOT EXISTS truth_tables (
 CREATE TABLE IF NOT EXISTS test_groups (
   id INT PRIMARY KEY AUTO_INCREMENT,
   truth_table_id INT NOT NULL COMMENT '所属真值表ID',
-  test_id VARCHAR(50) NOT NULL COMMENT '测试ID',
   level TINYINT NOT NULL DEFAULT 2 COMMENT '测试级别：1-安全类，2-普通类',
   description TEXT COMMENT '描述',
   sequence INT NOT NULL DEFAULT 0 COMMENT '显示顺序',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  FOREIGN KEY (truth_table_id) REFERENCES truth_tables(id) ON DELETE CASCADE,
-  UNIQUE KEY uk_truth_table_test_id (truth_table_id, test_id)
+  FOREIGN KEY (truth_table_id) REFERENCES truth_tables(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='测试组表';
 
 -- 测试项表
@@ -254,7 +252,7 @@ CREATE TABLE IF NOT EXISTS test_items (
   FOREIGN KEY (test_group_id) REFERENCES test_groups(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='测试项表';
 
--- 插入测试图纸数据
+-- 插入��试图纸数据
 INSERT INTO drawings (drawing_number, version, description) VALUES
 ('DWG-001', '1.0', '安全开关测试图纸'),
 ('DWG-002', '1.0', '电机控制测试图纸');
@@ -265,11 +263,11 @@ INSERT INTO truth_tables (name, drawing_id, version, description) VALUES
 ('电机控制测试', 2, '1.0', '电机控制功能测试真值表');
 
 -- 插入测试组数据
-INSERT INTO test_groups (truth_table_id, test_id, level, description, sequence) VALUES
-(1, 'SAFETY-001', 1, '安全开关检查组', 0),
-(1, 'SAFETY-002', 2, '安全联锁测试组', 1),
-(2, 'MOTOR-001', 1, '电机启动测试组', 0),
-(2, 'MOTOR-002', 2, '电机运行测试组', 1);
+INSERT INTO test_groups (truth_table_id, level, description, sequence) VALUES
+(1, 1, '安全开关检查组', 0),
+(1, 2, '安全联锁测试组', 1),
+(2, 1, '电机启动测试组', 0),
+(2, 2, '电机运行测试组', 1);
 
 -- 插入测试项数据
 INSERT INTO test_items (test_group_id, action, expected_result, sequence) VALUES

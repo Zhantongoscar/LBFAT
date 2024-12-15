@@ -104,7 +104,7 @@
             
             <!-- 测试组列表 -->
             <el-table :data="testGroups" style="width: 100%">
-              <el-table-column prop="test_id" label="测试ID" width="120" />
+              <el-table-column prop="id" label="ID" width="80" />
               <el-table-column prop="level" label="级别" width="80">
                 <template #default="{ row }">
                   <el-tag :type="row.level === 1 ? 'success' : 'warning'">
@@ -226,9 +226,6 @@
       width="50%"
     >
       <el-form ref="groupFormRef" :model="groupForm" :rules="groupRules" label-width="100px">
-        <el-form-item label="测试ID" prop="test_id">
-          <el-input v-model="groupForm.test_id" placeholder="请输入测试ID" />
-        </el-form-item>
         <el-form-item label="级别" prop="level">
           <el-select v-model="groupForm.level" placeholder="请选择级别">
             <el-option :value="1" label="级别1" />
@@ -340,7 +337,6 @@ export default {
     const groupDialogVisible = ref(false)
     const groupForm = ref({
       id: null,
-      test_id: '',
       level: 1,
       description: '',
       sequence: 0,
@@ -349,8 +345,7 @@ export default {
 
     // 测试组表单验证规则
     const groupRules = {
-      test_id: [{ required: true, message: '请输入测试ID', trigger: 'blur' }],
-      level: [{ required: true, message: '请选择测���级别', trigger: 'change' }],
+      level: [{ required: true, message: '请选择测试级别', trigger: 'change' }],
       description: [{ required: true, message: '请输入描述', trigger: 'blur' }]
     }
 
@@ -594,7 +589,7 @@ export default {
                         })
                     }
                 } else {
-                    console.error('API 响应格式不正确:', res)
+                    console.error('API 应格式不正确:', res)
                     testGroups.value = []
                     ElMessage({
                         message: '获取真值表数据格式不正确',
@@ -626,7 +621,7 @@ export default {
             
             ElMessage.error(error.response?.data?.message || '设置当前编辑表失败')
             
-            // 发生错误时回滚状态
+            // 生错误时回滚状态
             currentTable.value = null
             localStorage.removeItem('selectedTruthTable')
             localStorage.removeItem('lastSelectedTruthTableId')
@@ -658,7 +653,6 @@ export default {
       editingGroup.value = null
       groupForm.value = {
         id: null,
-        test_id: '',
         level: 1,
         description: '',
         sequence: testGroups.value.length,
