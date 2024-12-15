@@ -3,9 +3,9 @@
   <div class="truth-table-manager">
     <el-container direction="vertical">
       <!-- 上部分：真值表列表和当前真值表信息 -->
-      <el-container style="height: 300px;">
-        <!-- 左侧真值表列表 -->
-        <el-main class="list-container" style="width: 70%;">
+      <el-container :style="{ height: isCollapse ? 'auto' : '300px' }">
+        <!-- 真值表列表 -->
+        <el-main class="list-container" style="width: 100%;">
           <el-card class="list-card">
             <template #header>
               <div class="card-header">
@@ -19,6 +19,14 @@
                     </el-icon>
                     真值表列表
                   </el-button>
+                  <template v-if="currentTable">
+                    <el-divider direction="vertical" />
+                    <span class="current-info">
+                      当前编辑：{{ currentTable.name }} | 
+                      图纸编号：{{ getDrawingNumber(currentTable.drawing_id) }} | 
+                      版本：{{ currentTable.version }}
+                    </span>
+                  </template>
                 </div>
                 <el-button type="primary" @click="showCreateDialog">新建真值表</el-button>
               </div>
@@ -75,40 +83,6 @@
             </el-collapse-transition>
           </el-card>
         </el-main>
-
-        <!-- 右侧当前真值表信息 -->
-        <el-aside width="30%" class="info-container">
-          <el-card v-if="currentTable" class="current-table-card">
-            <template #header>
-              <div class="card-header">
-                <span>当前真值表</span>
-              </div>
-            </template>
-            <div class="current-table-info">
-              <div class="info-item">
-                <label>名称：</label>
-                <span>{{ currentTable.name }}</span>
-              </div>
-              <div class="info-item">
-                <label>图纸编号：</label>
-                <span>{{ getDrawingNumber(currentTable.drawing_id) }}</span>
-              </div>
-              <div class="info-item">
-                <label>版本：</label>
-                <span>{{ currentTable.version }}</span>
-              </div>
-              <div class="info-item">
-                <label>描述：</label>
-                <span>{{ currentTable.description || '-' }}</span>
-              </div>
-              <div class="info-item">
-                <label>更新时间：</label>
-                <span>{{ formatDate(currentTable.updated_at) }}</span>
-              </div>
-            </div>
-          </el-card>
-          <el-empty v-else description="未选择真值表" />
-        </el-aside>
       </el-container>
 
       <!-- 下部分：编辑工作区 -->
@@ -376,7 +350,7 @@ export default {
     // 测试组表单验证规则
     const groupRules = {
       test_id: [{ required: true, message: '请输入测试ID', trigger: 'blur' }],
-      level: [{ required: true, message: '请选择测试级别', trigger: 'change' }],
+      level: [{ required: true, message: '请选择测���级别', trigger: 'change' }],
       description: [{ required: true, message: '请输入描述', trigger: 'blur' }]
     }
 
@@ -404,12 +378,14 @@ export default {
         const res = await getTruthTables()
         truthTables.value = res.data.data
         
-        // 如果有上次选中的真值表ID，则选中对应行
+        // 如果有上次选中的真值表ID，则选中对应行并加载其测试组数据
         const lastSelectedId = localStorage.getItem('lastSelectedTruthTableId')
         if (lastSelectedId) {
           const table = truthTables.value.find(t => t.id === parseInt(lastSelectedId))
           if (table) {
             currentTable.value = table
+            // 加载测试组数据
+            await fetchTestGroups(table.id)
           }
         }
       } catch (error) {
@@ -499,7 +475,7 @@ export default {
         await deleteTruthTable(row.id)
         ElMessage.success('删除成功')
         
-        // 如果删除的是当前选中的真值表，清空选中状态
+        // 如果除的是当前选中的真值表，清空选中状态
         if (currentTable.value && currentTable.value.id === row.id) {
           currentTable.value = null
           localStorage.removeItem('lastSelectedTruthTableId')
@@ -673,7 +649,7 @@ export default {
       } catch (error) {
         console.error('获取测试组失败:', error)
         testGroups.value = []
-        throw new Error('获取测试组数据失败：' + (error.message || '未知错误'))
+        ElMessage.warning('获取测试组数据失败，请重试')
       }
     }
 
@@ -884,8 +860,9 @@ export default {
 }
 
 .list-container {
-  padding: 0 10px 0 0;
+  padding: 0;
   overflow: hidden;
+  transition: height 0.3s ease-in-out;
 }
 
 .info-container {
@@ -896,10 +873,12 @@ export default {
 .edit-container {
   margin-top: 20px;
   padding: 0;
+  flex: 1;
 }
 
 .list-card, .current-table-card, .edit-card {
   height: 100%;
+  transition: height 0.3s ease-in-out;
 }
 
 .card-header {
@@ -911,6 +890,7 @@ export default {
 .header-left {
   display: flex;
   align-items: center;
+  flex: 1;
 }
 
 .header-actions {
@@ -990,5 +970,17 @@ export default {
 .items-header h4 {
   margin: 0;
   color: #606266;
+}
+
+.current-info {
+  color: #409EFF;
+  font-weight: bold;
+  margin-left: 8px;
+  font-size: 14px;
+}
+
+.el-divider--vertical {
+  margin: 0 12px;
+  height: 20px;
 }
 </style> 
