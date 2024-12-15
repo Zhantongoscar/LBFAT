@@ -107,8 +107,8 @@
               <el-table-column prop="id" label="ID" width="80" />
               <el-table-column prop="level" label="级别" width="80">
                 <template #default="{ row }">
-                  <el-tag :type="row.level === 1 ? 'success' : 'warning'">
-                    {{ row.level }}
+                  <el-tag :type="row.level === 1 ? 'success' : 'info'">
+                    {{ row.level === 1 ? '安全类' : '普通类' }}
                   </el-tag>
                 </template>
               </el-table-column>
@@ -228,9 +228,8 @@
       <el-form ref="groupFormRef" :model="groupForm" :rules="groupRules" label-width="100px">
         <el-form-item label="级别" prop="level">
           <el-select v-model="groupForm.level" placeholder="请选择级别">
-            <el-option :value="1" label="级别1" />
-            <el-option :value="2" label="级别2" />
-            <el-option :value="3" label="级别3" />
+            <el-option :value="0" label="普通类" />
+            <el-option :value="1" label="安全类" />
           </el-select>
         </el-form-item>
         <el-form-item label="描述" prop="description">
@@ -337,7 +336,7 @@ export default {
     const groupDialogVisible = ref(false)
     const groupForm = ref({
       id: null,
-      level: 1,
+      level: 0,
       description: '',
       sequence: 0,
       items: []
@@ -653,7 +652,7 @@ export default {
       editingGroup.value = null
       groupForm.value = {
         id: null,
-        level: 1,
+        level: 0,
         description: '',
         sequence: testGroups.value.length,
         items: []

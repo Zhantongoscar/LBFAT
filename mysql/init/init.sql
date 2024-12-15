@@ -226,13 +226,13 @@ CREATE TABLE IF NOT EXISTS truth_tables (
   FOREIGN KEY (drawing_id) REFERENCES drawings(id) ON DELETE RESTRICT,
   FOREIGN KEY (created_by) REFERENCES users(id),
   FOREIGN KEY (updated_by) REFERENCES users(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='真值表主表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='真值表主���';
 
 -- 测试组表
 CREATE TABLE IF NOT EXISTS test_groups (
   id INT PRIMARY KEY AUTO_INCREMENT,
   truth_table_id INT NOT NULL COMMENT '所属真值表ID',
-  level TINYINT NOT NULL DEFAULT 2 COMMENT '测试级别：1-安全类，2-普通类',
+  level TINYINT NOT NULL DEFAULT 0 COMMENT '测试级别：0-普通类，1-安全类',
   description TEXT COMMENT '描述',
   sequence INT NOT NULL DEFAULT 0 COMMENT '显示顺序',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
@@ -252,7 +252,7 @@ CREATE TABLE IF NOT EXISTS test_items (
   FOREIGN KEY (test_group_id) REFERENCES test_groups(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='测试项表';
 
--- 插入��试图纸数据
+-- 插入试图纸数据
 INSERT INTO drawings (drawing_number, version, description) VALUES
 ('DWG-001', '1.0', '安全开关测试图纸'),
 ('DWG-002', '1.0', '电机控制测试图纸');
