@@ -96,14 +96,32 @@
           <!-- 这里添加真值表编辑的具体内容 -->
           <div class="edit-area">
             <div class="groups-header">
-              <h3>测试组列表</h3>
-              <el-button type="primary" size="small" @click="handleAddGroup">
-                添加测试组
-              </el-button>
+              <div class="groups-title">
+                <h3>测试组列表</h3>
+              </div>
+              <div class="groups-actions">
+                <el-button-group>
+                  <el-button type="primary" size="small" @click="expandAllGroups">
+                    <el-icon><Expand /></el-icon>全部展开
+                  </el-button>
+                  <el-button type="primary" size="small" @click="collapseAllGroups">
+                    <el-icon><Fold /></el-icon>全部折叠
+                  </el-button>
+                </el-button-group>
+                <el-button type="primary" size="small" @click="handleAddGroup">
+                  <el-icon><Plus /></el-icon>添加测试组
+                </el-button>
+              </div>
             </div>
             
             <!-- 测试组列表 -->
-            <el-table :data="testGroups" style="width: 100%">
+            <el-table 
+              :data="testGroups" 
+              style="width: 100%"
+              :expand-row-keys="expandedGroups"
+              @expand-change="handleGroupExpand"
+              row-key="id"
+            >
               <el-table-column prop="id" label="ID" width="80" />
               <el-table-column prop="level" label="级别" width="80">
                 <template #default="{ row }">
@@ -369,7 +387,7 @@
         <el-form-item label="设备类型" prop="device_type">
           <el-select 
             v-model="itemForm.device_type" 
-            placeholder="请选择设��类型"
+            placeholder="请选择设备类型"
             @change="handleDeviceTypeChange"
           >
             <el-option 
@@ -465,7 +483,7 @@
 <script>
 import { ref, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ArrowDown, ArrowRight } from '@element-plus/icons-vue'
+import { ArrowDown, ArrowRight, Expand, Fold, Plus } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 import { useDeviceStore } from '@/stores/device'
 import { getAvailableDrawings, getTruthTables, createTruthTable, updateTruthTable, deleteTruthTable, createTestGroup, updateTestGroup, deleteTestGroup, getTruthTable } from '@/api/truthTable'
@@ -474,7 +492,10 @@ export default {
   name: 'TruthTableManager',
   components: {
     ArrowDown,
-    ArrowRight
+    ArrowRight,
+    Expand,
+    Fold,
+    Plus
   },
   setup() {
     const router = useRouter()
@@ -488,6 +509,7 @@ export default {
     const isCollapse = ref(true)
     const currentTable = ref(null)
     const testGroups = ref([])
+    const expandedGroups = ref([])
 
     // 对话框控制
     const dialogVisible = ref(false)
@@ -608,7 +630,7 @@ export default {
 
         // 如果没有上次选中的真值表或找不到对应记录，选择最新的真值表
         if (!targetTable && truthTables.value.length > 0) {
-          targetTable = truthTables.value[0] // 因���后端已按更新时间降序排序
+          targetTable = truthTables.value[0] // 因后端已按更新时间降序排序
         }
 
         // 如果找到目标真值表，设置为当前编辑表
@@ -782,7 +804,7 @@ export default {
       })
     }
 
-    // 选择当前真值表
+    // 选择当前���值表
     const handleSelectTable = async (row) => {
       try {
         console.log('开始选择真值表，数据:', row)
@@ -824,13 +846,17 @@ export default {
         console.log('获取到的测试组数据:', res.data)
         if (res.data && res.data.data && res.data.data.groups) {
           testGroups.value = res.data.data.groups
+          // 默认不展开任何测试组
+          expandedGroups.value = []
         } else {
           console.warn('获取到的测试组数据格式不正确:', res)
           testGroups.value = []
+          expandedGroups.value = []
         }
       } catch (error) {
         console.error('获取测试组失败:', error)
         testGroups.value = []
+        expandedGroups.value = []
         ElMessage.warning('获取测试组数据失败，请重试')
       }
     }
@@ -870,7 +896,7 @@ export default {
         ElMessage.success('删除成功')
       } catch (error) {
         if (error !== 'cancel') {
-          console.error('��除测试组失败:', error)
+          console.error('删除测试组失败:', error)
           ElMessage.error('删除测试组失败')
         }
       }
@@ -1024,6 +1050,41 @@ export default {
       row.expected_result = 0
     }
 
+    // 全部展开
+    const expandAllGroups = () => {
+      if (!currentTable.value || !testGroups.value.length) {
+        ElMessage.warning('当前没有可展开的测试组')
+        return
+      }
+      // 获取所有测试组的ID
+      expandedGroups.value = testGroups.value.map(group => group.id)
+      console.log('展开所有测试组:', expandedGroups.value)
+      ElMessage.success('已展开所有测试组')
+    }
+
+    // 全部折叠
+    const collapseAllGroups = () => {
+      if (!currentTable.value || !testGroups.value.length) {
+        ElMessage.warning('当前没有可折叠的测试组')
+        return
+      }
+      // 清空展开列表
+      expandedGroups.value = []
+      console.log('折叠所有测试组')
+      ElMessage.success('已折叠所有测试组')
+    }
+
+    // 处理测试组展开/折叠
+    const handleGroupExpand = (row, expanded) => {
+      const index = expandedGroups.value.indexOf(row.id)
+      if (expanded && index === -1) {
+        expandedGroups.value.push(row.id)
+      } else if (!expanded && index > -1) {
+        expandedGroups.value.splice(index, 1)
+      }
+      console.log('当前展开的测试组:', expandedGroups.value)
+    }
+
     onMounted(() => {
       fetchTruthTables()
       fetchAvailableDrawings()
@@ -1086,7 +1147,13 @@ export default {
       getAvailablePoints,
       handleDeviceTypeChangeInline,
       handlePointTypeChangeInline,
-      deviceStore
+      deviceStore,
+
+      // 测试组数据
+      expandedGroups,
+      handleGroupExpand,
+      expandAllGroups,
+      collapseAllGroups,
     }
   }
 }
@@ -1192,10 +1259,35 @@ export default {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  background-color: #f5f7fa;
+  padding: 12px 20px;
+  border-radius: 4px;
 }
 
-.groups-header h3 {
+.groups-title {
+  display: flex;
+  align-items: center;
+}
+
+.groups-title h3 {
   margin: 0;
+  font-size: 16px;
+  color: #303133;
+}
+
+.groups-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.groups-actions .el-button {
+  display: flex;
+  align-items: center;
+}
+
+.groups-actions .el-icon {
+  margin-right: 4px;
 }
 
 .test-items-container {
