@@ -157,22 +157,25 @@ INSERT INTO project_subscriptions (project_name, is_subscribed) VALUES
 
 -- 插入设备数据
 INSERT INTO devices (id, project_name, module_type, serial_number, status, rssi) VALUES
-(1, 'lb_test', 'EDB', '4', 'offline', 0)
+(1, 'lb_test', 'EDB', '4', 'offline', 0),
+(2, 'lb_test', 'EDB', '5', 'offline', 0)
 ON DUPLICATE KEY UPDATE status = 'offline';
 
 -- 插入MQTT订阅
 INSERT INTO mqtt_subscriptions (topic, qos, is_active) VALUES
 ('lb_test/+/+/status', 1, TRUE);
 
--- 插入EDB设备类型
+-- 插入设备类型
 INSERT INTO device_types (id, type_name, point_count, description) VALUES
-(1, 'EDB', 20, 'EDB设备：20个点位配置（7DI + 3DO + 7DI + 3DI）');
+(1, 'EDB', 20, 'EDB设备：20个点位配置（7DI + 3DO + 7DI + 3DI）'),
+(2, 'EBD', 20, 'EBD设备：20个点位配置（7DO + 3DI + 10DO）');
 
 -- 插入EDB设备点位配置
 INSERT INTO device_type_points (device_type_id, point_index, point_type, point_name, description) VALUES
+-- EDB设备点位（device_type_id = 1）
 -- 前7个DI
 (1, 1, 'DI', 'DI1', 'EDB数字输入点1 - 前段'),
-(1, 2, 'DI', 'DI2', 'EDB数字输入��2 - 前段'),
+(1, 2, 'DI', 'DI2', 'EDB数字输入点2 - 前段'),
 (1, 3, 'DI', 'DI3', 'EDB数字输入点3 - 前段'),
 (1, 4, 'DI', 'DI4', 'EDB数字输入点4 - 前段'),
 (1, 5, 'DI', 'DI5', 'EDB数字输入点5 - 前段'),
@@ -193,7 +196,33 @@ INSERT INTO device_type_points (device_type_id, point_index, point_type, point_n
 -- 剩余3个点位
 (1, 18, 'DI', 'DI15', 'EDB数字输入点15 - 后段'),
 (1, 19, 'DI', 'DI16', 'EDB数字输入点16 - 后段'),
-(1, 20, 'DI', 'DI17', 'EDB数字输入点17 - 后段');
+(1, 20, 'DI', 'DI17', 'EDB数字输入点17 - 后段'),
+
+-- EBD设备点位（device_type_id = 2）
+-- 前7个DI
+(2, 1, 'DI', 'DI1', 'EBD数字输入点1 - 前段'),
+(2, 2, 'DI', 'DI2', 'EBD数字输入点2 - 前段'),
+(2, 3, 'DI', 'DI3', 'EBD数字输入点3 - 前段'),
+(2, 4, 'DI', 'DI4', 'EBD数字输入点4 - 前段'),
+(2, 5, 'DI', 'DI5', 'EBD数字输入点5 - 前段'),
+(2, 6, 'DI', 'DI6', 'EBD数字输入点6 - 前段'),
+(2, 7, 'DI', 'DI7', 'EBD数字输入点7 - 前段'),
+-- 3个DO
+(2, 8, 'DO', 'DO1', 'EBD数字输出点1'),
+(2, 9, 'DO', 'DO2', 'EBD数字输出点2'),
+(2, 10, 'DO', 'DO3', 'EBD数字输出点3'),
+-- 后7个DI
+(2, 11, 'DI', 'DI8', 'EBD数字输入点8 - 中段'),
+(2, 12, 'DI', 'DI9', 'EBD数字输入点9 - 中段'),
+(2, 13, 'DI', 'DI10', 'EBD数字输入点10 - 中段'),
+(2, 14, 'DI', 'DI11', 'EBD数字输入点11 - 中段'),
+(2, 15, 'DI', 'DI12', 'EBD数字输入点12 - 中段'),
+(2, 16, 'DI', 'DI13', 'EBD数字输入点13 - 中段'),
+(2, 17, 'DI', 'DI14', 'EBD数字输入点14 - 中段'),
+-- 剩余3个点位
+(2, 18, 'DI', 'DI15', 'EBD数字输入点15 - 后段'),
+(2, 19, 'DI', 'DI16', 'EBD数字输入点16 - 后段'),
+(2, 20, 'DI', 'DI17', 'EBD数字输入点17 - 后段');
 
 -- 插入图纸数据
 INSERT INTO drawings (id, drawing_number, version, description) VALUES
