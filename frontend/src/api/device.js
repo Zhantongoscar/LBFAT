@@ -4,11 +4,20 @@ const baseURL = import.meta.env.VITE_API_URL
 
 const deviceAPI = {
   getDevices(filters = {}) {
+    console.log('调用 getDevices API, 参数:', filters)
     return axios.get(`${baseURL}/api/devices`, { params: filters })
+      .then(response => {
+        console.log('getDevices API 响应:', response)
+        return response
+      })
+      .catch(error => {
+        console.error('getDevices API 错误:', error)
+        throw error
+      })
   },
   
-  getDevice(projectName, moduleType, serialNumber) {
-    return axios.get(`${baseURL}/api/devices/${projectName}/${moduleType}/${serialNumber}`)
+  getDevice(id) {
+    return axios.get(`${baseURL}/api/devices/${id}`)
   },
   
   createDevice(device) {
@@ -19,8 +28,8 @@ const deviceAPI = {
     return axios.put(`${baseURL}/api/devices/${id}`, data)
   },
   
-  deleteDevice(projectName, moduleType, serialNumber) {
-    return axios.delete(`${baseURL}/api/devices/${projectName}/${moduleType}/${serialNumber}`)
+  deleteDevice(id) {
+    return axios.delete(`${baseURL}/api/devices/${id}`)
   }
 }
 

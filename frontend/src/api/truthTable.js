@@ -7,7 +7,23 @@ export function getAvailableDrawings() {
 
 // 获取真值表列表
 export function getTruthTables() {
-    return api.get('/api/truth-tables')
+    console.log('调用 getTruthTables API');
+    return api.get('/api/truth-tables').then(response => {
+        console.log('getTruthTables API 响应:', {
+            status: response.status,
+            statusText: response.statusText,
+            data: response.data
+        });
+        return response;
+    }).catch(error => {
+        console.error('getTruthTables API 错误:', {
+            message: error.message,
+            code: error.code,
+            response: error.response?.data,
+            status: error.response?.status
+        });
+        throw error;
+    });
 }
 
 // 获取真值表详情
