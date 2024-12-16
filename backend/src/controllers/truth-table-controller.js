@@ -26,9 +26,12 @@ async function getTruthTables(req, res) {
                                 IF(i.id IS NOT NULL,
                                     JSON_OBJECT(
                                         'id', i.id,
+                                        'device_id', i.device_id,
+                                        'point_type', i.point_type,
+                                        'point_index', i.point_index,
                                         'action', i.action,
                                         'expected_result', i.expected_result,
-                                        'sequence', i.sequence
+                                        'fault_description', i.fault_description
                                     ),
                                     NULL
                                 )
@@ -119,9 +122,12 @@ async function getTruthTable(req, res) {
                             IF(i.id IS NOT NULL,
                                 JSON_OBJECT(
                                     'id', i.id,
+                                    'device_id', i.device_id,
+                                    'point_type', i.point_type,
+                                    'point_index', i.point_index,
                                     'action', i.action,
                                     'expected_result', i.expected_result,
-                                    'sequence', i.sequence
+                                    'fault_description', i.fault_description
                                 ),
                                 NULL
                             )

@@ -124,8 +124,44 @@
                       </el-button>
                     </div>
                     <el-table :data="row.items || []" style="width: 100%">
-                      <el-table-column prop="action" label="动作" width="120" />
-                      <el-table-column prop="expected_result" label="预期结果" />
+                      <el-table-column prop="device_type" label="设备类型" width="100">
+                        <template #default="{ row }">
+                          <el-tag size="small">{{ row.device_type || 'EDB' }}</el-tag>
+                        </template>
+                      </el-table-column>
+                      <el-table-column prop="point_type" label="点位类型" width="100">
+                        <template #default="{ row }">
+                          <el-tag 
+                            size="small"
+                            :type="row.point_type === 'DI' ? 'info' : 
+                                  row.point_type === 'DO' ? 'success' : 
+                                  row.point_type === 'AI' ? 'warning' : 'danger'"
+                          >
+                            {{ row.point_type || 'DI' }}
+                          </el-tag>
+                        </template>
+                      </el-table-column>
+                      <el-table-column prop="point_index" label="点位序号" width="100" />
+                      <el-table-column prop="action" label="动作/设定值" width="150">
+                        <template #default="{ row }">
+                          <template v-if="row.point_type === 'DO' || row.point_type === 'AO'">
+                            <span>设定值: {{ row.action }} V</span>
+                          </template>
+                          <template v-else>
+                            {{ row.action }}
+                          </template>
+                        </template>
+                      </el-table-column>
+                      <el-table-column prop="expected_result" label="预期结果" width="150">
+                        <template #default="{ row }">
+                          {{ row.expected_result }} V
+                        </template>
+                      </el-table-column>
+                      <el-table-column prop="fault_description" label="故障描述" min-width="200">
+                        <template #default="{ row }">
+                          {{ row.fault_description || '-' }}
+                        </template>
+                      </el-table-column>
                       <el-table-column prop="sequence" label="序号" width="80" />
                       <el-table-column label="操作" width="200" fixed="right">
                         <template #default="scope">
@@ -191,7 +227,7 @@
         <el-form-item label="版本" prop="version">
           <el-select 
             v-model="form.version" 
-            placeholder="请选择版本"
+            placeholder="请选择���本"
             :disabled="!form.drawing_id"
           >
             <el-option
@@ -259,15 +295,86 @@
       width="50%"
     >
       <el-form ref="itemFormRef" :model="itemForm" :rules="itemRules" label-width="100px">
-        <el-form-item label="动作" prop="action">
-          <el-input v-model="itemForm.action" placeholder="请输入测试动作" />
+        <el-form-item label="设备类型" prop="device_type">
+          <el-select 
+            v-model="itemForm.device_type" 
+            placeholder="请选择设备类型"
+            @change="handleDeviceTypeChange"
+          >
+            <el-option 
+              v-for="type in Object.keys(deviceStore.deviceTypes)"
+              :key="type"
+              :label="deviceStore.deviceTypes[type].name"
+              :value="type"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="点位类型" prop="point_type">
+          <el-select 
+            v-model="itemForm.point_type" 
+            placeholder="请选择点位类型"
+            @change="handlePointTypeChange"
+          >
+            <el-option
+              v-for="type in availablePointTypes"
+              :key="type"
+              :label="type"
+              :value="type"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="点位" prop="point_index">
+          <el-select v-model="itemForm.point_index" placeholder="请选择点位">
+            <el-option
+              v-for="point in availablePoints"
+              :key="point.value"
+              :label="point.label"
+              :value="point.value"
+            >
+              <span>{{ point.label }}</span>
+              <span class="point-description">{{ point.description }}</span>
+            </el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item 
+          :label="itemForm.point_type === 'DO' || itemForm.point_type === 'AO' ? '设定值' : '动作'" 
+          prop="action"
+        >
+          <template v-if="itemForm.point_type === 'DO' || itemForm.point_type === 'AO'">
+            <el-input-number
+              v-model="itemForm.action"
+              :precision="2"
+              :step="0.1"
+              :max="100"
+              :min="-100"
+              placeholder="请输入设定值"
+              style="width: 100%"
+            />
+          </template>
+          <template v-else>
+            <el-input 
+              v-model="itemForm.action" 
+              placeholder="请输入测试动作" 
+            />
+          </template>
         </el-form-item>
         <el-form-item label="预期结果" prop="expected_result">
-          <el-input
+          <el-input-number
             v-model="itemForm.expected_result"
-            type="textarea"
-            rows="3"
+            :precision="2"
+            :step="0.1"
+            :max="100"
+            :min="-100"
             placeholder="请输入预期结果"
+            style="width: 100%"
+          />
+        </el-form-item>
+        <el-form-item label="故障描述" prop="fault_description">
+          <el-input
+            v-model="itemForm.fault_description"
+            type="textarea"
+            :rows="3"
+            placeholder="请输入故障描述"
           />
         </el-form-item>
         <el-form-item label="序号" prop="sequence">
@@ -285,10 +392,11 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowDown, ArrowRight } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
+import { useDeviceStore } from '@/stores/device'
 import { getAvailableDrawings, getTruthTables, createTruthTable, updateTruthTable, deleteTruthTable, createTestGroup, updateTestGroup, deleteTestGroup, getTruthTable } from '@/api/truthTable'
 
 export default {
@@ -299,6 +407,7 @@ export default {
   },
   setup() {
     const router = useRouter()
+    const deviceStore = useDeviceStore()
     
     // 真值表数据
     const truthTables = ref([])
@@ -354,15 +463,60 @@ export default {
     const currentGroup = ref(null)
     const itemForm = ref({
       id: null,
-      action: '',
-      expected_result: '',
+      device_type: 'EDB',
+      point_type: 'DI',
+      point_index: 1,
+      action: 0,
+      expected_result: 0,
+      fault_description: '',
       sequence: 0
     })
 
+    // 计算可用的点位类型
+    const availablePointTypes = computed(() => {
+      const config = deviceStore.getDeviceConfig(itemForm.value.device_type)
+      return config ? config.pointTypes : []
+    })
+
+    // 计算可用的点位选项
+    const availablePoints = computed(() => {
+      return deviceStore.getPointOptions(
+        itemForm.value.device_type,
+        itemForm.value.point_type
+      )
+    })
+
+    // 处理设备类型变化
+    const handleDeviceTypeChange = () => {
+      // 重置点位类型和序号
+      itemForm.value.point_type = availablePointTypes.value[0] || ''
+      itemForm.value.point_index = 1
+    }
+
+    // 处理点位类型变化
+    const handlePointTypeChange = () => {
+      // 重置点位序号和相关值
+      itemForm.value.point_index = 1
+      itemForm.value.action = 0
+      itemForm.value.expected_result = 0
+    }
+
     // 测试项表单验证规则
     const itemRules = {
-      action: [{ required: true, message: '请输入测试动作', trigger: 'blur' }],
-      expected_result: [{ required: true, message: '请输入预期结果', trigger: 'blur' }]
+      device_type: [{ required: true, message: '请选择设备类型', trigger: 'change' }],
+      point_type: [{ required: true, message: '请选择点位类型', trigger: 'change' }],
+      point_index: [{ required: true, message: '请选择点位', trigger: 'change' }],
+      action: [
+        { required: true, message: '请��入动作/设定值', trigger: 'blur' },
+        { type: 'number', message: '必须为数字值', trigger: 'blur' }
+      ],
+      expected_result: [
+        { required: true, message: '请输入预期结果', trigger: 'blur' },
+        { type: 'number', message: '必须为数字值', trigger: 'blur' }
+      ],
+      fault_description: [
+        { required: true, message: '请输入故障描述', trigger: 'blur' }
+      ]
     }
 
     // 获取真值表列表
@@ -591,7 +745,7 @@ export default {
                     console.error('API 应格式不正确:', res)
                     testGroups.value = []
                     ElMessage({
-                        message: '获取真值表数据格式不正确',
+                        message: '获取真值表数据式不正确',
                         type: 'error'
                     })
                 }
@@ -682,7 +836,7 @@ export default {
         ElMessage.success('删除成功')
       } catch (error) {
         if (error !== 'cancel') {
-          console.error('删除测试组失败:', error)
+          console.error('删��测试组失败:', error)
           ElMessage.error('删除测试组失败')
         }
       }
@@ -731,8 +885,12 @@ export default {
       editingItem.value = null
       itemForm.value = {
         id: null,
-        action: '',
-        expected_result: '',
+        device_type: 'EDB',
+        point_type: 'DI',
+        point_index: 1,
+        action: 0,
+        expected_result: 0,
+        fault_description: '',
         sequence: (group.items || []).length
       }
       itemDialogVisible.value = true
@@ -742,7 +900,12 @@ export default {
     const handleEditItem = (group, item) => {
       currentGroup.value = group
       editingItem.value = item
-      itemForm.value = { ...item }
+      itemForm.value = { 
+        ...item,
+        device_type: item.device_type || 'EDB',
+        point_type: item.point_type || 'DI',
+        point_index: item.point_index || 1
+      }
       itemDialogVisible.value = true
     }
 
@@ -773,16 +936,32 @@ export default {
         currentGroup.value.items = []
       }
       
-      if (editingItem.value) {
-        const index = currentGroup.value.items.findIndex(i => i.id === editingItem.value.id)
-        if (index > -1) {
-          currentGroup.value.items[index] = { ...itemForm.value }
-        }
-      } else {
-        currentGroup.value.items.push({ ...itemForm.value })
+      const saveData = {
+        ...itemForm.value,
+        test_group_id: currentGroup.value.id
       }
-      itemDialogVisible.value = false
-      ElMessage.success('保存成功')
+      
+      try {
+        let res
+        if (editingItem.value) {
+          // 更新测试项
+          res = await updateTestItem(editingItem.value.id, saveData)
+          const index = currentGroup.value.items.findIndex(i => i.id === editingItem.value.id)
+          if (index > -1) {
+            currentGroup.value.items[index] = res.data.data
+          }
+        } else {
+          // 创建新测试项
+          res = await createTestItem(saveData)
+          currentGroup.value.items.push(res.data.data)
+        }
+        
+        itemDialogVisible.value = false
+        ElMessage.success(editingItem.value ? '更新成功' : '创建成功')
+      } catch (error) {
+        console.error('保存测试项失败:', error)
+        ElMessage.error('保存测试项失败')
+      }
     }
 
     onMounted(() => {
@@ -837,6 +1016,12 @@ export default {
       handleDeleteItem,
       handleSaveItem,
       handleSelectTable,
+
+      // 测试项数据
+      availablePointTypes,
+      availablePoints,
+      handleDeviceTypeChange,
+      handlePointTypeChange
     }
   }
 }
@@ -975,5 +1160,11 @@ export default {
 .el-divider--vertical {
   margin: 0 12px;
   height: 20px;
+}
+
+.point-description {
+  margin-left: 8px;
+  color: #909399;
+  font-size: 12px;
 }
 </style> 

@@ -7,7 +7,7 @@ CREATE DATABASE IF NOT EXISTS lbfat;
 USE lbfat;
 
 -- =====================================================
--- 基础表结构
+-- 表结构定义
 -- =====================================================
 
 -- 用户表
@@ -25,12 +25,6 @@ CREATE TABLE IF NOT EXISTS users (
     INDEX idx_role (role),
     INDEX idx_status (status)
 ) COMMENT '用户管理表';
-
--- 插入默认管理员账户 (root/root)
--- 使用明文密码
-INSERT INTO users (username, password, display_name, role, status) 
-VALUES ('root', 'root', '系统管理员', 'admin', 'active')
-ON DUPLICATE KEY UPDATE password = VALUES(password);
 
 -- 项目订阅管理表
 CREATE TABLE IF NOT EXISTS project_subscriptions (
@@ -71,10 +65,6 @@ CREATE TABLE IF NOT EXISTS mqtt_subscriptions (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) COMMENT 'MQTT订阅配置表';
 
--- =====================================================
--- 设备类型和点位配置
--- =====================================================
-
 -- 设备类型表
 CREATE TABLE IF NOT EXISTS device_types (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -98,61 +88,67 @@ CREATE TABLE IF NOT EXISTS device_type_points (
     UNIQUE KEY unique_point (device_type_id, point_index)
 ) COMMENT '设备点位配置表';
 
+-- 图纸表
+CREATE TABLE IF NOT EXISTS drawings (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  drawing_number VARCHAR(50) NOT NULL COMMENT '图纸编号',
+  version VARCHAR(20) NOT NULL COMMENT '版本号',
+  description TEXT COMMENT '描述',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  UNIQUE KEY uk_drawing_version (drawing_number, version)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='图纸表';
+
+-- 真值表主表
+CREATE TABLE IF NOT EXISTS truth_tables (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  name VARCHAR(100) NOT NULL COMMENT '真值表名称',
+  drawing_id INT NOT NULL COMMENT '关联图纸ID',
+  version VARCHAR(20) NOT NULL COMMENT '版本号',
+  description TEXT COMMENT '描述',
+  created_by INT COMMENT '创建人ID',
+  updated_by INT COMMENT '最后修改人ID',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  FOREIGN KEY (drawing_id) REFERENCES drawings(id) ON DELETE RESTRICT,
+  FOREIGN KEY (created_by) REFERENCES users(id),
+  FOREIGN KEY (updated_by) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='���值表主表';
+
+-- 测试组表
+CREATE TABLE IF NOT EXISTS test_groups (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  truth_table_id INT NOT NULL COMMENT '所属真值表ID',
+  level TINYINT NOT NULL DEFAULT 0 COMMENT '测试级别：0-普通类，1-安全类',
+  description TEXT COMMENT '描述',
+  sequence INT NOT NULL DEFAULT 0 COMMENT '显示顺序',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  FOREIGN KEY (truth_table_id) REFERENCES truth_tables(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='测试组表';
+
+-- 测试项表
+CREATE TABLE IF NOT EXISTS test_items (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  test_group_id INT NOT NULL COMMENT '所属测试组ID',
+  device_id INT NOT NULL COMMENT '关联的设备ID',
+  point_type VARCHAR(50) NOT NULL DEFAULT 'DI' COMMENT '点位类型',
+  point_index INT NOT NULL DEFAULT 1 COMMENT '点位序号',
+  action DECIMAL(10,2) NOT NULL COMMENT '测试动作/设定值',
+  expected_result DECIMAL(10,2) NOT NULL COMMENT '预期结果',
+  fault_description TEXT COMMENT '故障描述',
+  FOREIGN KEY (test_group_id) REFERENCES test_groups(id) ON DELETE CASCADE,
+  FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='测试项表';
+
 -- =====================================================
--- 测试相关表结构
+-- 初始数据插入
 -- =====================================================
 
--- 测试模板表
-CREATE TABLE IF NOT EXISTS test_templates (
-    template_id VARCHAR(50) PRIMARY KEY,
-    device_type_id VARCHAR(50),
-    name VARCHAR(100),
-    description TEXT,
-    version VARCHAR(20),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) COMMENT '测试模板表';
-
--- 测试批次表
-CREATE TABLE IF NOT EXISTS test_batches (
-    batch_id VARCHAR(50) PRIMARY KEY,
-    template_id VARCHAR(50),
-    name VARCHAR(100),
-    description TEXT,
-    sequence INT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (template_id) REFERENCES test_templates(template_id)
-) COMMENT '测试批次管理表';
-
--- 批次步骤关联表
-CREATE TABLE IF NOT EXISTS batch_steps (
-    batch_id VARCHAR(50),
-    step_id INT,
-    sequence INT,
-    PRIMARY KEY (batch_id, step_id),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (batch_id) REFERENCES test_batches(batch_id)
-) COMMENT '批次步骤关联表';
-
--- 测试步骤表
-CREATE TABLE IF NOT EXISTS template_steps (
-    step_id INT,
-    template_id VARCHAR(50),
-    unit VARCHAR(50),
-    operation VARCHAR(20),
-    value FLOAT,
-    expect_value FLOAT,
-    timeout INT,
-    batch_id VARCHAR(50) COMMENT '关联批次ID',
-    tolerance FLOAT COMMENT '允许误差范围',
-    is_enabled BOOLEAN DEFAULT true COMMENT '步骤启用状态',
-    PRIMARY KEY (template_id, step_id)
-) COMMENT '测试步骤表';
-
--- =====================================================
--- 初始数据
--- =====================================================
+-- 插入默认管理员账户 (root/root)
+INSERT INTO users (username, password, display_name, role, status) 
+VALUES ('root', 'root', '系统管理员', 'admin', 'active')
+ON DUPLICATE KEY UPDATE password = VALUES(password);
 
 -- 插入项目数据
 INSERT INTO project_subscriptions (project_name, is_subscribed) VALUES
@@ -160,16 +156,17 @@ INSERT INTO project_subscriptions (project_name, is_subscribed) VALUES
 ('lb_prod', false);
 
 -- 插入设备数据
-INSERT INTO devices (project_name, module_type, serial_number, status, rssi) VALUES
-('lb_test', 'EDB', '4', 'offline', 0);
+INSERT INTO devices (id, project_name, module_type, serial_number, status, rssi) VALUES
+(1, 'lb_test', 'EDB', '4', 'offline', 0)
+ON DUPLICATE KEY UPDATE status = 'offline';
 
 -- 插入MQTT订阅
 INSERT INTO mqtt_subscriptions (topic, qos, is_active) VALUES
 ('lb_test/+/+/status', 1, TRUE);
 
 -- 插入EDB设备类型
-INSERT INTO device_types (type_name, point_count, description) VALUES
-('EDB', 20, 'EDB设备：20个点位配置（7DI + 3DO + 7DI + 3DI）');
+INSERT INTO device_types (id, type_name, point_count, description) VALUES
+(1, 'EDB', 20, 'EDB设备：20个点位配置（7DI + 3DO + 7DI + 3DI）');
 
 -- 插入EDB设备点位配置
 INSERT INTO device_type_points (device_type_id, point_index, point_type, point_name, description) VALUES
@@ -198,82 +195,31 @@ INSERT INTO device_type_points (device_type_id, point_index, point_type, point_n
 (1, 19, 'DI', 'DI16', 'EDB数字输入点16 - 后段'),
 (1, 20, 'DI', 'DI17', 'EDB数字输入点17 - 后段');
 
--- 开启键检查
-SET FOREIGN_KEY_CHECKS = 1;
-
--- 创建图纸表
-CREATE TABLE IF NOT EXISTS drawings (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  drawing_number VARCHAR(50) NOT NULL COMMENT '图纸编号',
-  version VARCHAR(20) NOT NULL COMMENT '版本号',
-  description TEXT COMMENT '描述',
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  UNIQUE KEY uk_drawing_version (drawing_number, version)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='图纸表';
-
--- 真值表主表
-CREATE TABLE IF NOT EXISTS truth_tables (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  name VARCHAR(100) NOT NULL COMMENT '真值表名称',
-  drawing_id INT NOT NULL COMMENT '关联图纸ID',
-  version VARCHAR(20) NOT NULL COMMENT '版本号',
-  description TEXT COMMENT '描述',
-  created_by INT COMMENT '创建人ID',
-  updated_by INT COMMENT '最后修改人ID',
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  FOREIGN KEY (drawing_id) REFERENCES drawings(id) ON DELETE RESTRICT,
-  FOREIGN KEY (created_by) REFERENCES users(id),
-  FOREIGN KEY (updated_by) REFERENCES users(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='真值表主���';
-
--- 测试组表
-CREATE TABLE IF NOT EXISTS test_groups (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  truth_table_id INT NOT NULL COMMENT '所属真值表ID',
-  level TINYINT NOT NULL DEFAULT 0 COMMENT '测试级别：0-普通类，1-安全类',
-  description TEXT COMMENT '描述',
-  sequence INT NOT NULL DEFAULT 0 COMMENT '显示顺序',
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  FOREIGN KEY (truth_table_id) REFERENCES truth_tables(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='测试组表';
-
--- 测试项表
-CREATE TABLE IF NOT EXISTS test_items (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  test_group_id INT NOT NULL COMMENT '所属测试组ID',
-  action TEXT NOT NULL COMMENT '测试动作',
-  expected_result TEXT NOT NULL COMMENT '预期结果',
-  sequence INT NOT NULL DEFAULT 0 COMMENT '显示顺序',
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  FOREIGN KEY (test_group_id) REFERENCES test_groups(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='测试项表';
-
--- 插入试图纸数据
-INSERT INTO drawings (drawing_number, version, description) VALUES
-('DWG-001', '1.0', '安全开关测试图纸'),
-('DWG-002', '1.0', '电机控制测试图纸');
+-- 插入图纸数据
+INSERT INTO drawings (id, drawing_number, version, description) VALUES
+(1, 'DWG-001', '1.0', '安全开关测试图纸'),
+(2, 'DWG-002', '1.0', '电机控制测试图纸');
 
 -- 插入测试真值表数据
-INSERT INTO truth_tables (name, drawing_id, version, description) VALUES
-('安全开关测试', 1, '1.0', '安全开关功能测试真值表'),
-('电机控制测试', 2, '1.0', '电机控制功能测试真值表');
+INSERT INTO truth_tables (id, name, drawing_id, version, description) VALUES
+(1, '安全开关测试', 1, '1.0', '安全开关功能测试真值表'),
+(2, '电机控制测试', 2, '1.0', '电机控制功能测试真值表');
 
 -- 插入测试组数据
-INSERT INTO test_groups (truth_table_id, level, description, sequence) VALUES
-(1, 1, '安全开关检查组', 0),
-(1, 2, '安全联锁测试组', 1),
-(2, 1, '电机启动测试组', 0),
-(2, 2, '电机运行测试组', 1);
+INSERT INTO test_groups (id, truth_table_id, level, description, sequence) VALUES
+(1, 1, 1, '安全开关检查组', 0),
+(2, 1, 0, '安全联锁测试组', 1),
+(3, 2, 1, '电机启动测试组', 0),
+(4, 2, 0, '电机运行测试组', 1);
 
 -- 插入测试项数据
-INSERT INTO test_items (test_group_id, action, expected_result, sequence) VALUES
-(1, '检查安全开关状态', '安全开关处于闭合状态', 0),
-(1, '打开安全开关', '安全开关处于打开状态', 1),
-(2, '检查安全联锁', '电机无法启动', 0),
-(3, '启动电机', '电机正常启动', 0),
-(3, '检查运行状态', '电机运行指示灯亮起', 1),
-(4, '检查电机转速', '电机转速达到额定值', 0);
+INSERT INTO test_items (test_group_id, device_id, point_type, point_index, action, expected_result, fault_description) VALUES
+(1, 1, 'DI', 1, 0.00, 1.00, '安全开关处于闭合状态时，输入信号应为1'),
+(1, 1, 'DI', 1, 1.00, 0.00, '安全开关处于打开状态时，输入信号应为0'),
+(2, 1, 'DI', 2, 1.00, 0.00, '安全联锁触发时，电机无法启动'),
+(3, 1, 'DO', 1, 1.00, 1.00, '启动电机时，输出信号应为1'),
+(3, 1, 'DI', 3, 1.00, 1.00, '电机运行时，运行指示灯应亮起'),
+(4, 1, 'AO', 1, 50.00, 50.00, '电机转速应达到设定值');
+
+-- 开启外键检查
+SET FOREIGN_KEY_CHECKS = 1;

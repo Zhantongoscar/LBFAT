@@ -315,6 +315,17 @@ import { ref, computed, onMounted } from 'vue'
 import { Monitor, Cpu, Connection, ArrowDown, ArrowRight } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getTruthTables, getTruthTable } from '@/api/truthTable'
+import {
+  createTestInstance,
+  startTest,
+  updateTestItemStatus,
+  completeTest,
+  getTestInstance,
+  TestStatus,
+  TestResult,
+  ExecutionStatus,
+  ResultStatus
+} from '@/api/testInstance'
 
 export default {
   name: 'TestExecution',
@@ -543,7 +554,7 @@ export default {
             description: group.description,
             items: group.items.map(item => ({
               deviceId: item.device_id || 'device1', // 临时使用默认值
-              unitId: item.unit_id || 'DI1', // 临时使用默认值
+              unitId: item.unit_id || 'DI1', // 临时使��默认值
               unitType: item.unit_type || 'DI', // 临时使用默认值
               expectedValue: item.expected_result,
               setValue: item.action,
@@ -568,57 +579,193 @@ export default {
     const testGroups = ref([])
     const currentTestGroup = ref(null)
     const currentTestItem = ref(null)
-    const testStatus = ref('ready') // ready, running, paused, completed
+    const testStatus = ref(TestStatus.PENDING)
     const testResults = ref([])
 
-    // 开始测试
-    const startTest = async () => {
+    // 测试实例相关
+    const currentInstance = ref(null)
+
+    // 创建测试实例
+    const createInstance = async () => {
       if (!selectedTemplate.value) {
         ElMessage.warning('请先选择真值表')
         return
       }
 
       try {
-        testStatus.value = 'running'
-        currentTestGroup.value = testGroups.value[0]
-        currentTestItem.value = currentTestGroup.value.items[0]
-        // TODO: 实现测试逻辑
+        const instanceData = {
+          truth_table_id: selectedTemplate.value.id,
+          product_sn: productInfo.value.serialNumber,
+          product_model: productInfo.value.model,
+          firmware_version: productInfo.value.firmwareVersion,
+          operator: 'admin' // TODO: 从用户状态获取
+        }
+
+        const res = await createTestInstance(instanceData)
+        currentInstance.value = res.data.data.instanceId
+        testStatus.value = TestStatus.PENDING
+
+        // 获取实例详情
+        await loadInstanceDetails()
+
+        ElMessage.success('测试实例创建成功')
       } catch (error) {
-        console.error('测试执行失败:', error)
-        ElMessage.error('测试执行失败')
-        testStatus.value = 'ready'
+        console.error('创建测试实例失败:', error)
+        ElMessage.error('创建测试实例失败')
       }
     }
 
+    // 加载实例详情
+    const loadInstanceDetails = async () => {
+      if (!currentInstance.value) return
+
+      try {
+        const res = await getTestInstance(currentInstance.value)
+        const instanceData = res.data.data
+
+        // 更新测试组和测试项数据
+        testGroups.value = instanceData.items.reduce((groups, item) => {
+          const group = groups.find(g => g.id === item.group_id)
+          if (group) {
+            group.items.push(item)
+          } else {
+            groups.push({
+              id: item.group_id,
+              description: item.group_description,
+              items: [item]
+            })
+          }
+          return groups
+        }, [])
+
+        testStatus.value = instanceData.status
+      } catch (error) {
+        console.error('加载测试实例详情失败:', error)
+        ElMessage.error('加载测试实例详情失败')
+      }
+    }
+
+    // 开始测试
+    const startTest = async () => {
+      if (!currentInstance.value) {
+        await createInstance()
+      }
+
+      try {
+        await startTest(currentInstance.value)
+        testStatus.value = TestStatus.RUNNING
+        currentTestGroup.value = testGroups.value[0]
+        currentTestItem.value = currentTestGroup.value?.items[0]
+        
+        // 开始执行第一个测试项
+        await executeTestItem(currentTestItem.value)
+      } catch (error) {
+        console.error('开始测试失败:', error)
+        ElMessage.error('开始测试失败')
+      }
+    }
+
+    // 执行测试项
+    const executeTestItem = async (item) => {
+      if (!item) return
+
+      try {
+        // 更新测试项状态为执行中
+        await updateTestItemStatus(currentInstance.value, item.id, {
+          execution_status: ExecutionStatus.RUNNING,
+          result_status: ResultStatus.UNKNOWN
+        })
+
+        // TODO: 实现具体的测试逻辑
+        // 1. 根据点位类型执行不同的操作
+        // 2. 处理测试结果
+        // 3. 更新测试项状态
+
+        // 模拟测试执行
+        setTimeout(async () => {
+          const result = Math.random() > 0.5 ? ResultStatus.PASS : ResultStatus.FAIL
+          
+          await updateTestItemStatus(currentInstance.value, item.id, {
+            execution_status: ExecutionStatus.COMPLETED,
+            result_status: result,
+            actual_value: result === ResultStatus.PASS ? item.expected_value : 'unexpected value'
+          })
+
+          // 执行下一个测试项
+          const nextItem = getNextTestItem(item)
+          if (nextItem) {
+            currentTestItem.value = nextItem
+            await executeTestItem(nextItem)
+          } else {
+            // 所有测试项执行完成
+            await completeTest(currentInstance.value, TestResult.PASS)
+            testStatus.value = TestStatus.COMPLETED
+          }
+        }, 2000)
+      } catch (error) {
+        console.error('执行测试项失败:', error)
+        ElMessage.error('执行测试项失败')
+      }
+    }
+
+    // 获取下一个测试项
+    const getNextTestItem = (currentItem) => {
+      const currentGroup = testGroups.value.find(g => g.id === currentItem.group_id)
+      const currentIndex = currentGroup.items.findIndex(i => i.id === currentItem.id)
+      
+      // 当前组内还有测试项
+      if (currentIndex < currentGroup.items.length - 1) {
+        return currentGroup.items[currentIndex + 1]
+      }
+      
+      // 查找下一个组的第一个测试项
+      const currentGroupIndex = testGroups.value.findIndex(g => g.id === currentGroup.id)
+      if (currentGroupIndex < testGroups.value.length - 1) {
+        const nextGroup = testGroups.value[currentGroupIndex + 1]
+        return nextGroup.items[0]
+      }
+      
+      return null
+    }
+
     // 暂停测试
-    const pauseTest = () => {
-      testStatus.value = 'paused'
+    const pauseTest = async () => {
+      // TODO: 实现暂停逻辑
+      testStatus.value = TestStatus.PAUSED
     }
 
     // 继续测试
-    const resumeTest = () => {
-      testStatus.value = 'running'
+    const resumeTest = async () => {
+      // TODO: 实现继续逻辑
+      testStatus.value = TestStatus.RUNNING
     }
 
     // 停止测试
-    const stopTest = () => {
-      ElMessageBox.confirm(
-        '确定要停止当前测试吗？已执行的测试结果将被保存。',
-        '警告',
-        {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
-          type: 'warning'
-        }
-      ).then(() => {
-        testStatus.value = 'ready'
+    const stopTest = async () => {
+      try {
+        await ElMessageBox.confirm(
+          '确定要停止当前测试吗？已执行的测试结果将被保存。',
+          '警告',
+          {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning'
+          }
+        )
+
+        await completeTest(currentInstance.value, TestResult.FAIL)
+        testStatus.value = TestStatus.ABORTED
         currentTestGroup.value = null
         currentTestItem.value = null
-      })
+      } catch (error) {
+        if (error !== 'cancel') {
+          console.error('停止测试失败:', error)
+          ElMessage.error('停止测试失败')
+        }
+      }
     }
 
     onMounted(() => {
-      // 在组件挂载时获取真值表列表
       fetchTemplateList()
     })
 
@@ -661,7 +808,12 @@ export default {
       startTest,
       pauseTest,
       resumeTest,
-      stopTest
+      stopTest,
+      currentInstance,
+      TestStatus,
+      TestResult,
+      ExecutionStatus,
+      ResultStatus
     }
   }
 }
