@@ -124,45 +124,116 @@
                       </el-button>
                     </div>
                     <el-table :data="row.items || []" style="width: 100%">
-                      <el-table-column prop="device_type" label="设备类型" width="100">
+                      <el-table-column prop="id" label="ID" width="80" />
+                      <el-table-column prop="device_id" label="设备ID" width="100">
+                        <template #default="scope">
+                          <el-select v-model="scope.row.device_id" placeholder="选择设备" size="small">
+                            <el-option
+                              v-for="device in deviceStore.devices"
+                              :key="device.id"
+                              :label="device.id"
+                              :value="device.id"
+                            />
+                          </el-select>
+                        </template>
+                      </el-table-column>
+                      <el-table-column prop="device_type" label="设备类型" width="150">
                         <template #default="{ row }">
-                          <el-tag size="small">{{ row.device_type || 'EDB' }}</el-tag>
+                          <el-select 
+                            v-model="row.device_type" 
+                            placeholder="选择设备类型"
+                            size="small"
+                            @change="(val) => handleDeviceTypeChangeInline(val, row)"
+                          >
+                            <el-option 
+                              v-for="type in Object.keys(deviceStore.deviceTypes)"
+                              :key="type"
+                              :label="deviceStore.deviceTypes[type].name"
+                              :value="type"
+                            />
+                          </el-select>
                         </template>
                       </el-table-column>
                       <el-table-column prop="point_type" label="点位类型" width="100">
                         <template #default="{ row }">
-                          <el-tag 
+                          <el-select 
+                            v-model="row.point_type" 
+                            placeholder="选择点位类型"
                             size="small"
-                            :type="row.point_type === 'DI' ? 'info' : 
-                                  row.point_type === 'DO' ? 'success' : 
-                                  row.point_type === 'AI' ? 'warning' : 'danger'"
+                            @change="(val) => handlePointTypeChangeInline(val, row)"
                           >
-                            {{ row.point_type || 'DI' }}
-                          </el-tag>
+                            <el-option
+                              v-for="type in getAvailablePointTypes(row.device_type)"
+                              :key="type"
+                              :label="type"
+                              :value="type"
+                            />
+                          </el-select>
                         </template>
                       </el-table-column>
-                      <el-table-column prop="point_index" label="点位序号" width="100" />
+                      <el-table-column prop="point_index" label="点位序号" width="100">
+                        <template #default="{ row }">
+                          <el-select 
+                            v-model="row.point_index" 
+                            placeholder="选择点位"
+                            size="small"
+                          >
+                            <el-option
+                              v-for="point in getAvailablePoints(row.device_type, row.point_type)"
+                              :key="point.value"
+                              :label="point.label"
+                              :value="point.value"
+                            >
+                              <span>{{ point.label }}</span>
+                              <span class="point-description">{{ point.description }}</span>
+                            </el-option>
+                          </el-select>
+                        </template>
+                      </el-table-column>
                       <el-table-column prop="action" label="动作/设定值" width="150">
                         <template #default="{ row }">
                           <template v-if="row.point_type === 'DO' || row.point_type === 'AO'">
-                            <span>设定值: {{ row.action }} V</span>
+                            <el-input-number
+                              v-model="row.action"
+                              :precision="2"
+                              :step="0.1"
+                              :max="100"
+                              :min="-100"
+                              size="small"
+                              style="width: 120px"
+                            />
                           </template>
                           <template v-else>
-                            {{ row.action }}
+                            <el-input 
+                              v-model="row.action" 
+                              size="small"
+                              style="width: 120px"
+                            />
                           </template>
                         </template>
                       </el-table-column>
                       <el-table-column prop="expected_result" label="预期结果" width="150">
                         <template #default="{ row }">
-                          {{ row.expected_result }} V
+                          <el-input-number
+                            v-model="row.expected_result"
+                            :precision="2"
+                            :step="0.1"
+                            :max="100"
+                            :min="-100"
+                            size="small"
+                            style="width: 120px"
+                          />
                         </template>
                       </el-table-column>
                       <el-table-column prop="fault_description" label="故障描述" min-width="200">
                         <template #default="{ row }">
-                          {{ row.fault_description || '-' }}
+                          <el-input
+                            v-model="row.fault_description"
+                            size="small"
+                            placeholder="请输入故障描述"
+                          />
                         </template>
                       </el-table-column>
-                      <el-table-column prop="sequence" label="序号" width="80" />
                       <el-table-column label="操作" width="200" fixed="right">
                         <template #default="scope">
                           <el-button-group>
@@ -227,7 +298,7 @@
         <el-form-item label="版本" prop="version">
           <el-select 
             v-model="form.version" 
-            placeholder="请选择���本"
+            placeholder="请选择版本"
             :disabled="!form.drawing_id"
           >
             <el-option
@@ -298,7 +369,7 @@
         <el-form-item label="设备类型" prop="device_type">
           <el-select 
             v-model="itemForm.device_type" 
-            placeholder="请选择设备类型"
+            placeholder="请选择设��类型"
             @change="handleDeviceTypeChange"
           >
             <el-option 
@@ -414,7 +485,7 @@ export default {
     const availableDrawings = ref([])
     const availableVersions = ref([])
     const loading = ref(false)
-    const isCollapse = ref(false)
+    const isCollapse = ref(true)
     const currentTable = ref(null)
     const testGroups = ref([])
 
@@ -507,7 +578,7 @@ export default {
       point_type: [{ required: true, message: '请选择点位类型', trigger: 'change' }],
       point_index: [{ required: true, message: '请选择点位', trigger: 'change' }],
       action: [
-        { required: true, message: '请��入动作/设定值', trigger: 'blur' },
+        { required: true, message: '请输入动作/设定值', trigger: 'blur' },
         { type: 'number', message: '必须为数字值', trigger: 'blur' }
       ],
       expected_result: [
@@ -526,15 +597,24 @@ export default {
         const res = await getTruthTables()
         truthTables.value = res.data.data
         
-        // 如果有上次选中的真值表ID，则选中对应行并加载其测试组数据
+        // 获取上次选中的真值表ID
         const lastSelectedId = localStorage.getItem('lastSelectedTruthTableId')
+        let targetTable = null
+
         if (lastSelectedId) {
-          const table = truthTables.value.find(t => t.id === parseInt(lastSelectedId))
-          if (table) {
-            currentTable.value = table
-            // 加载测试组数据
-            await fetchTestGroups(table.id)
-          }
+          // 尝试找到上次选中的真值表
+          targetTable = truthTables.value.find(t => t.id === parseInt(lastSelectedId))
+        }
+
+        // 如果没有上次选中的真值表或找不到对应记录，选择最新的真值表
+        if (!targetTable && truthTables.value.length > 0) {
+          targetTable = truthTables.value[0] // 因���后端已按更新时间降序排序
+        }
+
+        // 如果找到目标真值表，设置为当前编辑表
+        if (targetTable) {
+          console.log('自动选择真值表:', targetTable)
+          await handleSelectTable(targetTable)
         }
       } catch (error) {
         console.error('获取真值表列表失败:', error)
@@ -704,82 +784,36 @@ export default {
 
     // 选择当前真值表
     const handleSelectTable = async (row) => {
-        try {
-            console.log('开始选择真值表，数据:', row);
-            
-            // 更新本地状态
-            currentTable.value = row
-            localStorage.setItem('lastSelectedTruthTableId', row.id)
-            
-            // 存储当前选中的真值表信息到 localStorage
-            const tableInfo = {
-                id: row.id,
-                name: row.name,
-                drawing_id: row.drawing_id,
-                version: row.version,
-                drawingNumber: getDrawingNumber(row.drawing_id)
-            }
-            localStorage.setItem('selectedTruthTable', JSON.stringify(tableInfo))
-            
-            // 获取测试组数据
-            console.log('开始获取真值表详情，ID:', row.id)
-            try {
-                console.log('调用 getTruthTable API...')
-                const res = await getTruthTable(row.id)
-                console.log('获取到的真值表详情:', res)
-                
-                if (res.data && res.data.data) {
-                    const tableData = res.data.data
-                    if (Array.isArray(tableData.groups)) {
-                        testGroups.value = tableData.groups
-                        ElMessage.success('已设置为当前编辑表')
-                    } else {
-                        console.warn('真值表数据中没有 groups 数组:', tableData)
-                        testGroups.value = []
-                        ElMessage({
-                            message: '已设置为当前编辑表，但该真值表暂无测试组数据',
-                            type: 'warning'
-                        })
-                    }
-                } else {
-                    console.error('API 应格式不正确:', res)
-                    testGroups.value = []
-                    ElMessage({
-                        message: '获取真值表数据式不正确',
-                        type: 'error'
-                    })
-                }
-            } catch (apiError) {
-                console.error('调用 getTruthTable API 失败:', apiError)
-                console.error('错误详情:', {
-                    message: apiError.message,
-                    response: apiError.response,
-                    request: apiError.request,
-                    config: apiError.config
-                })
-                throw apiError
-            }
-        } catch (error) {
-            console.error('设置当前编辑表失败:', error)
-            console.error('错误类型:', error.constructor.name)
-            console.error('错误消息:', error.message)
-            console.error('错误堆栈:', error.stack)
-            if (error.response) {
-                console.error('服务器响应:', {
-                    status: error.response.status,
-                    statusText: error.response.statusText,
-                    data: error.response.data
-                })
-            }
-            
-            ElMessage.error(error.response?.data?.message || '设置当前编辑表失败')
-            
-            // 生错误时回滚状态
-            currentTable.value = null
-            localStorage.removeItem('selectedTruthTable')
-            localStorage.removeItem('lastSelectedTruthTableId')
-            testGroups.value = []
+      try {
+        console.log('开始选择真值表，数据:', row)
+        
+        // 更新本地状态
+        currentTable.value = row
+        localStorage.setItem('lastSelectedTruthTableId', row.id)
+        
+        // 存储当前选中的真值表信息到 localStorage
+        const tableInfo = {
+          id: row.id,
+          name: row.name,
+          drawing_id: row.drawing_id,
+          version: row.version,
+          drawingNumber: getDrawingNumber(row.drawing_id)
         }
+        localStorage.setItem('selectedTruthTable', JSON.stringify(tableInfo))
+        
+        // 获取测试组数据
+        await fetchTestGroups(row.id)
+        ElMessage.success('已设置为当前编辑表')
+      } catch (error) {
+        console.error('设置当前编辑表失败:', error)
+        ElMessage.error('设置当前编辑表失败')
+        
+        // 发生错误时回滚状态
+        currentTable.value = null
+        localStorage.removeItem('selectedTruthTable')
+        localStorage.removeItem('lastSelectedTruthTableId')
+        testGroups.value = []
+      }
     }
 
     // 获取真值表的测试组
@@ -836,7 +870,7 @@ export default {
         ElMessage.success('删除成功')
       } catch (error) {
         if (error !== 'cancel') {
-          console.error('删��测试组失败:', error)
+          console.error('��除测试组失败:', error)
           ElMessage.error('删除测试组失败')
         }
       }
@@ -964,6 +998,32 @@ export default {
       }
     }
 
+    // 获取可用的点位类型（用于内联编辑）
+    const getAvailablePointTypes = (deviceType) => {
+      const config = deviceStore.getDeviceConfig(deviceType)
+      return config ? config.pointTypes : []
+    }
+
+    // 获取可用的点位选项（用于内联编辑）
+    const getAvailablePoints = (deviceType, pointType) => {
+      return deviceStore.getPointOptions(deviceType, pointType)
+    }
+
+    // 处理内联编辑时的设备类型变化
+    const handleDeviceTypeChangeInline = (val, row) => {
+      // 重置点位类型和序号
+      row.point_type = getAvailablePointTypes(val)[0] || ''
+      row.point_index = 1
+    }
+
+    // 处理内联编辑时的点位类型变化
+    const handlePointTypeChangeInline = (val, row) => {
+      // 重置点位序号和相关值
+      row.point_index = 1
+      row.action = 0
+      row.expected_result = 0
+    }
+
     onMounted(() => {
       fetchTruthTables()
       fetchAvailableDrawings()
@@ -1021,7 +1081,12 @@ export default {
       availablePointTypes,
       availablePoints,
       handleDeviceTypeChange,
-      handlePointTypeChange
+      handlePointTypeChange,
+      getAvailablePointTypes,
+      getAvailablePoints,
+      handleDeviceTypeChangeInline,
+      handlePointTypeChangeInline,
+      deviceStore
     }
   }
 }

@@ -113,7 +113,7 @@ CREATE TABLE IF NOT EXISTS truth_tables (
   FOREIGN KEY (drawing_id) REFERENCES drawings(id) ON DELETE RESTRICT,
   FOREIGN KEY (created_by) REFERENCES users(id),
   FOREIGN KEY (updated_by) REFERENCES users(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='���值表主表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='真值表主表';
 
 -- 测试组表
 CREATE TABLE IF NOT EXISTS test_groups (
@@ -172,7 +172,7 @@ INSERT INTO device_types (id, type_name, point_count, description) VALUES
 INSERT INTO device_type_points (device_type_id, point_index, point_type, point_name, description) VALUES
 -- 前7个DI
 (1, 1, 'DI', 'DI1', 'EDB数字输入点1 - 前段'),
-(1, 2, 'DI', 'DI2', 'EDB数字输入点2 - 前段'),
+(1, 2, 'DI', 'DI2', 'EDB数字输入��2 - 前段'),
 (1, 3, 'DI', 'DI3', 'EDB数字输入点3 - 前段'),
 (1, 4, 'DI', 'DI4', 'EDB数字输入点4 - 前段'),
 (1, 5, 'DI', 'DI5', 'EDB数字输入点5 - 前段'),
@@ -214,11 +214,11 @@ INSERT INTO test_groups (id, truth_table_id, level, description, sequence) VALUE
 
 -- 插入测试项数据
 INSERT INTO test_items (test_group_id, device_id, point_type, point_index, action, expected_result, fault_description) VALUES
-(1, 1, 'DI', 1, 0.00, 1.00, '安全开关处于闭合状态时，输入信号应为1'),
-(1, 1, 'DI', 1, 1.00, 0.00, '安全开关处于打开状态时，输入信号应为0'),
+(1, 1, 'DI', 1, 0.00, 1.00, '安全开关处于闭合状态时，输入信号为1'),
+(1, 1, 'DI', 1, 1.00, 0.00, '安全开关处于打开状态时，输入信号为0'),
 (2, 1, 'DI', 2, 1.00, 0.00, '安全联锁触发时，电机无法启动'),
-(3, 1, 'DO', 1, 1.00, 1.00, '启动电机时，输出信号应为1'),
-(3, 1, 'DI', 3, 1.00, 1.00, '电机运行时，运行指示灯应亮起'),
+(3, 1, 'DO', 1, 1.00, 1.00, '启动电机时，输出信号为1'),
+(3, 1, 'DI', 3, 1.00, 1.00, '电机运行时，运行指示灯亮起'),
 (4, 1, 'AO', 1, 50.00, 50.00, '电机转速应达到设定值');
 
 -- 开启外键检查
