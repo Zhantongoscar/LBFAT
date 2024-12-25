@@ -48,19 +48,26 @@ class Device {
     // 创建或更新设备
     static async upsert(device) {
         const sql = `
-            INSERT INTO devices (project_name, module_type, serial_number, status, rssi)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO devices (project_name, module_type, serial_number, status)
+            VALUES (?, ?, ?, 'offline')
             ON DUPLICATE KEY UPDATE
-                status = VALUES(status),
-                rssi = VALUES(rssi)
+                module_type = VALUES(module_type)
         `;
-        const [result] = await db.query(sql, [
-            device.projectName,
-            device.moduleType,
-            device.serialNumber,
-            device.status,
-            device.rssi
+        
+        console.log('执行SQL:', sql);
+        console.log('参数:', [
+            device.project_name,
+            device.module_type,
+            device.serial_number
         ]);
+        
+        const result = await db.query(sql, [
+            device.project_name,
+            device.module_type,
+            device.serial_number
+        ]);
+        
+        console.log('插入结果:', result);
         return result;
     }
 

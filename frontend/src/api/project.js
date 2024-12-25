@@ -6,14 +6,14 @@ export default {
         return api.get('/projects');
     },
 
-    // 创建新项目
-    createProject(projectName) {
-        return api.post('/projects', { projectName });
+    // 创建项目
+    createProject(data) {
+        return api.post('/projects', data);
     },
 
     // 更新项目订阅状态
-    updateSubscription(projectName, isSubscribed) {
-        return api.put(`/projects/${projectName}/subscription`, { isSubscribed });
+    updateSubscription(projectName, data) {
+        return api.put(`/projects/${projectName}/subscription`, data);
     },
 
     // 删除项目
