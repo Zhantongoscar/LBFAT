@@ -49,33 +49,40 @@
     <el-dialog
       v-model="dialogVisible"
       :title="'编辑设备类型！'"
-      width="500px"
+      width="800px"
+      class="device-type-dialog"
     >
       <el-form :model="deviceForm" label-width="100px">
-        <el-form-item label="设备类型">
-          <el-input v-model="deviceForm.type_name" placeholder="如：EDB" />
-        </el-form-item>
-        <el-form-item label="点位数量！">
-          <el-input-number 
-            v-model="deviceForm.point_count" 
-            :min="1" 
-            :max="100"
-          />
-          <el-button 
-            type="primary" 
-            link 
-            @click="showQuickSetDialog"
-            style="margin-left: 10px"
-          >
-            快速设置
-          </el-button>
-        </el-form-item>
+        <el-row :gutter="20">
+          <el-col :span="8">
+            <el-form-item label="设备类型">
+              <el-input v-model="deviceForm.type_name" placeholder="如：EDB" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="16">
+            <el-form-item label="点位数量！">
+              <el-input-number 
+                v-model="deviceForm.point_count" 
+                :min="1" 
+                :max="100"
+              />
+              <el-button 
+                type="primary" 
+                link 
+                @click="showQuickSetDialog"
+                style="margin-left: 10px"
+              >
+                快速设置
+              </el-button>
+            </el-form-item>
+          </el-col>
+        </el-row>
         
         <!-- 点位配置列表 -->
         <el-form-item label="点位配置">
           <div class="points-list">
             <div v-for="(point, index) in deviceForm.points" :key="index" class="point-item">
-              <el-row :gutter="10">
+              <el-row :gutter="20">
                 <el-col :span="4">
                   <el-input 
                     v-model="point.point_index" 
@@ -83,15 +90,15 @@
                     placeholder="序号"
                   />
                 </el-col>
-                <el-col :span="6">
-                  <el-select v-model="point.point_type" placeholder="类型">
+                <el-col :span="8">
+                  <el-select v-model="point.point_type" placeholder="类型" style="width: 100%">
                     <el-option label="DI" value="DI" />
                     <el-option label="DO" value="DO" />
                     <el-option label="AI" value="AI" />
                     <el-option label="AO" value="AO" />
                   </el-select>
                 </el-col>
-                <el-col :span="14">
+                <el-col :span="12">
                   <el-input 
                     v-model="point.description" 
                     placeholder="点位描述"
@@ -107,7 +114,7 @@
             v-model="deviceForm.description"
             type="textarea"
             placeholder="如：EDB设备: 20个点位配置 (7DI + 3DO + 7DI + 3DI)"
-            :rows="3"
+            :rows="2"
           />
         </el-form-item>
       </el-form>
@@ -499,5 +506,28 @@ export default {
 .quick-set-tips li {
   margin: 3px 0;
   color: #606266;
+}
+
+/* 设备类型对话框样式 */
+:deep(.device-type-dialog) {
+  .el-dialog__body {
+    padding: 20px 30px;
+  }
+  
+  .el-select {
+    width: 100%;
+  }
+  
+  .points-list {
+    margin-top: 10px;
+  }
+  
+  .point-item {
+    transition: all 0.3s;
+  }
+  
+  .point-item:hover {
+    background-color: #ecf5ff;
+  }
 }
 </style> 
