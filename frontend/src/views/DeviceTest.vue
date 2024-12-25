@@ -163,7 +163,7 @@ export default {
     // 加载设备列表
     const loadDevices = async () => {
       try {
-        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/devices`)
+        const response = await api.get('/devices')
         if (response.data.code === 200) {
           devices.value = response.data.data
           
@@ -360,7 +360,7 @@ export default {
       messageDetailVisible.value = true
     }
 
-    // 组件挂载时添加WebSocket监听
+    // 组件挂���时添加WebSocket监听
     onMounted(() => {
       loadDevices()
       if (ws.value) {

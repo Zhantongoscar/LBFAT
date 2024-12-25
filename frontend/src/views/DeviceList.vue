@@ -44,7 +44,7 @@ export default {
       loading.value = true
       try {
         console.log('开始加载设备列表')
-        const response = await api.get('/api/devices')
+        const response = await api.get('/devices')
         console.log('获取到的数据:', response.data)
         if (response.data.code === 200) {
           devices.value = response.data.data

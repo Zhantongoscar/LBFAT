@@ -46,7 +46,7 @@ import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import { ElMessage } from 'element-plus'
-import axios from 'axios'
+import api from '../utils/api'
 
 export default {
   name: 'Login',
@@ -55,15 +55,6 @@ export default {
     const userStore = useUserStore()
     const loginForm = ref(null)
     const loading = ref(false)
-    
-    // 配置 axios
-    const axiosInstance = axios.create({
-      baseURL: '/api',
-      timeout: 5000,
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    })
     
     const formData = reactive({
       username: '',
@@ -86,7 +77,7 @@ export default {
         await loginForm.value.validate()
         loading.value = true
         
-        const response = await axiosInstance.post('/users/login', formData)
+        const response = await api.post('/users/login', formData)
         const data = response.data
         
         if (response.status === 200 && data.code === 200) {

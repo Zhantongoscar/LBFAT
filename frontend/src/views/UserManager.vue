@@ -84,7 +84,7 @@
 <script>
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import axios from 'axios'
+import api from '../utils/api'
 import { useUserStore } from '../stores/user'
 
 export default {
@@ -126,29 +126,15 @@ export default {
         { required: true, message: '请选择角色', trigger: 'change' }
       ],
       status: [
-        { required: true, message: '请选择状态', trigger: 'change' }
+        { required: true, message: '请选���状态', trigger: 'change' }
       ]
     }
-
-    // 配置 axios
-    const axiosInstance = axios.create({
-      baseURL: '/api'
-    })
-
-    // 配置请求拦截器
-    axiosInstance.interceptors.request.use(config => {
-      const token = userStore.token
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`
-      }
-      return config
-    })
 
     // 获取用户列表
     const fetchUsers = async () => {
       loading.value = true
       try {
-        const response = await axiosInstance.get('/users')
+        const response = await api.get('/users')
         if (response.data.code === 200) {
           users.value = response.data.data
         } else {
@@ -200,7 +186,7 @@ export default {
         }
       ).then(async () => {
         try {
-          const response = await axiosInstance.delete(`/users/${row.id}`)
+          const response = await api.delete(`/users/${row.id}`)
           if (response.data.code === 200) {
             ElMessage.success('删除成功')
             fetchUsers()
@@ -224,10 +210,10 @@ export default {
             let response
             if (dialogType.value === 'add') {
               console.log('准备创建用户:', userForm.value)
-              response = await axiosInstance.post('/users', userForm.value)
+              response = await api.post('/users', userForm.value)
             } else {
               console.log('准备更新用户:', userForm.value)
-              response = await axiosInstance.put(`/users/${userForm.value.id}`, userForm.value)
+              response = await api.put(`/users/${userForm.value.id}`, userForm.value)
             }
 
             if (response.data.code === 200) {

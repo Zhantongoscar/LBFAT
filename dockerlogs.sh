@@ -1,0 +1,1 @@
+clear && docker logs lbfat_frontend && docker logs lbfat_backend
