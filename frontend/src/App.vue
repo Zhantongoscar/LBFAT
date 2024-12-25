@@ -2,18 +2,20 @@
   <el-container>
     <el-header>
       <div class="header-content">
-        <h1>Leybold Panel Test System V1.0.0</h1>
+        <div class="logo-title">
+          <img src="@/assets/buhler-logo.png" alt="Bühler Logo" class="buhler-logo">
+          <h1>Leybold Panel Test System V1.0.0</h1>
+        </div>
         <div class="user-info" v-if="userStore.isAuthenticated">
           <el-dropdown>
             <span class="el-dropdown-link">
               <el-avatar
                 :size="32"
                 class="user-avatar"
-                :src="userStore.user?.avatar"
               >
-                {{ userStore.user?.username.charAt(0).toUpperCase() }}
+                {{ userStore.user?.username?.charAt(0).toUpperCase() || 'U' }}
               </el-avatar>
-              {{ userStore.user?.username }}
+              <span class="username">{{ userStore.user?.username }}</span>
               <el-icon class="el-icon--right"><arrow-down /></el-icon>
             </span>
             <template #dropdown>
@@ -22,26 +24,16 @@
                   <el-avatar
                     :size="50"
                     class="user-avatar-large"
-                    :src="userStore.user?.avatar"
                   >
-                    {{ userStore.user?.username.charAt(0).toUpperCase() }}
+                    {{ userStore.user?.username?.charAt(0).toUpperCase() || 'U' }}
                   </el-avatar>
+                  <div class="user-detail">
+                    <div>{{ userStore.user?.username }}</div>
+                    <div class="user-role">{{ userStore.isAdmin ? '管理员' : '普通用户' }}</div>
+                  </div>
                 </el-dropdown-item>
                 <el-dropdown-item>
-                  <span>用户名：{{ userStore.user?.username }}</span>
-                </el-dropdown-item>
-                <el-dropdown-item>
-                  <span>显示名称：{{ userStore.user?.display_name || '-' }}</span>
-                </el-dropdown-item>
-                <el-dropdown-item>
-                  <span>角色：</span>
-                  <el-tag size="small" :type="userStore.isAdmin ? 'danger' : 'info'">
-                    {{ userStore.isAdmin ? '管理员' : '普通用户' }}
-                  </el-tag>
-                </el-dropdown-item>
-                <el-dropdown-item divided @click="handleLogout">
-                  <el-icon><switch-button /></el-icon>
-                  退出登录
+                  <el-button type="text" @click="handleLogout">退出登录</el-button>
                 </el-dropdown-item>
               </el-dropdown-menu>
             </template>
@@ -123,6 +115,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from './stores/user'
+import { buhlerLogoBase64 } from './assets/buhler-logo.js'
 import { 
   Monitor, 
   Message, 
@@ -186,7 +179,8 @@ export default {
       isCollapse,
       toggleCollapse,
       userStore,
-      handleLogout
+      handleLogout,
+      buhlerLogoBase64
     }
   }
 }
@@ -194,10 +188,11 @@ export default {
 
 <style>
 .el-header {
-  background-color: #e4e7ed;
+  background-color: #fff;
   color: #303133;
-  line-height: 60px;
-  padding: 0 20px;
+  line-height: normal;
+  height: 70px !important;
+  padding: 0;
   border-bottom: 1px solid #dcdfe6;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
   position: relative;
@@ -206,9 +201,10 @@ export default {
 
 .el-header h1 {
   margin: 0;
-  font-size: 20px;
+  font-size: 22px;
   color: #303133;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .aside-container {
@@ -307,6 +303,20 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  height: 100%;
+  background-color: #fff;
+  padding: 0 20px;
+}
+
+.logo-title {
+  display: flex;
+  align-items: center;
+}
+
+.buhler-logo {
+  height: 60px;
+  width: auto;
+  margin-right: 20px;
 }
 
 .user-info {
@@ -317,40 +327,42 @@ export default {
 .el-dropdown-link {
   display: flex;
   align-items: center;
-  color: #303133;
-  cursor: pointer;
   gap: 8px;
+  cursor: pointer;
+}
+
+.username {
+  font-size: 14px;
+  color: #606266;
 }
 
 .user-avatar {
   background-color: #409EFF;
   color: #fff;
-  font-weight: bold;
-}
-
-.user-avatar-large {
-  background-color: #409EFF;
-  color: #fff;
-  font-weight: bold;
-  margin-bottom: 8px;
 }
 
 .user-info-header {
-  display: flex;
-  justify-content: center;
-  padding: 16px 0;
-  pointer-events: none;
+  text-align: center;
+  padding: 15px;
+  border-bottom: 1px solid #eee;
   cursor: default;
-  border-bottom: 1px solid #ebeef5;
+  pointer-events: none;
 }
 
-.el-dropdown-menu__item {
-  display: flex;
-  align-items: center;
-  gap: 5px;
+.user-avatar-large {
+  margin-bottom: 10px;
+  background-color: #409EFF;
+  color: #fff;
 }
 
-.el-icon {
-  margin-right: 5px;
+.user-detail {
+  font-size: 14px;
+  color: #606266;
+}
+
+.user-role {
+  font-size: 12px;
+  color: #909399;
+  margin-top: 4px;
 }
 </style>

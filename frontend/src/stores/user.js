@@ -19,6 +19,7 @@ export const useUserStore = defineStore('user', () => {
 
   function setUser(userData) {
     user.value = userData
+    localStorage.setItem('userInfo', JSON.stringify(userData))
   }
 
   function setRedirectPath(path) {
@@ -29,15 +30,32 @@ export const useUserStore = defineStore('user', () => {
     token.value = ''
     user.value = null
     localStorage.removeItem('token')
+    localStorage.removeItem('userInfo')
   }
 
-  // 初始化时检查token是否有效
+  // 初始化时检查token和用户信息
   function init() {
     const storedToken = localStorage.getItem('token')
+    const storedUser = localStorage.getItem('userInfo')
+    
     if (storedToken) {
       token.value = storedToken
+      if (storedUser) {
+        try {
+          user.value = JSON.parse(storedUser)
+        } catch (e) {
+          console.error('Failed to parse stored user data:', e)
+          localStorage.removeItem('userInfo')
+        }
+      }
+    } else {
+      // 如果没有token，清除所有存储的信息
+      logout()
     }
   }
+
+  // 立即初始化
+  init()
 
   return {
     // 状态
