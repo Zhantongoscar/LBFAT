@@ -105,7 +105,7 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const userStore = useUserStore()
   
-  // 如果用户已登录且要去登录页，重定向到首页
+  // 如果用户已登录且要去登录��，重定向到首页
   if (to.path === '/login' && userStore.isAuthenticated) {
     next('/projects')
     return
@@ -119,6 +119,7 @@ router.beforeEach((to, from, next) => {
   
   // 未登录跳转到登录页
   if (!userStore.isAuthenticated) {
+    userStore.logout()  // 清除用户状态
     userStore.setRedirectPath(to.fullPath)
     next('/login')
     return

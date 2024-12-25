@@ -1,39 +1,57 @@
 import { defineStore } from 'pinia'
+import { ref, computed } from 'vue'
 
-export const useUserStore = defineStore('user', {
-  state: () => ({
-    token: localStorage.getItem('token'),
-    user: JSON.parse(localStorage.getItem('user')),
-    redirectPath: '/'
-  }),
+export const useUserStore = defineStore('user', () => {
+  // 状态
+  const token = ref(localStorage.getItem('token') || '')
+  const user = ref(null)
+  const redirectPath = ref('')
 
-  getters: {
-    isAuthenticated: (state) => !!state.token && !!state.user,
-    isLoggedIn: (state) => !!state.token && !!state.user,
-    isAdmin: (state) => state.user?.role === 'admin'
-  },
+  // 计算属性
+  const isAuthenticated = computed(() => !!token.value)
+  const isAdmin = computed(() => user.value?.role === 'admin')
 
-  actions: {
-    setToken(token) {
-      this.token = token
-      localStorage.setItem('token', token)
-    },
+  // 方法
+  function setToken(newToken) {
+    token.value = newToken
+    localStorage.setItem('token', newToken)
+  }
 
-    setUser(user) {
-      this.user = user
-      localStorage.setItem('user', JSON.stringify(user))
-    },
+  function setUser(userData) {
+    user.value = userData
+  }
 
-    setRedirectPath(path) {
-      this.redirectPath = path
-    },
+  function setRedirectPath(path) {
+    redirectPath.value = path
+  }
 
-    logout() {
-      this.token = null
-      this.user = null
-      this.redirectPath = '/'
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
+  function logout() {
+    token.value = ''
+    user.value = null
+    localStorage.removeItem('token')
+  }
+
+  // 初始化时检查token是否有效
+  function init() {
+    const storedToken = localStorage.getItem('token')
+    if (storedToken) {
+      token.value = storedToken
     }
+  }
+
+  return {
+    // 状态
+    token,
+    user,
+    redirectPath,
+    // 计算属性
+    isAuthenticated,
+    isAdmin,
+    // 方法
+    setToken,
+    setUser,
+    setRedirectPath,
+    logout,
+    init
   }
 }) 
