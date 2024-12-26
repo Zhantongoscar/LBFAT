@@ -80,7 +80,7 @@ const routes = [
       {
         path: 'template',
         name: 'TemplateManager',
-        component: () => import('../views/template/TemplateManager.vue')
+        component: () => import('../views/test/TemplateManager.vue')
       },
       {
         path: 'execution',
