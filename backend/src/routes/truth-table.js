@@ -22,16 +22,9 @@ router.put('/:id', truthTableController.updateTruthTable);
 router.delete('/:id', truthTableController.deleteTruthTable);
 
 // 测试组相关路由
-// 获取指定真值表下的所有测试组
-router.get('/:truth_table_id/groups', testGroupController.getTestGroups);
-
-// 创建测试组
-router.post('/:truth_table_id/groups', testGroupController.createTestGroup);
-
-// 更新测试组
-router.put('/:truth_table_id/groups/:id', testGroupController.updateTestGroup);
-
-// 删除测试组
-router.delete('/:truth_table_id/groups/:id', testGroupController.deleteTestGroup);
+router.get('/:id/groups', testGroupController.getTestGroups);
+router.post('/:id/groups', testGroupController.createTestGroup);
+router.put('/:id/groups/:group_id', testGroupController.updateTestGroup);
+router.delete('/:id/groups/:group_id', testGroupController.deleteTestGroup);
 
 module.exports = router; 

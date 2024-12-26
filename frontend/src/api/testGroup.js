@@ -3,7 +3,7 @@ import request from '@/utils/request'
 // 获取指定真值表下的所有测试组
 export function getTestGroups(truthTableId) {
   return request({
-    url: `/truth-table/${truthTableId}/groups`,
+    url: `/truth-tables/${truthTableId}/groups`,
     method: 'get'
   })
 }
@@ -11,7 +11,7 @@ export function getTestGroups(truthTableId) {
 // 创建测试组
 export function createTestGroup(truthTableId, data) {
   return request({
-    url: `/truth-table/${truthTableId}/groups`,
+    url: `/truth-tables/${truthTableId}/groups`,
     method: 'post',
     data
   })
@@ -20,7 +20,7 @@ export function createTestGroup(truthTableId, data) {
 // 更新测试组
 export function updateTestGroup(truthTableId, id, data) {
   return request({
-    url: `/truth-table/${truthTableId}/groups/${id}`,
+    url: `/truth-tables/${truthTableId}/groups/${id}`,
     method: 'put',
     data
   })
@@ -29,7 +29,7 @@ export function updateTestGroup(truthTableId, id, data) {
 // 删除测试组
 export function deleteTestGroup(truthTableId, id) {
   return request({
-    url: `/truth-table/${truthTableId}/groups/${id}`,
+    url: `/truth-tables/${truthTableId}/groups/${id}`,
     method: 'delete'
   })
 } 

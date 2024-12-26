@@ -382,8 +382,12 @@ export default {
     };
 
     // 处理当前选中行变化
-    const handleCurrentChange = (row) => {
-      currentTable.value = row
+    const handleCurrentChange = async (row) => {
+      if (row && (!currentTable.value || currentTable.value.id !== row.id)) {
+        currentTable.value = row
+        localStorage.setItem('lastSelectedTruthTableId', row.id)
+        await fetchTestGroups(row.id)
+      }
     }
 
     // 设置表格行的类名
@@ -552,7 +556,7 @@ export default {
       }
     }
 
-    // 获取测试组列表
+    // 获取测试组��表
     const fetchTestGroups = async () => {
       if (!currentTable.value) return;
       testGroupLoading.value = true;
@@ -649,9 +653,7 @@ export default {
 
     // 监听当前真值表变化
     watch(() => currentTable.value, (newVal) => {
-      if (newVal) {
-        fetchTestGroups(newVal.id)
-      } else {
+      if (!newVal) {
         testGroups.value = []
       }
     })
