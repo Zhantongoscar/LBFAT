@@ -84,6 +84,123 @@
         </el-main>
       </el-container>
 
+      <!-- 测试组列表部分 -->
+      <el-container :style="{ height: 'auto', marginTop: '20px' }">
+        <el-main class="list-container" style="width: 100%;">
+          <el-card class="list-card">
+            <template #header>
+              <div class="card-header">
+                <div class="header-left">
+                  <span>测试组列表</span>
+                  <template v-if="currentTable">
+                    <el-divider direction="vertical" />
+                    <span class="current-info">
+                      所属真值表：{{ currentTable.name }}
+                    </span>
+                  </template>
+                </div>
+                <el-button 
+                  type="primary" 
+                  @click="showCreateTestGroupDialog"
+                  :disabled="!currentTable"
+                >
+                  新建测试组
+                </el-button>
+              </div>
+            </template>
+
+            <el-table 
+              :data="testGroups" 
+              style="width: 100%" 
+              v-loading="testGroupLoading"
+              max-height="400"
+            >
+              <el-table-column prop="name" label="名称" />
+              <el-table-column prop="description" label="描述" show-overflow-tooltip />
+              <el-table-column prop="level" label="级别" width="100">
+                <template #default="{ row }">
+                  <el-tag :type="row.level === 1 ? 'success' : row.level === 2 ? 'warning' : 'info'">
+                    {{ row.level === 1 ? '初���' : row.level === 2 ? '中级' : '高级' }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column prop="sequence" label="序号" width="80" />
+              <el-table-column label="操作" width="200" fixed="right">
+                <template #default="{ row }">
+                  <el-button-group>
+                    <el-button 
+                      type="primary" 
+                      size="small" 
+                      @click="handleEditTestGroup(row)"
+                    >
+                      编辑
+                    </el-button>
+                    <el-button 
+                      type="danger" 
+                      size="small" 
+                      @click="handleDeleteTestGroup(row)"
+                    >
+                      删除
+                    </el-button>
+                  </el-button-group>
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-card>
+        </el-main>
+      </el-container>
+
+      <!-- 测试组对话框 -->
+      <el-dialog
+        :title="testGroupDialogTitle"
+        v-model="testGroupDialogVisible"
+        width="50%"
+        :close-on-click-modal="false"
+      >
+        <el-form 
+          ref="testGroupFormRef"
+          :model="testGroupForm"
+          :rules="testGroupRules"
+          label-width="100px"
+        >
+          <el-form-item label="名称" prop="name">
+            <el-input 
+              v-model="testGroupForm.name"
+              placeholder="请输入测试组名称"
+            />
+          </el-form-item>
+          <el-form-item label="描述" prop="description">
+            <el-input
+              v-model="testGroupForm.description"
+              type="textarea"
+              rows="3"
+              placeholder="请输入描述信息"
+            />
+          </el-form-item>
+          <el-form-item label="级别" prop="level">
+            <el-select v-model="testGroupForm.level" placeholder="请选择级别">
+              <el-option label="初级" :value="1" />
+              <el-option label="中级" :value="2" />
+              <el-option label="高级" :value="3" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="序号" prop="sequence">
+            <el-input-number 
+              v-model="testGroupForm.sequence" 
+              :min="1"
+              :max="999"
+              placeholder="请输入序号"
+            />
+          </el-form-item>
+        </el-form>
+        <template #footer>
+          <span class="dialog-footer">
+            <el-button @click="testGroupDialogVisible = false">取消</el-button>
+            <el-button type="primary" @click="handleTestGroupSubmit">确定</el-button>
+          </span>
+        </template>
+      </el-dialog>
+
       <!-- 真值表对话框 -->
       <el-dialog
         :title="dialogTitle"
@@ -145,11 +262,12 @@
 </template>
 
 <script>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowDown, ArrowRight } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 import { getAvailableDrawings, getTruthTables, createTruthTable, updateTruthTable, deleteTruthTable, getTruthTable } from '@/api/truthTable'
+import { getTestGroups, createTestGroup, updateTestGroup, deleteTestGroup } from '@/api/testGroup'
 
 export default {
   name: 'TemplateManager',
@@ -188,6 +306,31 @@ export default {
       name: [{ required: true, message: '请输入真值表名称', trigger: 'blur' }],
       drawing_id: [{ required: true, message: '请选择图纸', trigger: 'change' }],
       version: [{ required: true, message: '请选择版本', trigger: 'change' }]
+    }
+
+    // 测试组相关数据
+    const testGroups = ref([])
+    const testGroupLoading = ref(false)
+    const testGroupDialogVisible = ref(false)
+    const testGroupDialogTitle = ref('')
+    const isTestGroupEdit = ref(false)
+
+    // 测试组表单
+    const testGroupFormRef = ref(null)
+    const testGroupForm = ref({
+      id: null,
+      name: '',
+      description: '',
+      level: 1,
+      sequence: 1,
+      truth_table_id: null
+    })
+
+    // 测试组表单验证规则
+    const testGroupRules = {
+      name: [{ required: true, message: '请输入测试组名称', trigger: 'blur' }],
+      level: [{ required: true, message: '请选择级别', trigger: 'change' }],
+      sequence: [{ required: true, message: '请输入序号', trigger: 'blur' }]
     }
 
     // 获取真值表列表
@@ -394,6 +537,9 @@ export default {
         }
         localStorage.setItem('selectedTruthTable', JSON.stringify(tableInfo))
         
+        // 加载测试组列表
+        await fetchTestGroups(row.id)
+        
         ElMessage.success('已设置为当前编辑表')
       } catch (error) {
         console.error('设置当前编辑表失败:', error)
@@ -405,6 +551,110 @@ export default {
         localStorage.removeItem('lastSelectedTruthTableId')
       }
     }
+
+    // 获取测试组列表
+    const fetchTestGroups = async () => {
+      if (!currentTable.value) return;
+      testGroupLoading.value = true;
+      try {
+        const response = await getTestGroups(currentTable.value.id);
+        testGroups.value = response.data.data;
+      } catch (error) {
+        console.error('获取测试组列表失败:', error);
+        ElMessage.error('获取测试组列表失败');
+      } finally {
+        testGroupLoading.value = false;
+      }
+    }
+
+    // 显示创建测试组对话框
+    const showCreateTestGroupDialog = () => {
+      if (!currentTable.value) {
+        ElMessage.warning('请先选择一个真值表')
+        return
+      }
+      isTestGroupEdit.value = false
+      testGroupDialogTitle.value = '新建测试组'
+      testGroupForm.value = {
+        id: null,
+        name: '',
+        description: '',
+        level: 1,
+        sequence: testGroups.value.length + 1,
+        truth_table_id: currentTable.value.id
+      }
+      testGroupDialogVisible.value = true
+    }
+
+    // 显示编辑测试组对话框
+    const handleEditTestGroup = (row) => {
+      isTestGroupEdit.value = true
+      testGroupDialogTitle.value = '编辑测试组'
+      testGroupForm.value = { ...row }
+      testGroupDialogVisible.value = true
+    }
+
+    // 提交测试组表单
+    const handleTestGroupSubmit = async () => {
+      if (!testGroupFormRef.value) return;
+      await testGroupFormRef.value.validate(async (valid) => {
+        if (valid) {
+          try {
+            if (isTestGroupEdit.value) {
+              await updateTestGroup(
+                currentTable.value.id,
+                testGroupForm.value.id,
+                testGroupForm.value
+              );
+              ElMessage.success('更新成功');
+            } else {
+              await createTestGroup(
+                currentTable.value.id,
+                testGroupForm.value
+              );
+              ElMessage.success('创建成功');
+            }
+            testGroupDialogVisible.value = false;
+            fetchTestGroups();
+          } catch (error) {
+            console.error('操作失败:', error);
+            ElMessage.error('操作失败');
+          }
+        }
+      });
+    }
+
+    // 删除测试组
+    const handleDeleteTestGroup = async (row) => {
+      try {
+        await ElMessageBox.confirm(
+          '确定要删除该测试组吗？',
+          '警告',
+          {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning'
+          }
+        );
+        await deleteTestGroup(currentTable.value.id, row.id);
+        ElMessage.success('删除成功');
+        fetchTestGroups();
+      } catch (error) {
+        if (error !== 'cancel') {
+          console.error('删除失败:', error);
+          ElMessage.error('删除失败');
+        }
+      }
+    }
+
+    // 监听当前真值表变化
+    watch(() => currentTable.value, (newVal) => {
+      if (newVal) {
+        fetchTestGroups(newVal.id)
+      } else {
+        testGroups.value = []
+      }
+    })
 
     onMounted(() => {
       fetchTruthTables()
@@ -437,7 +687,23 @@ export default {
       tableRowClassName,
       getDrawingNumber,
       formatDate,
-      handleSelectTable
+      handleSelectTable,
+      fetchTestGroups,
+      handleTestGroupSubmit,
+      handleDeleteTestGroup,
+
+      // 测试组相关数据
+      testGroups,
+      testGroupLoading,
+      testGroupDialogVisible,
+      testGroupDialogTitle,
+      testGroupFormRef,
+      testGroupForm,
+      testGroupRules,
+      showCreateTestGroupDialog,
+      handleEditTestGroup,
+      handleTestGroupSubmit,
+      handleDeleteTestGroup
     }
   }
 }

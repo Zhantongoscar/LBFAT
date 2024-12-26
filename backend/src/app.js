@@ -57,7 +57,7 @@ app.use('/api/deviceTypes', deviceTypeRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/drawings', drawingRoutes);
 app.use('/api/truth-tables', truthTableRoutes);
-app.use('/api/test-groups', testGroupRoutes);
+app.use('/api', testGroupRoutes);
 
 console.log('=== 路由注册完成 ===');
 
