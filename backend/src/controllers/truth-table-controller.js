@@ -26,12 +26,12 @@ async function getTruthTables(req, res) {
                                 IF(i.id IS NOT NULL,
                                     JSON_OBJECT(
                                         'id', i.id,
-                                        'device_id', i.device_id,
-                                        'point_type', i.point_type,
-                                        'point_index', i.point_index,
-                                        'action', i.action,
-                                        'expected_result', i.expected_result,
-                                        'fault_description', i.fault_description
+                                        'name', i.name,
+                                        'description', i.description,
+                                        'sequence', i.sequence,
+                                        'input_values', i.input_values,
+                                        'expected_values', i.expected_values,
+                                        'timeout', i.timeout
                                     ),
                                     NULL
                                 )
@@ -122,12 +122,12 @@ async function getTruthTable(req, res) {
                             IF(i.id IS NOT NULL,
                                 JSON_OBJECT(
                                     'id', i.id,
-                                    'device_id', i.device_id,
-                                    'point_type', i.point_type,
-                                    'point_index', i.point_index,
-                                    'action', i.action,
-                                    'expected_result', i.expected_result,
-                                    'fault_description', i.fault_description
+                                    'name', i.name,
+                                    'description', i.description,
+                                    'sequence', i.sequence,
+                                    'input_values', i.input_values,
+                                    'expected_values', i.expected_values,
+                                    'timeout', i.timeout
                                 ),
                                 NULL
                             )
@@ -212,7 +212,7 @@ async function createTruthTable(req, res) {
     try {
         const { name, drawing_id, version, description } = req.body;
         
-        // 验证必填字段
+        // 验证��填字段
         if (!name || !drawing_id || !version) {
             return res.status(400).json({
                 code: 400,
