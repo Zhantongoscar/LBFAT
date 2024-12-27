@@ -115,11 +115,12 @@
               v-loading="testGroupLoading"
               max-height="400"
             >
+              <el-table-column prop="id" label="ID" width="80" />
               <el-table-column prop="description" label="描述" show-overflow-tooltip />
               <el-table-column prop="level" label="级别" width="100">
                 <template #default="{ row }">
-                  <el-tag :type="row.level === 1 ? 'success' : row.level === 2 ? 'warning' : 'info'">
-                    {{ row.level === 1 ? '初级' : row.level === 2 ? '中级' : '高级' }}
+                  <el-tag :type="row.level === 1 ? 'danger' : 'info'">
+                    {{ row.level === 1 ? '安全' : '普通' }}
                   </el-tag>
                 </template>
               </el-table-column>
@@ -138,6 +139,68 @@
                       type="danger" 
                       size="small" 
                       @click="handleDeleteTestGroup(row)"
+                    >
+                      删除
+                    </el-button>
+                  </el-button-group>
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-card>
+        </el-main>
+      </el-container>
+
+      <!-- 测试项列表部分 -->
+      <el-container :style="{ height: 'auto', marginTop: '20px' }">
+        <el-main class="list-container" style="width: 100%;">
+          <el-card class="list-card">
+            <template #header>
+              <div class="card-header">
+                <div class="header-left">
+                  <span>测试项列表</span>
+                  <template v-if="currentTestGroup">
+                    <el-divider direction="vertical" />
+                    <span class="current-info">
+                      所属测试组：{{ currentTestGroup.description }}
+                    </span>
+                  </template>
+                </div>
+                <el-button 
+                  type="primary" 
+                  @click="showCreateTestItemDialog"
+                  :disabled="!currentTestGroup"
+                >
+                  新建测试项
+                </el-button>
+              </div>
+            </template>
+
+            <el-table 
+              :data="testItems" 
+              style="width: 100%" 
+              v-loading="testItemLoading"
+              max-height="400"
+              row-key="id"
+              @row-click="handleTestItemClick"
+            >
+              <el-table-column prop="id" label="ID" width="80" />
+              <el-table-column prop="name" label="名称" />
+              <el-table-column prop="description" label="描述" show-overflow-tooltip />
+              <el-table-column prop="sequence" label="序号" width="80" />
+              <el-table-column label="操作" width="200" fixed="right">
+                <template #default="{ row }">
+                  <el-button-group>
+                    <el-button 
+                      type="primary" 
+                      size="small" 
+                      @click.stop="handleEditTestItem(row)"
+                    >
+                      编辑
+                    </el-button>
+                    <el-button 
+                      type="danger" 
+                      size="small" 
+                      @click.stop="handleDeleteTestItem(row)"
                     >
                       删除
                     </el-button>
@@ -172,9 +235,8 @@
           </el-form-item>
           <el-form-item label="级别" prop="level">
             <el-select v-model="testGroupForm.level" placeholder="请选择级别">
-              <el-option label="初级" :value="1" />
-              <el-option label="中级" :value="2" />
-              <el-option label="高级" :value="3" />
+              <el-option label="普通" :value="0" />
+              <el-option label="安全" :value="1" />
             </el-select>
           </el-form-item>
           <el-form-item label="序号" prop="sequence">
@@ -250,17 +312,84 @@
           </span>
         </template>
       </el-dialog>
+
+      <!-- 测试项对话框 -->
+      <el-dialog
+        :title="testItemDialogTitle"
+        v-model="testItemDialogVisible"
+        width="60%"
+        :close-on-click-modal="false"
+      >
+        <el-form 
+          ref="testItemFormRef"
+          :model="testItemForm"
+          :rules="testItemRules"
+          label-width="100px"
+        >
+          <el-form-item label="名称" prop="name">
+            <el-input v-model="testItemForm.name" placeholder="请输入测试项名称" />
+          </el-form-item>
+          <el-form-item label="描述" prop="description">
+            <el-input
+              v-model="testItemForm.description"
+              type="textarea"
+              rows="3"
+              placeholder="请输入描述信息"
+            />
+          </el-form-item>
+          <el-form-item label="序号" prop="sequence">
+            <el-input-number 
+              v-model="testItemForm.sequence" 
+              :min="1"
+              :max="999"
+              placeholder="请输入序号"
+            />
+          </el-form-item>
+          <el-form-item label="输入值" prop="input_values">
+            <el-input
+              v-model="testItemForm.input_values"
+              type="textarea"
+              rows="3"
+              placeholder="请输入JSON格式的输入值配置"
+            />
+          </el-form-item>
+          <el-form-item label="期望值" prop="expected_values">
+            <el-input
+              v-model="testItemForm.expected_values"
+              type="textarea"
+              rows="3"
+              placeholder="请输入JSON格式的期望值配置"
+            />
+          </el-form-item>
+          <el-form-item label="超时时间" prop="timeout">
+            <el-input-number 
+              v-model="testItemForm.timeout" 
+              :min="1000"
+              :step="1000"
+              :max="60000"
+              placeholder="请输入超时时间(毫秒)"
+            />
+          </el-form-item>
+        </el-form>
+        <template #footer>
+          <span class="dialog-footer">
+            <el-button @click="testItemDialogVisible = false">取消</el-button>
+            <el-button type="primary" @click="handleTestItemSubmit">确定</el-button>
+          </span>
+        </template>
+      </el-dialog>
     </el-container>
   </div>
 </template>
 
 <script>
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, computed, watch, reactive } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowDown, ArrowRight } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 import { getAvailableDrawings, getTruthTables, createTruthTable, updateTruthTable, deleteTruthTable, getTruthTable } from '@/api/truthTable'
 import { getTestGroups, createTestGroup, updateTestGroup, deleteTestGroup } from '@/api/testGroup'
+import testItemApi from '@/api/testItem'
 
 export default {
   name: 'TemplateManager',
@@ -313,7 +442,7 @@ export default {
     const testGroupForm = ref({
       id: null,
       description: '',
-      level: 1,
+      level: 0,
       sequence: 1,
       truth_table_id: null
     })
@@ -324,6 +453,56 @@ export default {
       level: [{ required: true, message: '请选择级别', trigger: 'change' }],
       sequence: [{ required: true, message: '请输入序号', trigger: 'blur' }]
     }
+
+    // 测试项相关
+    const testItems = ref([]);
+    const testItemLoading = ref(false);
+    const currentTestItem = ref(null);
+    const testItemDialogVisible = ref(false);
+    const testItemDialogTitle = ref('');
+    const testItemFormRef = ref(null);
+    const testItemForm = reactive({
+      name: '',
+      description: '',
+      sequence: 1,
+      input_values: '{}',
+      expected_values: '{}',
+      timeout: 5000,
+      test_group_id: null
+    });
+
+    const testItemRules = {
+      name: [{ required: true, message: '请输入测试项名称', trigger: 'blur' }],
+      input_values: [
+        { required: true, message: '请输入输入值配置', trigger: 'blur' },
+        { 
+          validator: (rule, value, callback) => {
+            try {
+              JSON.parse(value);
+              callback();
+            } catch (error) {
+              callback(new Error('请输入有效的JSON格式'));
+            }
+          },
+          trigger: 'blur'
+        }
+      ],
+      expected_values: [
+        { required: true, message: '请输入期望值配置', trigger: 'blur' },
+        { 
+          validator: (rule, value, callback) => {
+            try {
+              JSON.parse(value);
+              callback();
+            } catch (error) {
+              callback(new Error('请输入有效的JSON格式'));
+            }
+          },
+          trigger: 'blur'
+        }
+      ],
+      timeout: [{ required: true, message: '请输入超时时间', trigger: 'blur' }]
+    };
 
     // 获取真值表列表
     const fetchTruthTables = async () => {
@@ -348,7 +527,7 @@ export default {
 
           // 如果没有上次选中的真值表或找不到对应记录，选择最新的真值表
           if (!targetTable && truthTables.value.length > 0) {
-            targetTable = truthTables.value[0]; // 因后端已按更新时间降序排序
+            targetTable = truthTables.value[0]; // 后端已按更新时间降序排序
           }
 
           // 如果找到目标真值表，设置当前编辑表
@@ -538,7 +717,7 @@ export default {
         
         ElMessage.success('已设置为当前编辑表')
       } catch (error) {
-        console.error('设置当前��辑表失败:', error)
+        console.error('设置当前编辑表失���:', error)
         ElMessage.error('设置当前编辑表失败')
         
         // 发生错误时回滚状态
@@ -612,7 +791,7 @@ export default {
             testGroupDialogVisible.value = false;
             fetchTestGroups();
           } catch (error) {
-            console.error('操作��败:', error);
+            console.error('操作失败:', error);
             ElMessage.error('操作失败');
           }
         }
@@ -624,7 +803,7 @@ export default {
       try {
         await ElMessageBox.confirm(
           '确定要删除该测试组吗？',
-          '警告',
+          '���告',
           {
             confirmButtonText: '确定',
             cancelButtonText: '取消',
@@ -648,6 +827,105 @@ export default {
         testGroups.value = []
       }
     })
+
+    // 加载测试项列表
+    const loadTestItems = async (groupId) => {
+      if (!groupId) return;
+      testItemLoading.value = true;
+      try {
+        const response = await testItemApi.getByGroupId(groupId);
+        testItems.value = response.data;
+      } catch (error) {
+        console.error('获取测试项列表失败:', error);
+        ElMessage.error('获取测试项列表失败');
+      } finally {
+        testItemLoading.value = false;
+      }
+    };
+
+    // 显示创建测试项对话框
+    const showCreateTestItemDialog = () => {
+      testItemDialogTitle.value = '新建测试项';
+      testItemForm.test_group_id = currentTestGroup.value.id;
+      testItemForm.name = '';
+      testItemForm.description = '';
+      testItemForm.sequence = testItems.value.length + 1;
+      testItemForm.input_values = '{}';
+      testItemForm.expected_values = '{}';
+      testItemForm.timeout = 5000;
+      testItemDialogVisible.value = true;
+    };
+
+    // 显示编辑测试项对话框
+    const handleEditTestItem = (row) => {
+      testItemDialogTitle.value = '编辑测试项';
+      Object.assign(testItemForm, {
+        ...row,
+        input_values: JSON.stringify(row.input_values, null, 2),
+        expected_values: JSON.stringify(row.expected_values, null, 2)
+      });
+      testItemDialogVisible.value = true;
+    };
+
+    // 处理测试项表单提交
+    const handleTestItemSubmit = async () => {
+      if (!testItemFormRef.value) return;
+      
+      await testItemFormRef.value.validate(async (valid) => {
+        if (valid) {
+          try {
+            const data = {
+              ...testItemForm,
+              input_values: JSON.parse(testItemForm.input_values),
+              expected_values: JSON.parse(testItemForm.expected_values)
+            };
+            
+            if (data.id) {
+              await testItemApi.update(data.id, data);
+              ElMessage.success('更新成功');
+            } else {
+              await testItemApi.create(data);
+              ElMessage.success('创建成功');
+            }
+            
+            testItemDialogVisible.value = false;
+            loadTestItems(currentTestGroup.value.id);
+          } catch (error) {
+            console.error('保存测试项失败:', error);
+            ElMessage.error('保存失败');
+          }
+        }
+      });
+    };
+
+    // 处理删除测试项
+    const handleDeleteTestItem = async (row) => {
+      try {
+        await ElMessageBox.confirm('确定要删除该测试项吗？', '提示', {
+          type: 'warning'
+        });
+        
+        await testItemApi.delete(row.id);
+        ElMessage.success('删除成功');
+        loadTestItems(currentTestGroup.value.id);
+      } catch (error) {
+        if (error !== 'cancel') {
+          console.error('删除测试项失败:', error);
+          ElMessage.error('删除失败');
+        }
+      }
+    };
+
+    // 处理测试项点击
+    const handleTestItemClick = (row) => {
+      currentTestItem.value = row;
+    };
+
+    // 在选择测试组时加载测试项
+    const handleTestGroupClick = async (row) => {
+      currentTestGroup.value = row;
+      await loadTestItems(row.id);
+    };
 
     onMounted(() => {
       fetchTruthTables()
@@ -696,7 +974,23 @@ export default {
       showCreateTestGroupDialog,
       handleEditTestGroup,
       handleTestGroupSubmit,
-      handleDeleteTestGroup
+      handleDeleteTestGroup,
+
+      // 测试项相关数据
+      testItems,
+      testItemLoading,
+      currentTestItem,
+      testItemDialogVisible,
+      testItemDialogTitle,
+      testItemFormRef,
+      testItemForm,
+      testItemRules,
+      showCreateTestItemDialog,
+      handleEditTestItem,
+      handleTestItemSubmit,
+      handleDeleteTestItem,
+      handleTestItemClick,
+      handleTestGroupClick
     }
   }
 }
