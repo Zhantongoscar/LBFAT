@@ -114,6 +114,7 @@
               style="width: 100%" 
               v-loading="testGroupLoading"
               max-height="400"
+              @row-click="handleTestGroupClick"
             >
               <el-table-column prop="id" label="ID" width="80" />
               <el-table-column prop="description" label="描述" show-overflow-tooltip />
@@ -717,7 +718,7 @@ export default {
         
         ElMessage.success('已设置为当前编辑表')
       } catch (error) {
-        console.error('设置当前编辑表失���:', error)
+        console.error('设置当前编辑表失败:', error)
         ElMessage.error('设置当前编辑表失败')
         
         // 发生错误时回滚状态
@@ -803,7 +804,7 @@ export default {
       try {
         await ElMessageBox.confirm(
           '确定要删除该测试组吗？',
-          '���告',
+          '提示',
           {
             confirmButtonText: '确定',
             cancelButtonText: '取消',
@@ -923,8 +924,18 @@ export default {
 
     // 在选择测试组时加载测试项
     const handleTestGroupClick = async (row) => {
-      currentTestGroup.value = row;
-      await loadTestItems(row.id);
+      try {
+        testItemLoading.value = true;
+        const response = await testItemApi.getByGroupId(row.id);
+        console.log('测试项列表:', response.data);
+        currentTestGroup.value = row;
+        // 这里可以根据需要处理返回的数据
+      } catch (error) {
+        console.error('获取测试项失败:', error);
+        ElMessage.error('获取测试项失败');
+      } finally {
+        testItemLoading.value = false;
+      }
     };
 
     onMounted(() => {
