@@ -115,12 +115,11 @@
               v-loading="testGroupLoading"
               max-height="400"
             >
-              <el-table-column prop="name" label="名称" />
               <el-table-column prop="description" label="描述" show-overflow-tooltip />
               <el-table-column prop="level" label="级别" width="100">
                 <template #default="{ row }">
                   <el-tag :type="row.level === 1 ? 'success' : row.level === 2 ? 'warning' : 'info'">
-                    {{ row.level === 1 ? '初���' : row.level === 2 ? '中级' : '高级' }}
+                    {{ row.level === 1 ? '初级' : row.level === 2 ? '中级' : '高级' }}
                   </el-tag>
                 </template>
               </el-table-column>
@@ -163,12 +162,6 @@
           :rules="testGroupRules"
           label-width="100px"
         >
-          <el-form-item label="名称" prop="name">
-            <el-input 
-              v-model="testGroupForm.name"
-              placeholder="请输入测试组名称"
-            />
-          </el-form-item>
           <el-form-item label="描述" prop="description">
             <el-input
               v-model="testGroupForm.description"
@@ -319,7 +312,6 @@ export default {
     const testGroupFormRef = ref(null)
     const testGroupForm = ref({
       id: null,
-      name: '',
       description: '',
       level: 1,
       sequence: 1,
@@ -328,7 +320,7 @@ export default {
 
     // 测试组表单验证规则
     const testGroupRules = {
-      name: [{ required: true, message: '请输入测试组名称', trigger: 'blur' }],
+      description: [{ required: true, message: '请输入描述信息', trigger: 'blur' }],
       level: [{ required: true, message: '请选择级别', trigger: 'change' }],
       sequence: [{ required: true, message: '请输入序号', trigger: 'blur' }]
     }
@@ -546,7 +538,7 @@ export default {
         
         ElMessage.success('已设置为当前编辑表')
       } catch (error) {
-        console.error('设置当前编辑表失败:', error)
+        console.error('设置当前��辑表失败:', error)
         ElMessage.error('设置当前编辑表失败')
         
         // 发生错误时回滚状态
@@ -556,7 +548,7 @@ export default {
       }
     }
 
-    // 获取测试组��表
+    // 获取测试组列表
     const fetchTestGroups = async () => {
       if (!currentTable.value) return;
       testGroupLoading.value = true;
@@ -581,7 +573,6 @@ export default {
       testGroupDialogTitle.value = '新建测试组'
       testGroupForm.value = {
         id: null,
-        name: '',
         description: '',
         level: 1,
         sequence: testGroups.value.length + 1,
@@ -621,7 +612,7 @@ export default {
             testGroupDialogVisible.value = false;
             fetchTestGroups();
           } catch (error) {
-            console.error('操作失败:', error);
+            console.error('操作��败:', error);
             ElMessage.error('操作失败');
           }
         }
