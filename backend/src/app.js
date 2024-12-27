@@ -7,10 +7,11 @@ const deviceTypeRoutes = require('./routes/device-type-routes');
 const userRoutes = require('./routes/user-routes');
 const drawingRoutes = require('./routes/drawing-routes');
 const truthTableRoutes = require('./routes/truth-table.js');
+const testGroupRoutes = require('./routes/test-group-routes');
+const testItemRoutes = require('./routes/test-item-routes');
 const mqttService = require('./services/mqtt-service');
 const WebSocketService = require('./services/websocket-service');
 const db = require('./utils/db');
-const testGroupRoutes = require('./routes/test-group-routes')
 
 const app = express();
 const server = http.createServer(app);
@@ -57,7 +58,8 @@ app.use('/api/deviceTypes', deviceTypeRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/drawings', drawingRoutes);
 app.use('/api/truth-tables', truthTableRoutes);
-
+app.use('/api/test-groups', testGroupRoutes);
+app.use('/api/test-items', testItemRoutes);
 
 console.log('=== 路由注册完成 ===');
 

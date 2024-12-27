@@ -131,14 +131,15 @@ CREATE TABLE IF NOT EXISTS test_groups (
 CREATE TABLE IF NOT EXISTS test_items (
   id INT PRIMARY KEY AUTO_INCREMENT,
   test_group_id INT NOT NULL COMMENT '所属测试组ID',
-  device_id INT NOT NULL COMMENT '关联的设备ID',
-  point_type VARCHAR(50) NOT NULL DEFAULT 'DI' COMMENT '点位类型',
-  point_index INT NOT NULL DEFAULT 1 COMMENT '点位序号',
-  action DECIMAL(10,2) NOT NULL COMMENT '测试动作/设定值',
-  expected_result DECIMAL(10,2) NOT NULL COMMENT '预期结果',
-  fault_description TEXT COMMENT '故障描述',
-  FOREIGN KEY (test_group_id) REFERENCES test_groups(id) ON DELETE CASCADE,
-  FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE RESTRICT
+  name VARCHAR(100) NOT NULL COMMENT '测试项名称',
+  description TEXT COMMENT '测试项描述',
+  sequence INT NOT NULL DEFAULT 0 COMMENT '显示顺序',
+  input_values JSON NOT NULL DEFAULT '{}' COMMENT '输入值配置',
+  expected_values JSON NOT NULL DEFAULT '{}' COMMENT '预期结果配置',
+  timeout INT NOT NULL DEFAULT 5000 COMMENT '超时时间(毫秒)',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  FOREIGN KEY (test_group_id) REFERENCES test_groups(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='测试项表';
 
 -- =====================================================
@@ -231,7 +232,7 @@ INSERT INTO drawings (id, drawing_number, version, description) VALUES
 
 -- 插入测试真值表数据
 INSERT INTO truth_tables (id, name, drawing_id, version, description) VALUES
-(1, '安全开关测试', 1, '1.0', '安全开关功能测试真值表'),
+(1, '安全开关测试', 1, '1.0', '安全开关功能测��真值表'),
 (2, '电机控制测试', 2, '1.0', '电机控制功能测试真值表');
 
 -- 插入测试组数据
@@ -242,13 +243,15 @@ INSERT INTO test_groups (id, truth_table_id, level, description, sequence) VALUE
 (4, 2, 0, '电机运行测试组', 1);
 
 -- 插入测试项数据
-INSERT INTO test_items (test_group_id, device_id, point_type, point_index, action, expected_result, fault_description) VALUES
-(1, 1, 'DI', 1, 0.00, 1.00, '安全开关处于闭合状态时，输入信号为1'),
-(1, 1, 'DI', 1, 1.00, 0.00, '安全开关处于打开状态时，输入信号为0'),
-(2, 1, 'DI', 2, 1.00, 0.00, '安全联锁触发时，电机无法启动'),
-(3, 1, 'DO', 1, 1.00, 1.00, '启动电机时，输出信号为1'),
-(3, 1, 'DI', 3, 1.00, 1.00, '电机运行时，运行指示灯亮起'),
-(4, 1, 'AO', 1, 50.00, 50.00, '电机转速应达到设定值');
+INSERT INTO test_items (test_group_id, name, description, sequence, input_values, expected_values) VALUES
+(1, '安全开关闭合测试', '检查安全开关闭合状态下的输入信号', 0, 
+   '{"DI1": 0}', '{"DI1": 1}'),
+(1, '安全开关打开测试', '检查安全开关打开状态下的输入信号', 1,
+   '{"DI1": 1}', '{"DI1": 0}'),
+(2, '安全联锁测试', '验证安全联锁功能是否正常工作', 0,
+   '{"DI2": 1}', '{"DO1": 0}'),
+(3, '电机启动测试', '验证电机启动控制功能', 0,
+   '{"DO1": 1}', '{"DI3": 1}');
 
 -- 开启外键检查
 SET FOREIGN_KEY_CHECKS = 1;
