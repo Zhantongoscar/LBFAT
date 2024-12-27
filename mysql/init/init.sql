@@ -134,8 +134,8 @@ CREATE TABLE IF NOT EXISTS test_items (
   name VARCHAR(100) NOT NULL COMMENT '测试项名称',
   description TEXT COMMENT '测试项描述',
   sequence INT NOT NULL DEFAULT 0 COMMENT '显示顺序',
-  input_values JSON NOT NULL DEFAULT '{}' COMMENT '输入值配置',
-  expected_values JSON NOT NULL DEFAULT '{}' COMMENT '预期结果配置',
+  input_values JSON NOT NULL COMMENT '输入值配置',
+  expected_values JSON NOT NULL COMMENT '预期结果配置',
   timeout INT NOT NULL DEFAULT 5000 COMMENT '超时时间(毫秒)',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -195,7 +195,7 @@ INSERT INTO device_type_points (device_type_id, point_index, point_type, point_n
 (1, 16, 'DI', 'DI13', 'EDB数字输入点13 - 中段'),
 (1, 17, 'DI', 'DI14', 'EDB数字输入点14 - 中段'),
 -- 剩余3个点位
-(1, 18, 'DI', 'DI15', 'EDB数字输入点15 - 后段'),
+(1, 18, 'DI', 'DI15', 'EDB数字��入点15 - 后段'),
 (1, 19, 'DI', 'DI16', 'EDB数字输入点16 - 后段'),
 (1, 20, 'DI', 'DI17', 'EDB数字输入点17 - 后段'),
 
@@ -232,7 +232,7 @@ INSERT INTO drawings (id, drawing_number, version, description) VALUES
 
 -- 插入测试真值表数据
 INSERT INTO truth_tables (id, name, drawing_id, version, description) VALUES
-(1, '安全开关测试', 1, '1.0', '安全开关功能测��真值表'),
+(1, '安全开关测试', 1, '1.0', '安全开关功能测试真值表'),
 (2, '电机控制测试', 2, '1.0', '电机控制功能测试真值表');
 
 -- 插入测试组数据
