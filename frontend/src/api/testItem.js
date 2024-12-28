@@ -3,7 +3,16 @@ import api from '../utils/api';
 export default {
   // 获取指定测试组的所有测试项
   getByGroupId(groupId) {
-    return api.get(`/test-items/group/${groupId}`);
+    console.log('调用API获取测试项，组ID:', groupId);
+    return api.get(`/test-items/group/${groupId}`)
+      .then(response => {
+        console.log('API响应数据:', response.data);
+        return response.data;
+      })
+      .catch(error => {
+        console.error('API调用失败:', error);
+        throw error;
+      });
   },
 
   // 创建新测试项

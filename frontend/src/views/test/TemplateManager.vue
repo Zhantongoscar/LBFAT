@@ -728,7 +728,7 @@ export default {
       }
     }
 
-    // 获取测试组列表
+    // 获测试组列表
     const fetchTestGroups = async () => {
       if (!currentTable.value) return;
       testGroupLoading.value = true;
@@ -769,7 +769,7 @@ export default {
       testGroupDialogVisible.value = true
     }
 
-    // 提交测试组表单
+    // 提交测���组表单
     const handleTestGroupSubmit = async () => {
       if (!testGroupFormRef.value) return;
       await testGroupFormRef.value.validate(async (valid) => {
@@ -893,7 +893,7 @@ export default {
             loadTestItems(currentTestGroup.value.id);
           } catch (error) {
             console.error('保存测试项失败:', error);
-            ElMessage.error('保存失败');
+            ElMessage.error('保��失败');
           }
         }
       });
@@ -924,17 +924,17 @@ export default {
 
     // 在选择测试组时加载测试项
     const handleTestGroupClick = async (row) => {
+      console.log('测试组点击:', row);
+      if (!row || !row.id) {
+        console.log('无效的行数据');
+        return;
+      }
+      
       try {
-        testItemLoading.value = true;
-        const response = await testItemApi.getByGroupId(row.id);
-        console.log('测试项列表:', response.data);
-        currentTestGroup.value = row;
-        // 这里可以根据需要处理返回的数据
+        const response = await fetch(`/api/test-items/group/${row.id}`);
+        console.log('请求响应:', response);
       } catch (error) {
-        console.error('获取测试项失败:', error);
-        ElMessage.error('获取测试项失败');
-      } finally {
-        testItemLoading.value = false;
+        console.log('请求失败:', error);
       }
     };
 

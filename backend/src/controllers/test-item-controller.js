@@ -6,13 +6,28 @@ class TestItemController {
   static async getByGroupId(req, res) {
     try {
       const { groupId } = req.params;
+      console.log('接收到获取测试项请求，组ID:', groupId);
+      
       const items = await TestItem.findAll({
         where: { test_group_id: groupId },
         order: [['sequence', 'ASC']]
       });
-      res.json(items);
+      
+      console.log('查询到测试项数量:', items.length);
+      console.log('测试项数据:', JSON.stringify(items, null, 2));
+      
+      res.json({
+        code: 200,
+        message: 'success',
+        data: items
+      });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error('获取测试项失败:', error);
+      res.status(500).json({
+        code: 500,
+        message: '获取测试项失败',
+        error: error.message
+      });
     }
   }
 
