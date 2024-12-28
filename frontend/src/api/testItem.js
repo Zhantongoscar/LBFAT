@@ -6,8 +6,11 @@ export default {
     console.log('调用API获取测试项，组ID:', groupId);
     return api.get(`/test-items/group/${groupId}`)
       .then(response => {
-        console.log('API响应数据:', response.data);
-        return response.data;
+        console.log('API响应数据:', response);
+        if (response.data && response.data.code === 200) {
+          return response.data.data;
+        }
+        throw new Error('获取测试项失败');
       })
       .catch(error => {
         console.error('API调用失败:', error);

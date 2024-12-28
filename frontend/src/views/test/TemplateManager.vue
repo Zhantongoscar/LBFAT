@@ -113,15 +113,15 @@
               :data="testGroups" 
               style="width: 100%" 
               v-loading="testGroupLoading"
-              max-height="400"
-              @row-click="handleTestGroupClick"
+              @current-change="handleTestGroupClick"
+              highlight-current-row
             >
               <el-table-column prop="id" label="ID" width="80" />
-              <el-table-column prop="description" label="描述" show-overflow-tooltip />
+              <el-table-column prop="description" label="描述" />
               <el-table-column prop="level" label="级别" width="100">
                 <template #default="{ row }">
                   <el-tag :type="row.level === 1 ? 'danger' : 'info'">
-                    {{ row.level === 1 ? '安全' : '普通' }}
+                    {{ row.level === 1 ? '安全类' : '普通类' }}
                   </el-tag>
                 </template>
               </el-table-column>
@@ -132,14 +132,14 @@
                     <el-button 
                       type="primary" 
                       size="small" 
-                      @click="handleEditTestGroup(row)"
+                      @click.stop="handleEditTestGroup(row)"
                     >
                       编辑
                     </el-button>
                     <el-button 
                       type="danger" 
                       size="small" 
-                      @click="handleDeleteTestGroup(row)"
+                      @click.stop="handleDeleteTestGroup(row)"
                     >
                       删除
                     </el-button>
@@ -182,7 +182,6 @@
               v-loading="testItemLoading"
               max-height="400"
               row-key="id"
-              @row-click="handleTestItemClick"
             >
               <el-table-column prop="id" label="ID" width="80" />
               <el-table-column prop="name" label="名称" />
@@ -434,6 +433,7 @@ export default {
     // 测试组相关数据
     const testGroups = ref([])
     const testGroupLoading = ref(false)
+    const currentTestGroup = ref(null)
     const testGroupDialogVisible = ref(false)
     const testGroupDialogTitle = ref('')
     const isTestGroupEdit = ref(false)
@@ -455,13 +455,13 @@ export default {
       sequence: [{ required: true, message: '请输入序号', trigger: 'blur' }]
     }
 
-    // 测试项相关
-    const testItems = ref([]);
-    const testItemLoading = ref(false);
-    const currentTestItem = ref(null);
-    const testItemDialogVisible = ref(false);
-    const testItemDialogTitle = ref('');
-    const testItemFormRef = ref(null);
+    // 测试项相关数据
+    const testItems = ref([])
+    const testItemLoading = ref(false)
+    const currentTestItem = ref(null)
+    const testItemDialogVisible = ref(false)
+    const testItemDialogTitle = ref('')
+    const testItemFormRef = ref(null)
     const testItemForm = reactive({
       name: '',
       description: '',
@@ -546,7 +546,7 @@ export default {
         }
       } catch (error) {
         console.error('获取真值表列表失败:', error);
-        ElMessage.error('获取真值表列表失败');
+        ElMessage.error('获取真值表表失败');
         truthTables.value = [];
       } finally {
         loading.value = false;
@@ -769,7 +769,7 @@ export default {
       testGroupDialogVisible.value = true
     }
 
-    // 提交测���组表单
+    // 提交测试组表单
     const handleTestGroupSubmit = async () => {
       if (!testGroupFormRef.value) return;
       await testGroupFormRef.value.validate(async (valid) => {
@@ -831,14 +831,23 @@ export default {
 
     // 加载测试项列表
     const loadTestItems = async (groupId) => {
-      if (!groupId) return;
+      if (!groupId) {
+        console.log('无效的测试组ID');
+        return;
+      }
+      
       testItemLoading.value = true;
+      console.log('开始加载测试项数据，组ID:', groupId);
+      
       try {
-        const response = await testItemApi.getByGroupId(groupId);
-        testItems.value = response.data;
+        const data = await testItemApi.getByGroupId(groupId);
+        console.log('获取到的测试项数据:', data);
+        testItems.value = Array.isArray(data) ? data : [];
+        console.log('更新后的测试项列表:', testItems.value);
       } catch (error) {
-        console.error('获取测试项列表失败:', error);
-        ElMessage.error('获取测试项列表失败');
+        console.error('获取测试项失败:', error);
+        ElMessage.error('获取测试项失败');
+        testItems.value = [];
       } finally {
         testItemLoading.value = false;
       }
@@ -893,7 +902,7 @@ export default {
             loadTestItems(currentTestGroup.value.id);
           } catch (error) {
             console.error('保存测试项失败:', error);
-            ElMessage.error('保��失败');
+            ElMessage.error('保存失败');
           }
         }
       });
@@ -924,17 +933,24 @@ export default {
 
     // 在选择测试组时加载测试项
     const handleTestGroupClick = async (row) => {
-      console.log('测试组点击:', row);
+      console.log('测试组点击，完整数据:', JSON.stringify(row, null, 2));
       if (!row || !row.id) {
         console.log('无效的行数据');
         return;
       }
       
       try {
-        const response = await fetch(`/api/test-items/group/${row.id}`);
-        console.log('请求响应:', response);
+        currentTestGroup.value = row;
+        testItemLoading.value = true;
+        const items = await testItemApi.getByGroupId(row.id);
+        testItems.value = items || [];
+        console.log('加载到的测试项:', testItems.value);
       } catch (error) {
-        console.log('请求失败:', error);
+        console.error('加载测试项失败:', error);
+        ElMessage.error('加载测试项失败');
+        testItems.value = [];
+      } finally {
+        testItemLoading.value = false;
       }
     };
 
@@ -1001,7 +1017,8 @@ export default {
       handleTestItemSubmit,
       handleDeleteTestItem,
       handleTestItemClick,
-      handleTestGroupClick
+      handleTestGroupClick,
+      currentTestGroup
     }
   }
 }

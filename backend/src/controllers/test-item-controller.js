@@ -6,23 +6,46 @@ class TestItemController {
   static async getByGroupId(req, res) {
     try {
       const { groupId } = req.params;
-      console.log('接收到获取测试项请求，组ID:', groupId);
+      console.log('\n========== 测试项查询开始 ==========');
+      console.log('请求URL:', req.originalUrl);
+      console.log('请求方法:', req.method);
+      console.log('请求参数 - groupId:', groupId);
+      console.log('请求头:', JSON.stringify(req.headers, null, 2));
+      
+      console.log('\n----- 开始数据库查询 -----');
+      console.log('查询条件:', { test_group_id: groupId });
       
       const items = await TestItem.findAll({
         where: { test_group_id: groupId },
-        order: [['sequence', 'ASC']]
+        order: [['sequence', 'ASC']],
+        raw: true,
+        logging: (sql) => {
+          console.log('\n执行的SQL语句:', sql);
+        }
       });
       
-      console.log('查询到测试项数量:', items.length);
-      console.log('测试项数据:', JSON.stringify(items, null, 2));
+      console.log('\n----- 数据库查询结果 -----');
+      console.log('查询到的记录数:', items.length);
+      console.log('查询结果:', JSON.stringify(items, null, 2));
       
-      res.json({
+      const response = {
         code: 200,
         message: 'success',
-        data: items
-      });
+        data: items || []
+      };
+      
+      console.log('\n----- 发送响应数据 -----');
+      console.log('响应数据:', JSON.stringify(response, null, 2));
+      
+      res.json(response);
+      console.log('\n========== 测试项查询完成 ==========\n');
     } catch (error) {
-      console.error('获取测试项失败:', error);
+      console.error('\n========== 测试项查询失败 ==========');
+      console.error('错误类型:', error.name);
+      console.error('错误消息:', error.message);
+      console.error('错误堆栈:', error.stack);
+      console.error('================================\n');
+      
       res.status(500).json({
         code: 500,
         message: '获取测试项失败',
