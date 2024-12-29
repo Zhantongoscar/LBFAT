@@ -136,8 +136,8 @@ CREATE TABLE IF NOT EXISTS test_items (
   name VARCHAR(100) NOT NULL COMMENT '测试项名称',
   description TEXT COMMENT '测试项描述',
   sequence INT NOT NULL DEFAULT 0 COMMENT '显示顺序',
-  input_values JSON NOT NULL COMMENT '输入值配置',
-  expected_values JSON NOT NULL COMMENT '预期结果配置',
+  input_values FLOAT NOT NULL COMMENT '输入值',
+  expected_values FLOAT NOT NULL COMMENT '预期结果',
   timeout INT NOT NULL DEFAULT 5000 COMMENT '超时时间(毫秒)',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -146,6 +146,19 @@ CREATE TABLE IF NOT EXISTS test_items (
   INDEX idx_device (device_id),
   INDEX idx_point_index (point_index)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='测试项表';
+
+-- 测试项值表
+CREATE TABLE IF NOT EXISTS test_item_values (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  test_item_id INT NOT NULL COMMENT '所属测试项ID',
+  point_name VARCHAR(50) NOT NULL COMMENT '点位名称',
+  input_value FLOAT COMMENT '输入值',
+  expected_value FLOAT COMMENT '预期值',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  FOREIGN KEY (test_item_id) REFERENCES test_items(id) ON DELETE CASCADE,
+  INDEX idx_test_item (test_item_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='测试项值表';
 
 -- =====================================================
 -- 初始数据插入
@@ -249,14 +262,17 @@ INSERT INTO test_groups (id, truth_table_id, level, description, sequence) VALUE
 
 -- 插入测试项数据
 INSERT INTO test_items (test_group_id, device_id, point_index, name, description, sequence, input_values, expected_values) VALUES
-(1, 1, 1, '安全开关闭合测试', '检查安全开关闭合状态下的输入信号', 0, 
-   '{"DI1": 0}', '{"DI1": 1}'),
-(1, 1, 1, '安全开关打开测试', '检查安全开关打开状态下的输入信号', 1,
-   '{"DI1": 1}', '{"DI1": 0}'),
-(2, 2, 2, '安全联锁测试', '验证安全联锁功能是否正常工作', 0,
-   '{"DI2": 1}', '{"DO1": 0}'),
-(3, 1, 8, '电机启动测试', '验证电机启动控制功能', 0,
-   '{"DO1": 1}', '{"DI3": 1}');
+(1, 1, 1, '安全开关闭合测试', '检查安全开关闭合状态下的输入信号', 0, 0.0, 1.0),
+(1, 1, 1, '安全开关打开测试', '检查安全开关打开状态下的输入信号', 1, 1.0, 0.0),
+(2, 2, 2, '安全联锁测试', '验证安全联锁功能是否正常工作', 0, 1.0, 0.0),
+(3, 1, 8, '电机启动测试', '验证电机启动控制功能', 0, 1.0, 1.0);
+
+-- 插入测试项值数据
+INSERT INTO test_item_values (test_item_id, point_name, input_value, expected_value) VALUES
+(1, 'DI1', 0.0, 1.0),
+(2, 'DI1', 1.0, 0.0),
+(3, 'DI2', 1.0, 0.0),
+(4, 'DO1', 1.0, 0.0);
 
 -- 开启外键检查
 SET FOREIGN_KEY_CHECKS = 1;
