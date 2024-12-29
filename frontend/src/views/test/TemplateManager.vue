@@ -326,23 +326,20 @@
           :rules="testItemRules"
           label-width="100px"
         >
-          <el-form-item label="名称" prop="name">
-            <el-input v-model="testItemForm.name" placeholder="请输入测试项名称" />
-          </el-form-item>
-          <el-form-item label="描述" prop="description">
-            <el-input
-              v-model="testItemForm.description"
-              type="textarea"
-              rows="3"
-              placeholder="请输入描述信息"
-            />
-          </el-form-item>
-          <el-form-item label="序号" prop="sequence">
+          <el-form-item label="设备ID" prop="device_id">
             <el-input-number 
-              v-model="testItemForm.sequence" 
+              v-model="testItemForm.device_id" 
               :min="1"
               :max="999"
-              placeholder="请输入序号"
+              placeholder="请输入设备ID"
+            />
+          </el-form-item>
+          <el-form-item label="单元序号" prop="point_index">
+            <el-input-number 
+              v-model="testItemForm.point_index" 
+              :min="1"
+              :max="999"
+              placeholder="请输入单元序号"
             />
           </el-form-item>
           <el-form-item label="输入值" prop="input_values">
@@ -463,9 +460,8 @@ export default {
     const testItemDialogTitle = ref('')
     const testItemFormRef = ref(null)
     const testItemForm = reactive({
-      name: '',
-      description: '',
-      sequence: 1,
+      device_id: 1,
+      point_index: 1,
       input_values: '{}',
       expected_values: '{}',
       timeout: 5000,
@@ -473,7 +469,8 @@ export default {
     });
 
     const testItemRules = {
-      name: [{ required: true, message: '请输入测试项名称', trigger: 'blur' }],
+      device_id: [{ required: true, message: '请输入设备ID', trigger: 'blur' }],
+      point_index: [{ required: true, message: '请输入单元序号', trigger: 'blur' }],
       input_values: [
         { required: true, message: '请输入输入值配置', trigger: 'blur' },
         { 
@@ -857,9 +854,8 @@ export default {
     const showCreateTestItemDialog = () => {
       testItemDialogTitle.value = '新建测试项';
       testItemForm.test_group_id = currentTestGroup.value.id;
-      testItemForm.name = '';
-      testItemForm.description = '';
-      testItemForm.sequence = testItems.value.length + 1;
+      testItemForm.device_id = 1;
+      testItemForm.point_index = 1;
       testItemForm.input_values = '{}';
       testItemForm.expected_values = '{}';
       testItemForm.timeout = 5000;
