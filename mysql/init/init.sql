@@ -261,11 +261,13 @@ INSERT INTO test_groups (id, truth_table_id, level, description, sequence) VALUE
 (4, 2, 0, '电机运行测试组', 1);
 
 -- 插入测试项数据
-INSERT INTO test_items (test_group_id, device_id, point_index, name, description, sequence, input_values, expected_values) VALUES
-(1, 1, 1, '安全开关闭合测试', '检查安全开关闭合状态下的输入信号', 0, 0.0, 1.0),
-(1, 1, 1, '安全开关打开测试', '检查安全开关打开状态下的输入信号', 1, 1.0, 0.0),
-(2, 2, 2, '安全联锁测试', '验证安全联锁功能是否正常工作', 0, 1.0, 0.0),
-(3, 1, 8, '电机启动测试', '验证电机启动控制功能', 0, 1.0, 1.0);
+INSERT INTO test_items (test_group_id, device_id, point_index, name, description, sequence, input_values, expected_values, timeout) VALUES
+(1, 1, 1, '安全开关合闸测试', '检查安全开关合闸状态下的', 0, 0, 1, 5000),
+(1, 1, 1, '安全开关打开测试', '检查安全开关打开状态下的', 1, 1, 0, 5000),
+(2, 2, 2, '安全锁锁闭测试', '验证安全锁锁闭功能是否正常', 0, 1, 0, 5000),
+(3, 3, 1, '电机启动测试', '验证电机启动控制功能', 0, 1, 1, 5000),
+(3, 2, 2, '电机运行测试', '验证电机运行状态检测', 1, 1, 0, 5000),
+(4, 3, 1, '电机停止测试', '验证电机停止控制功能', 0, 0, 1, 5000);
 
 -- 插入测试项值数据
 INSERT INTO test_item_values (test_item_id, point_name, input_value, expected_value) VALUES
