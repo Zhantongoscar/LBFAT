@@ -17,6 +17,16 @@ TestItem.init({
       key: 'id'
     }
   },
+  device_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 1
+  },
+  point_index: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 1
+  },
   name: {
     type: DataTypes.STRING,
     allowNull: false

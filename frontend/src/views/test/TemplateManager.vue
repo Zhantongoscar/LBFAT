@@ -183,28 +183,50 @@
               max-height="400"
               row-key="id"
             >
-              <el-table-column prop="id" label="ID" width="80" />
-              <el-table-column prop="name" label="名称" />
-              <el-table-column prop="description" label="描述" show-overflow-tooltip />
-              <el-table-column prop="sequence" label="序号" width="80" />
-              <el-table-column label="操作" width="200" fixed="right">
+              <el-table-column
+                prop="id"
+                label="ID"
+                width="80"
+              />
+              <el-table-column
+                prop="device_id"
+                label="设备ID"
+                width="100"
+              />
+              <el-table-column
+                prop="point_index"
+                label="单元序号"
+                width="100"
+              />
+              <el-table-column
+                prop="description"
+                label="描述"
+              />
+              <el-table-column
+                prop="sequence"
+                label="序号"
+                width="80"
+              />
+              <el-table-column
+                label="操作"
+                width="150"
+                fixed="right"
+              >
                 <template #default="{ row }">
-                  <el-button-group>
-                    <el-button 
-                      type="primary" 
-                      size="small" 
-                      @click.stop="handleEditTestItem(row)"
-                    >
-                      编辑
-                    </el-button>
-                    <el-button 
-                      type="danger" 
-                      size="small" 
-                      @click.stop="handleDeleteTestItem(row)"
-                    >
-                      删除
-                    </el-button>
-                  </el-button-group>
+                  <el-button
+                    size="small"
+                    type="primary"
+                    @click.stop="handleEditTestItem(row)"
+                  >
+                    编辑
+                  </el-button>
+                  <el-button
+                    size="small"
+                    type="danger"
+                    @click.stop="handleDeleteTestItem(row)"
+                  >
+                    删除
+                  </el-button>
                 </template>
               </el-table-column>
             </el-table>
@@ -343,19 +365,19 @@
             />
           </el-form-item>
           <el-form-item label="输入值" prop="input_values">
-            <el-input
+            <el-input-number
               v-model="testItemForm.input_values"
-              type="textarea"
-              rows="3"
-              placeholder="请输入JSON格式的输入值配置"
+              :precision="2"
+              :step="0.1"
+              placeholder="请输入数值"
             />
           </el-form-item>
           <el-form-item label="期望值" prop="expected_values">
-            <el-input
+            <el-input-number
               v-model="testItemForm.expected_values"
-              type="textarea"
-              rows="3"
-              placeholder="请输入JSON格式的期望值配置"
+              :precision="2"
+              :step="0.1"
+              placeholder="请输入数值"
             />
           </el-form-item>
           <el-form-item label="超时时间" prop="timeout">
@@ -462,8 +484,8 @@ export default {
     const testItemForm = reactive({
       device_id: 1,
       point_index: 1,
-      input_values: '{}',
-      expected_values: '{}',
+      input_values: 0,
+      expected_values: 0,
       timeout: 5000,
       test_group_id: null
     });
@@ -471,34 +493,8 @@ export default {
     const testItemRules = {
       device_id: [{ required: true, message: '请输入设备ID', trigger: 'blur' }],
       point_index: [{ required: true, message: '请输入单元序号', trigger: 'blur' }],
-      input_values: [
-        { required: true, message: '请输入输入值配置', trigger: 'blur' },
-        { 
-          validator: (rule, value, callback) => {
-            try {
-              JSON.parse(value);
-              callback();
-            } catch (error) {
-              callback(new Error('请输入有效的JSON格式'));
-            }
-          },
-          trigger: 'blur'
-        }
-      ],
-      expected_values: [
-        { required: true, message: '请输入期望值配置', trigger: 'blur' },
-        { 
-          validator: (rule, value, callback) => {
-            try {
-              JSON.parse(value);
-              callback();
-            } catch (error) {
-              callback(new Error('请输入有效的JSON格式'));
-            }
-          },
-          trigger: 'blur'
-        }
-      ],
+      input_values: [{ required: true, message: '请输入输入值', trigger: 'blur' }],
+      expected_values: [{ required: true, message: '请输入期望值', trigger: 'blur' }],
       timeout: [{ required: true, message: '请输入超时时间', trigger: 'blur' }]
     };
 
@@ -837,10 +833,20 @@ export default {
       console.log('开始加载测试项数据，组ID:', groupId);
       
       try {
-        const data = await testItemApi.getByGroupId(groupId);
-        console.log('获取到的测试项数据:', data);
-        testItems.value = Array.isArray(data) ? data : [];
-        console.log('更新后的测试项列表:', testItems.value);
+        const response = await testItemApi.getByGroupId(groupId);
+        console.log('API响应:', response);
+        
+        if (Array.isArray(response)) {
+          testItems.value = response.map(item => ({
+            ...item,
+            device_id: parseInt(item.device_id),
+            point_index: parseInt(item.point_index)
+          }));
+          console.log('处理后的测试项列表:', testItems.value);
+        } else {
+          console.error('API返回数据格式错误:', response);
+          testItems.value = [];
+        }
       } catch (error) {
         console.error('获取测试项失败:', error);
         ElMessage.error('获取测试项失败');
@@ -856,21 +862,41 @@ export default {
       testItemForm.test_group_id = currentTestGroup.value.id;
       testItemForm.device_id = 1;
       testItemForm.point_index = 1;
-      testItemForm.input_values = '{}';
-      testItemForm.expected_values = '{}';
+      testItemForm.input_values = 0;
+      testItemForm.expected_values = 0;
       testItemForm.timeout = 5000;
       testItemDialogVisible.value = true;
     };
 
     // 显示编辑测试项对话框
-    const handleEditTestItem = (row) => {
+    const handleEditTestItem = async (row) => {
+      console.log('编辑测试项，原始数据:', row);
+      if (!row || !row.id) {
+        console.error('编辑的行数据为空');
+        return;
+      }
+
       testItemDialogTitle.value = '编辑测试项';
-      Object.assign(testItemForm, {
-        ...row,
-        input_values: JSON.stringify(row.input_values, null, 2),
-        expected_values: JSON.stringify(row.expected_values, null, 2)
-      });
-      testItemDialogVisible.value = true;
+      testItemLoading.value = true;
+
+      try {
+        // 直接使用行数据，不再发送额外的请求
+        testItemForm.id = row.id;
+        testItemForm.test_group_id = row.test_group_id;
+        testItemForm.device_id = parseInt(row.device_id) || 1;
+        testItemForm.point_index = parseInt(row.point_index) || 1;
+        testItemForm.input_values = parseFloat(row.input_values) || 0;
+        testItemForm.expected_values = parseFloat(row.expected_values) || 0;
+        testItemForm.timeout = parseInt(row.timeout) || 5000;
+
+        console.log('表单数据设置完成:', testItemForm);
+      } catch (error) {
+        console.error('处理测试项数据失败:', error);
+        ElMessage.error('处理数据失败');
+      } finally {
+        testItemLoading.value = false;
+        testItemDialogVisible.value = true;  // 无论成功失败都显示对话框
+      }
     };
 
     // 处理测试项表单提交
@@ -881,25 +907,38 @@ export default {
         if (valid) {
           try {
             const data = {
-              ...testItemForm,
-              input_values: JSON.parse(testItemForm.input_values),
-              expected_values: JSON.parse(testItemForm.expected_values)
+              id: testItemForm.id,
+              test_group_id: testItemForm.test_group_id,
+              device_id: parseInt(testItemForm.device_id),
+              point_index: parseInt(testItemForm.point_index),
+              input_values: parseFloat(testItemForm.input_values),
+              expected_values: parseFloat(testItemForm.expected_values),
+              timeout: parseInt(testItemForm.timeout)
             };
             
+            console.log('准备提交的表单数据:', testItemForm);
+            console.log('处理后的提交数据:', data);
+            
             if (data.id) {
-              await testItemApi.update(data.id, data);
+              console.log('发送更新请求，ID:', data.id, '完整请求数据:', JSON.stringify(data, null, 2));
+              const response = await testItemApi.update(data.id, data);
+              console.log('更新响应:', response);
               ElMessage.success('更新成功');
             } else {
-              await testItemApi.create(data);
+              console.log('发送创建请求，完整请求数据:', JSON.stringify(data, null, 2));
+              const response = await testItemApi.create(data);
+              console.log('创建响应:', response);
               ElMessage.success('创建成功');
             }
             
             testItemDialogVisible.value = false;
-            loadTestItems(currentTestGroup.value.id);
+            await loadTestItems(currentTestGroup.value.id);
           } catch (error) {
             console.error('保存测试项失败:', error);
             ElMessage.error('保存失败');
           }
+        } else {
+          console.log('表单验证失败');
         }
       });
     };
@@ -938,9 +977,16 @@ export default {
       try {
         currentTestGroup.value = row;
         testItemLoading.value = true;
-        const items = await testItemApi.getByGroupId(row.id);
-        testItems.value = items || [];
-        console.log('加载到的测试项:', testItems.value);
+        const response = await testItemApi.getByGroupId(row.id);
+        console.log('获取到的测试项数据:', response);
+        
+        if (Array.isArray(response)) {
+          // API层已经处理了数据类型转换，这里直接使用
+          testItems.value = response;
+        } else {
+          console.error('API返回数据格式错误:', response);
+          testItems.value = [];
+        }
       } catch (error) {
         console.error('加载测试项失败:', error);
         ElMessage.error('加载测试项失败');
