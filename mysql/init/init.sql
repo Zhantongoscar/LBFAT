@@ -131,6 +131,8 @@ CREATE TABLE IF NOT EXISTS test_groups (
 CREATE TABLE IF NOT EXISTS test_items (
   id INT PRIMARY KEY AUTO_INCREMENT,
   test_group_id INT NOT NULL COMMENT '所属测试组ID',
+  device_id INT NOT NULL COMMENT '关联设备ID',
+  point_index INT NOT NULL COMMENT '设备点位索引',
   name VARCHAR(100) NOT NULL COMMENT '测试项名称',
   description TEXT COMMENT '测试项描述',
   sequence INT NOT NULL DEFAULT 0 COMMENT '显示顺序',
@@ -139,7 +141,10 @@ CREATE TABLE IF NOT EXISTS test_items (
   timeout INT NOT NULL DEFAULT 5000 COMMENT '超时时间(毫秒)',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  FOREIGN KEY (test_group_id) REFERENCES test_groups(id) ON DELETE CASCADE
+  FOREIGN KEY (test_group_id) REFERENCES test_groups(id) ON DELETE CASCADE,
+  FOREIGN KEY (device_id) REFERENCES devices(id),
+  INDEX idx_device (device_id),
+  INDEX idx_point_index (point_index)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='测试项表';
 
 -- =====================================================
@@ -195,7 +200,7 @@ INSERT INTO device_type_points (device_type_id, point_index, point_type, point_n
 (1, 16, 'DI', 'DI13', 'EDB数字输入点13 - 中段'),
 (1, 17, 'DI', 'DI14', 'EDB数字输入点14 - 中段'),
 -- 剩余3个点位
-(1, 18, 'DI', 'DI15', 'EDB数字��入点15 - 后段'),
+(1, 18, 'DI', 'DI15', 'EDB数字输入点15 - 后段'),
 (1, 19, 'DI', 'DI16', 'EDB数字输入点16 - 后段'),
 (1, 20, 'DI', 'DI17', 'EDB数字输入点17 - 后段'),
 
@@ -243,14 +248,14 @@ INSERT INTO test_groups (id, truth_table_id, level, description, sequence) VALUE
 (4, 2, 0, '电机运行测试组', 1);
 
 -- 插入测试项数据
-INSERT INTO test_items (test_group_id, name, description, sequence, input_values, expected_values) VALUES
-(1, '安全开关闭合测试', '检查安全开关闭合状态下的输入信号', 0, 
+INSERT INTO test_items (test_group_id, device_id, point_index, name, description, sequence, input_values, expected_values) VALUES
+(1, 1, 1, '安全开关闭合测试', '检查安全开关闭合状态下的输入信号', 0, 
    '{"DI1": 0}', '{"DI1": 1}'),
-(1, '安全开关打开测试', '检查安全开关打开状态下的输入信号', 1,
+(1, 1, 1, '安全开关打开测试', '检查安全开关打开状态下的输入信号', 1,
    '{"DI1": 1}', '{"DI1": 0}'),
-(2, '安全联锁测试', '验证安全联锁功能是否正常工作', 0,
+(2, 2, 2, '安全联锁测试', '验证安全联锁功能是否正常工作', 0,
    '{"DI2": 1}', '{"DO1": 0}'),
-(3, '电机启动测试', '验证电机启动控制功能', 0,
+(3, 1, 8, '电机启动测试', '验证电机启动控制功能', 0,
    '{"DO1": 1}', '{"DI3": 1}');
 
 -- 开启外键检查
