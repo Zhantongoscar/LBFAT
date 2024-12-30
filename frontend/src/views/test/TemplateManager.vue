@@ -366,6 +366,14 @@
               placeholder="请输入单元序号"
             />
           </el-form-item>
+          <el-form-item label="描述" prop="description">
+            <el-input
+              v-model="testItemForm.description"
+              type="textarea"
+              :rows="2"
+              placeholder="请输入测试项描述"
+            />
+          </el-form-item>
           <el-form-item label="输入值" prop="input_values">
             <el-input-number
               v-model="testItemForm.input_values"
@@ -486,6 +494,7 @@ export default {
     const testItemForm = reactive({
       device_id: 1,
       point_index: 1,
+      description: '',
       input_values: 0,
       expected_values: 0,
       timeout: 5000,
@@ -864,6 +873,7 @@ export default {
       testItemForm.test_group_id = currentTestGroup.value.id;
       testItemForm.device_id = 1;
       testItemForm.point_index = 1;
+      testItemForm.description = '';
       testItemForm.input_values = 0;
       testItemForm.expected_values = 0;
       testItemForm.timeout = 5000;
@@ -882,11 +892,11 @@ export default {
       testItemLoading.value = true;
 
       try {
-        // 直接使用行数据，不再发送额外的请求
         testItemForm.id = row.id;
         testItemForm.test_group_id = row.test_group_id;
         testItemForm.device_id = parseInt(row.device_id) || 1;
         testItemForm.point_index = parseInt(row.point_index) || 1;
+        testItemForm.description = row.description || '';
         testItemForm.input_values = parseFloat(row.input_values) || 0;
         testItemForm.expected_values = parseFloat(row.expected_values) || 0;
         testItemForm.timeout = parseInt(row.timeout) || 5000;
@@ -897,7 +907,7 @@ export default {
         ElMessage.error('处理数据失败');
       } finally {
         testItemLoading.value = false;
-        testItemDialogVisible.value = true;  // 无论成功失败都显示对话框
+        testItemDialogVisible.value = true;
       }
     };
 
@@ -913,6 +923,7 @@ export default {
               test_group_id: testItemForm.test_group_id,
               device_id: parseInt(testItemForm.device_id),
               point_index: parseInt(testItemForm.point_index),
+              description: testItemForm.description,
               input_values: parseFloat(testItemForm.input_values),
               expected_values: parseFloat(testItemForm.expected_values),
               timeout: parseInt(testItemForm.timeout)
