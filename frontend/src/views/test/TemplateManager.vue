@@ -190,9 +190,16 @@
               />
               <el-table-column
                 prop="device_id"
-                label="设备ID"
-                width="100"
-              />
+                label="设备"
+                width="200"
+              >
+                <template #default="{ row }">
+                  <span v-if="row.device">
+                    {{ row.device.project_name }}-{{ row.device.module_type }}-{{ row.device.serial_number }}
+                  </span>
+                  <span v-else>{{ row.device_id }}</span>
+                </template>
+              </el-table-column>
               <el-table-column
                 prop="point_index"
                 label="单元序号"
@@ -201,11 +208,6 @@
               <el-table-column
                 prop="description"
                 label="描述"
-              />
-              <el-table-column
-                prop="sequence"
-                label="序号"
-                width="80"
               />
               <el-table-column
                 label="操作"

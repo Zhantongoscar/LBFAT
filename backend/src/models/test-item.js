@@ -1,5 +1,6 @@
 const { Model, DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
+const Device = require('./device');
 
 class TestItem extends Model {}
 
@@ -41,14 +42,14 @@ TestItem.init({
     defaultValue: 1
   },
   input_values: {
-    type: DataTypes.JSON,
+    type: DataTypes.FLOAT,
     allowNull: false,
-    defaultValue: {}
+    defaultValue: 0
   },
   expected_values: {
-    type: DataTypes.JSON,
+    type: DataTypes.FLOAT,
     allowNull: false,
-    defaultValue: {}
+    defaultValue: 0
   },
   timeout: {
     type: DataTypes.INTEGER,
@@ -61,6 +62,12 @@ TestItem.init({
   tableName: 'test_items',
   timestamps: true,
   underscored: true
+});
+
+// 定义关联关系
+TestItem.belongsTo(Device, {
+  foreignKey: 'device_id',
+  as: 'device'
 });
 
 module.exports = TestItem; 

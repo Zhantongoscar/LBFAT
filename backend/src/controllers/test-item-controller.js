@@ -17,8 +17,14 @@ class TestItemController {
       
       const items = await TestItem.findAll({
         where: { test_group_id: groupId },
+        include: [{
+          model: require('../models/device'),
+          as: 'device',
+          attributes: ['project_name', 'module_type', 'serial_number']
+        }],
         order: [['sequence', 'ASC']],
         raw: true,
+        nest: true,
         logging: (sql) => {
           console.log('\n执行的SQL语句:', sql);
         }
@@ -68,17 +74,42 @@ class TestItemController {
   static async update(req, res) {
     try {
       const { id } = req.params;
+      console.log('\n========== 更新测试项开始 ==========');
+      console.log('请求参数 - id:', id);
+      console.log('请求体:', JSON.stringify(req.body, null, 2));
+
       const [updated] = await TestItem.update(req.body, {
         where: { id }
       });
+
       if (updated) {
         const item = await TestItem.findByPk(id);
-        res.json(item);
+        console.log('更新成功，更新后的数据:', JSON.stringify(item, null, 2));
+        res.json({
+          code: 200,
+          message: '更新成功',
+          data: item
+        });
       } else {
-        res.status(404).json({ error: '测试项不存在' });
+        console.log('测试项不存在');
+        res.status(404).json({
+          code: 404,
+          message: '测试项不存在'
+        });
       }
+      console.log('\n========== 更新测试项完成 ==========\n');
     } catch (error) {
-      res.status(400).json({ error: error.message });
+      console.error('\n========== 更新测试项失败 ==========');
+      console.error('错误类型:', error.name);
+      console.error('错误消息:', error.message);
+      console.error('错误堆栈:', error.stack);
+      console.error('================================\n');
+      
+      res.status(500).json({
+        code: 500,
+        message: '更新测试项失败',
+        error: error.message
+      });
     }
   }
 

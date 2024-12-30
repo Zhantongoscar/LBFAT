@@ -1,96 +1,40 @@
-const db = require('../utils/db');
+const { Model, DataTypes } = require('sequelize');
+const sequelize = require('../config/database');
 
-class Device {
-    // 获取所有设备
-    static async findAll(filters = {}) {
-        try {
-            let sql = 'SELECT * FROM devices WHERE 1=1';
-            const params = [];
+class Device extends Model {}
 
-            if (filters.projectName) {
-                sql += ' AND project_name = ?';
-                params.push(filters.projectName);
-            }
-            if (filters.status) {
-                sql += ' AND status = ?';
-                params.push(filters.status);
-            }
-
-            sql += ' ORDER BY updated_at DESC';
-            console.log('=== 开始数据库查询 ===');
-            console.log('SQL语句:', sql);
-            console.log('查询参数:', params);
-            
-            // 执行查询
-            const result = await db.query(sql, params);
-            console.log('=== 原始查询结果 ===');
-            console.log('result完整结构:', JSON.stringify(result, null, 2));
-            console.log('result类型:', typeof result);
-            console.log('result是否为数组:', Array.isArray(result));
-            console.log('result长度:', result.length);
-            
-            // 直接返回查询结果
-            return result;
-            
-        } catch (error) {
-            console.error('查询出错:', error);
-            throw error;
-        }
-    }
-
-    // 获取单个设备
-    static async findOne(projectName, moduleType, serialNumber) {
-        const sql = 'SELECT * FROM devices WHERE project_name = ? AND module_type = ? AND serial_number = ?';
-        const [rows] = await db.query(sql, [projectName, moduleType, serialNumber]);
-        return rows[0];
-    }
-
-    // 创建或更新设备
-    static async upsert(device) {
-        const sql = `
-            INSERT INTO devices (project_name, module_type, serial_number, status)
-            VALUES (?, ?, ?, 'offline')
-            ON DUPLICATE KEY UPDATE
-                module_type = VALUES(module_type)
-        `;
-        
-        console.log('执行SQL:', sql);
-        console.log('参数:', [
-            device.project_name,
-            device.module_type,
-            device.serial_number
-        ]);
-        
-        const result = await db.query(sql, [
-            device.project_name,
-            device.module_type,
-            device.serial_number
-        ]);
-        
-        console.log('插入结果:', result);
-        return result;
-    }
-
-    // 更新设备状态
-    static async updateStatus(projectName, moduleType, serialNumber, status, rssi) {
-        const sql = 'UPDATE devices SET status = ?, rssi = ? WHERE project_name = ? AND module_type = ? AND serial_number = ?';
-        const [result] = await db.query(sql, [status, rssi, projectName, moduleType, serialNumber]);
-        return result;
-    }
-
-    // 批量更新项目下所有设备状态
-    static async updateProjectDevicesStatus(projectName, status) {
-        const sql = 'UPDATE devices SET status = ?, rssi = 0 WHERE project_name = ?';
-        const [result] = await db.query(sql, [status, projectName]);
-        return result;
-    }
-
-    // 删除设备
-    static async delete(projectName, moduleType, serialNumber) {
-        const sql = 'DELETE FROM devices WHERE project_name = ? AND module_type = ? AND serial_number = ?';
-        const [result] = await db.query(sql, [projectName, moduleType, serialNumber]);
-        return result;
-    }
-}
+Device.init({
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
+  project_name: {
+    type: DataTypes.STRING(50),
+    allowNull: false
+  },
+  module_type: {
+    type: DataTypes.STRING(20),
+    allowNull: false
+  },
+  serial_number: {
+    type: DataTypes.STRING(20),
+    allowNull: false
+  },
+  status: {
+    type: DataTypes.ENUM('online', 'offline'),
+    defaultValue: 'offline'
+  },
+  rssi: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0
+  }
+}, {
+  sequelize,
+  modelName: 'Device',
+  tableName: 'devices',
+  timestamps: true,
+  underscored: true
+});
 
 module.exports = Device; 
