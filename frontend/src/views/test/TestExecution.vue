@@ -219,27 +219,27 @@
             >
               <template #default="{ row }">
                 <el-button
-                  v-if="canStart(row)"
+                  v-if="canEdit(row)"
                   type="primary"
-                  size="small"
-                  @click="startInstance(row)"
+                  link
+                  @click="handleEdit(row)"
                 >
-                  开始测试
+                  编辑
                 </el-button>
                 <el-button
-                  v-if="canAbort(row)"
-                  type="danger"
-                  size="small"
-                  @click="abortInstance(row)"
-                >
-                  中止测试
-                </el-button>
-                <el-button
-                  type="info"
-                  size="small"
+                  type="primary"
+                  link
                   @click="showInstanceDetails(row)"
                 >
-                  查看详情
+                  详情
+                </el-button>
+                <el-button
+                  v-if="canDelete(row)"
+                  type="danger"
+                  link
+                  @click="handleDelete(row)"
+                >
+                  删除
                 </el-button>
               </template>
             </el-table-column>
@@ -371,6 +371,52 @@
         <el-button type="primary" @click="submitCreate">确定</el-button>
       </template>
     </el-dialog>
+
+    <!-- 编辑相关 -->
+    <el-dialog
+      v-model="editDialogVisible"
+      title="编辑测试实例"
+      width="500px"
+      destroy-on-close
+    >
+      <el-form
+        ref="editFormRef"
+        :model="editForm"
+        :rules="editRules"
+        label-width="100px"
+      >
+        <el-form-item label="真值表" prop="truth_table_id">
+          <el-select
+            v-model="editForm.truth_table_id"
+            placeholder="请选择真值表"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="table in truthTables"
+              :key="table.id"
+              :label="table.name"
+              :value="table.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="产品序列号" prop="product_sn">
+          <el-input
+            v-model="editForm.product_sn"
+            placeholder="请输入产品序列号"
+          />
+        </el-form-item>
+        <el-form-item label="操作员" prop="operator">
+          <el-input
+            v-model="editForm.operator"
+            placeholder="请输入操作员"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="editDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitEdit">确定</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -383,6 +429,7 @@ import {
   createTestInstance, 
   startTest, 
   completeTest,
+  deleteTestInstance,
   TestStatus,
   TestResult,
   ExecutionStatus,
@@ -773,6 +820,91 @@ export default {
              testInstances.value[0]
     })
 
+    // 编辑相关
+    const editDialogVisible = ref(false)
+    const editForm = ref({
+      id: '',
+      truth_table_id: '',
+      product_sn: '',
+      operator: 'root'
+    })
+    const editFormRef = ref()
+
+    // 判断是否可以编辑
+    const canEdit = (instance) => {
+      return instance.status === TestStatus.PENDING
+    }
+
+    // 处理编辑
+    const handleEdit = (instance) => {
+      editDialogVisible.value = true
+      editForm.value = {
+        id: instance.id,
+        truth_table_id: instance.truth_table_id,
+        product_sn: instance.product_sn,
+        operator: instance.operator
+      }
+    }
+
+    // 提交编辑
+    const submitEdit = async () => {
+      if (!editFormRef.value) return
+      
+      await editFormRef.value.validate(async (valid) => {
+        if (valid) {
+          try {
+            await updateTestInstance(editForm.value.id, {
+              truth_table_id: editForm.value.truth_table_id,
+              product_sn: editForm.value.product_sn,
+              operator: editForm.value.operator
+            })
+            ElMessage.success('更新测试实例成功')
+            editDialogVisible.value = false
+            await fetchTestInstances()
+          } catch (error) {
+            console.error('更新测试实例失败:', error)
+            ElMessage.error('更新测试实例失败')
+          }
+        }
+      })
+    }
+
+    const editRules = {
+      truth_table_id: [
+        { required: true, message: '请选择真值表', trigger: 'change' }
+      ],
+      product_sn: [
+        { required: true, message: '请输入产品序列号', trigger: 'blur' }
+      ],
+      operator: [
+        { required: true, message: '请输入操作员', trigger: 'blur' }
+      ]
+    }
+
+    // 判断是否可以删除
+    const canDelete = (instance) => {
+      return instance.status === TestStatus.PENDING
+    }
+
+    // 处理删除
+    const handleDelete = async (instance) => {
+      try {
+        await ElMessageBox.confirm('确定要删除该测试实例吗？', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        })
+        await deleteTestInstance(instance.id)
+        ElMessage.success('删除成功')
+        await fetchTestInstances()
+      } catch (error) {
+        if (error !== 'cancel') {
+          console.error('删除测试实例失败:', error)
+          ElMessage.error('删除失败')
+        }
+      }
+    }
+
     return {
       isDevicesPanelCollapsed,
       devices,
@@ -817,6 +949,13 @@ export default {
       getProgressStatus,
       canStart,
       canAbort,
+      canEdit,
+      handleEdit,
+      editDialogVisible,
+      editForm,
+      editFormRef,
+      editRules,
+      submitEdit,
       truthTables,
       createDialogVisible,
       createForm,
@@ -825,7 +964,9 @@ export default {
       handleCreate,
       submitCreate,
       isInstancesPanelCollapsed,
-      currentInstance
+      currentInstance,
+      canDelete,
+      handleDelete
     }
   }
 }

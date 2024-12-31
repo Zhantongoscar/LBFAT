@@ -30,6 +30,11 @@ export function getTestInstances(params) {
   return api.get('/test-instances', { params })
 }
 
+// 删除测试实例
+export function deleteTestInstance(instanceId) {
+  return api.delete(`/test-instances/${instanceId}`)
+}
+
 // 测试状态常量
 export const TestStatus = {
   PENDING: 'pending',
