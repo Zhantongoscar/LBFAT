@@ -176,7 +176,7 @@
           width="200"
         >
           <template #default="{ row }">
-            <el-progress 
+            <el-progress
               :percentage="getTestProgress(row)"
               :status="getProgressStatus(row)"
             />
@@ -184,11 +184,11 @@
         </el-table-column>
         <el-table-column
           label="时间"
-          width="180"
+          width="340"
         >
           <template #default="{ row }">
-            <div>开始：{{ formatDateTime(row.startTime) || '-' }}</div>
-            <div>结束：{{ formatDateTime(row.endTime) || '-' }}</div>
+            <div>开始：{{ formatDateTime(row.start_time) || '-' }}</div>
+            <div>结束：{{ formatDateTime(row.end_time) || '-' }}</div>
           </template>
         </el-table-column>
         <el-table-column
@@ -197,31 +197,29 @@
           fixed="right"
         >
           <template #default="{ row }">
-            <el-button-group>
-              <el-button
-                type="primary"
-                size="small"
-                :disabled="!canStart(row)"
-                @click="startInstance(row)"
-              >
-                开始
-              </el-button>
-              <el-button
-                type="warning"
-                size="small"
-                :disabled="!canAbort(row)"
-                @click="abortInstance(row)"
-              >
-                中止
-              </el-button>
-              <el-button
-                type="info"
-                size="small"
-                @click="showInstanceDetails(row)"
-              >
-                详情
-              </el-button>
-            </el-button-group>
+            <el-button
+              v-if="canStart(row)"
+              type="primary"
+              size="small"
+              @click="startInstance(row)"
+            >
+              开始测试
+            </el-button>
+            <el-button
+              v-if="canAbort(row)"
+              type="danger"
+              size="small"
+              @click="abortInstance(row)"
+            >
+              中止测试
+            </el-button>
+            <el-button
+              type="info"
+              size="small"
+              @click="showInstanceDetails(row)"
+            >
+              查看详情
+            </el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -778,6 +776,16 @@ export default {
       startInstance,
       abortInstance,
       showInstanceDetails,
+      getInstanceStatusType,
+      getInstanceStatusText,
+      getItemStatusType,
+      getItemStatusText,
+      getResultType,
+      getResultText,
+      getTestProgress,
+      getProgressStatus,
+      canStart,
+      canAbort,
       truthTables,
       createDialogVisible,
       createForm,
