@@ -9,7 +9,7 @@ exports.getTestInstances = async (req, res) => {
         model: TestItemInstance,
         as: 'items'
       }],
-      order: [['createdAt', 'DESC']]
+      order: [['created_at', 'DESC']]
     });
     res.json(instances);
   } catch (error) {
@@ -80,7 +80,7 @@ exports.startTest = async (req, res) => {
 
     await instance.update({
       status: TestStatus.RUNNING,
-      startTime: new Date()
+      start_time: new Date()
     });
 
     res.json(instance);
@@ -104,7 +104,7 @@ exports.completeTest = async (req, res) => {
     await instance.update({
       status: TestStatus.COMPLETED,
       result: result || TestResult.UNKNOWN,
-      endTime: new Date()
+      end_time: new Date()
     });
 
     res.json(instance);
@@ -122,7 +122,7 @@ exports.updateTestItemStatus = async (req, res) => {
 
     const testItem = await TestItemInstance.findOne({
       where: {
-        testInstanceId: id,
+        instance_id: id,
         id: itemId
       }
     });
