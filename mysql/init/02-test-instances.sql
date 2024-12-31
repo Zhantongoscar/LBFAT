@@ -1,6 +1,6 @@
 -- 创建测试实例主表
 CREATE TABLE IF NOT EXISTS test_instances (
-  id VARCHAR(36) PRIMARY KEY,        -- 实例唯一标识（UUID）
+  id INT AUTO_INCREMENT PRIMARY KEY,  -- 修改为自增整型
   truth_table_id INT NOT NULL,       -- 关联的真值表ID
   product_sn VARCHAR(50) NOT NULL,   -- 产品序列号
   operator VARCHAR(50) NOT NULL,     -- 操作员
@@ -15,8 +15,8 @@ CREATE TABLE IF NOT EXISTS test_instances (
 
 -- 创建测试项实例表
 CREATE TABLE IF NOT EXISTS test_item_instances (
-  id INT AUTO_INCREMENT PRIMARY KEY,  -- 主键
-  instance_id VARCHAR(36) NOT NULL,   -- 关联的测试实例ID
+  id INT AUTO_INCREMENT PRIMARY KEY,  -- 已经是自增整型
+  instance_id INT NOT NULL,          -- 修改为整型
   test_item_id INT NOT NULL,         -- 关联的测试项ID
   execution_status ENUM('pending','running','completed','skipped','timeout') DEFAULT 'pending', -- 执行状态
   result_status ENUM('unknown','pass','fail','error') DEFAULT 'unknown',  -- 结果状态

@@ -21,12 +21,23 @@ exports.getTestInstances = async (req, res) => {
 // 创建测试实例
 exports.createTestInstance = async (req, res) => {
   try {
-    const { name } = req.body;
+    const { truth_table_id, product_sn, operator } = req.body;
+    
+    // 验证必填字段
+    if (!truth_table_id || !product_sn || !operator) {
+      return res.status(400).json({ 
+        message: '真值表ID、产品序列号和操作员不能为空' 
+      });
+    }
+
     const instance = await TestInstance.create({
-      name: name || `测试实例_${Date.now()}`,
+      truth_table_id,
+      product_sn,
+      operator,
       status: TestStatus.PENDING,
       result: TestResult.UNKNOWN
     });
+    
     res.status(201).json(instance);
   } catch (error) {
     console.error('Error creating test instance:', error);

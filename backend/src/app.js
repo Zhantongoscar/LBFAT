@@ -9,6 +9,7 @@ const drawingRoutes = require('./routes/drawing-routes');
 const truthTableRoutes = require('./routes/truth-table.js');
 const testGroupRoutes = require('./routes/test-group-routes');
 const testItemRoutes = require('./routes/test-item-routes');
+const testInstanceRoutes = require('./routes/test-instance-routes');
 const mqttService = require('./services/mqtt-service');
 const WebSocketService = require('./services/websocket-service');
 const db = require('./utils/db');
@@ -60,6 +61,7 @@ app.use('/api/drawings', drawingRoutes);
 app.use('/api/truth-tables', truthTableRoutes);
 app.use('/api/test-groups', testGroupRoutes);
 app.use('/api/test-items', testItemRoutes);
+app.use('/api/test-instances', testInstanceRoutes);
 
 console.log('=== 路由注册完成 ===');
 

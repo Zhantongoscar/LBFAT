@@ -144,8 +144,8 @@
         border
       >
         <el-table-column
-          prop="name"
-          label="实例名称"
+          prop="product_sn"
+          label="产品序列号"
           min-width="180"
         />
         <el-table-column
@@ -262,10 +262,16 @@
     >
       <template v-if="selectedInstance">
         <el-descriptions :column="2" border>
-          <el-descriptions-item label="实例名称">{{ selectedInstance.name }}</el-descriptions-item>
+          <el-descriptions-item label="产品序列号">{{ selectedInstance.product_sn }}</el-descriptions-item>
+          <el-descriptions-item label="操作员">{{ selectedInstance.operator }}</el-descriptions-item>
           <el-descriptions-item label="状态">
             <el-tag :type="getInstanceStatusType(selectedInstance.status)">
               {{ getInstanceStatusText(selectedInstance.status) }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="结果" v-if="selectedInstance.result">
+            <el-tag :type="getResultType(selectedInstance.result)">
+              {{ getResultText(selectedInstance.result) }}
             </el-tag>
           </el-descriptions-item>
           <el-descriptions-item label="开始时间">
@@ -503,7 +509,9 @@ export default {
     const createNewInstance = async () => {
       try {
         await createTestInstance({
-          name: `测试实例_${new Date().getTime()}`
+          truth_table_id: 1, // 默认使用ID为1的真值表
+          product_sn: `P${new Date().getTime()}`, // 生成一个唯一的产品序列号
+          operator: 'admin' // 默认操作员
         })
         ElMessage.success('创建测试实例成功')
         await fetchTestInstances()
