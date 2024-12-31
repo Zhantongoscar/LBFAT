@@ -37,4 +37,18 @@ CREATE INDEX idx_test_instances_result ON test_instances(result);
 CREATE INDEX idx_test_item_instances_instance ON test_item_instances(instance_id);
 CREATE INDEX idx_test_item_instances_item ON test_item_instances(test_item_id);
 CREATE INDEX idx_test_item_instances_status ON test_item_instances(execution_status);
-CREATE INDEX idx_test_item_instances_result ON test_item_instances(result_status); 
+CREATE INDEX idx_test_item_instances_result ON test_item_instances(result_status);
+
+-- 插入演示测试实例
+INSERT INTO `test_instances` (`truth_table_id`, `product_sn`, `operator`, `status`, `result`, `created_at`, `updated_at`)
+SELECT 
+  id as truth_table_id,
+  'demo_project1' as product_sn,
+  'root' as operator,
+  'pending' as status,
+  NULL as result,
+  NOW() as created_at,
+  NOW() as updated_at
+FROM `truth_tables`
+WHERE `name` = '安全开关测试'
+LIMIT 1; 
