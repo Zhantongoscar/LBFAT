@@ -120,6 +120,113 @@
       </el-collapse-transition>
     </el-card>
 
+    <!-- 测试用例列表面板 -->
+    <el-card class="box-card mb-20">
+      <template #header>
+        <div class="card-header">
+          <div class="header-left">
+            <span>测试实例列表</span>
+            <el-tag type="info" class="ml-10">
+              {{ testInstances.length }}
+            </el-tag>
+          </div>
+          <div class="header-right">
+            <el-button type="primary" size="small" @click="createNewInstance">
+              新建测试实例
+            </el-button>
+          </div>
+        </div>
+      </template>
+
+      <el-table
+        :data="testInstances"
+        style="width: 100%"
+        border
+      >
+        <el-table-column
+          prop="name"
+          label="实例名称"
+          min-width="180"
+        />
+        <el-table-column
+          prop="status"
+          label="状态"
+          width="100"
+        >
+          <template #default="{ row }">
+            <el-tag :type="getInstanceStatusType(row.status)">
+              {{ getInstanceStatusText(row.status) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="result"
+          label="结果"
+          width="100"
+        >
+          <template #default="{ row }">
+            <el-tag :type="getResultType(row.result)" v-if="row.result">
+              {{ getResultText(row.result) }}
+            </el-tag>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="进度"
+          width="200"
+        >
+          <template #default="{ row }">
+            <el-progress 
+              :percentage="getTestProgress(row)"
+              :status="getProgressStatus(row)"
+            />
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="时间"
+          width="180"
+        >
+          <template #default="{ row }">
+            <div>开始：{{ formatDateTime(row.startTime) || '-' }}</div>
+            <div>结束：{{ formatDateTime(row.endTime) || '-' }}</div>
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="操作"
+          width="200"
+          fixed="right"
+        >
+          <template #default="{ row }">
+            <el-button-group>
+              <el-button
+                type="primary"
+                size="small"
+                :disabled="!canStart(row)"
+                @click="startInstance(row)"
+              >
+                开始
+              </el-button>
+              <el-button
+                type="warning"
+                size="small"
+                :disabled="!canAbort(row)"
+                @click="abortInstance(row)"
+              >
+                中止
+              </el-button>
+              <el-button
+                type="info"
+                size="small"
+                @click="showInstanceDetails(row)"
+              >
+                详情
+              </el-button>
+            </el-button-group>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
+
     <!-- 设备详情对话框 -->
     <el-dialog
       v-model="deviceDetailsVisible"
@@ -146,12 +253,69 @@
         </el-descriptions-item>
       </el-descriptions>
     </el-dialog>
+
+    <!-- 实例详情对话框 -->
+    <el-dialog
+      v-model="instanceDetailsVisible"
+      title="测试实例详情"
+      width="800px"
+    >
+      <template v-if="selectedInstance">
+        <el-descriptions :column="2" border>
+          <el-descriptions-item label="实例名称">{{ selectedInstance.name }}</el-descriptions-item>
+          <el-descriptions-item label="状态">
+            <el-tag :type="getInstanceStatusType(selectedInstance.status)">
+              {{ getInstanceStatusText(selectedInstance.status) }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="开始时间">
+            {{ formatDateTime(selectedInstance.startTime) || '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="结束时间">
+            {{ formatDateTime(selectedInstance.endTime) || '-' }}
+          </el-descriptions-item>
+        </el-descriptions>
+
+        <div class="mt-20">
+          <h4>测试项列表</h4>
+          <el-table :data="selectedInstance.items" border>
+            <el-table-column prop="name" label="测试项" min-width="180" />
+            <el-table-column prop="status" label="状态" width="100">
+              <template #default="{ row }">
+                <el-tag :type="getItemStatusType(row.status)">
+                  {{ getItemStatusText(row.status) }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="result" label="结果" width="100">
+              <template #default="{ row }">
+                <el-tag :type="getResultType(row.result)" v-if="row.result">
+                  {{ getResultText(row.result) }}
+                </el-tag>
+                <span v-else>-</span>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { Monitor, Cpu, Connection, ArrowDown, ArrowRight } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { 
+  getTestInstances, 
+  createTestInstance, 
+  startTest, 
+  completeTest,
+  TestStatus,
+  TestResult,
+  ExecutionStatus,
+  ResultStatus
+} from '@/api/testInstance'
 
 export default {
   name: 'TestExecution',
@@ -320,6 +484,160 @@ export default {
       offlineCurrentPage.value = page
     }
 
+    // 测试实例相关
+    const testInstances = ref([])
+    const instanceDetailsVisible = ref(false)
+    const selectedInstance = ref(null)
+
+    // 获取测试实例列表
+    const fetchTestInstances = async () => {
+      try {
+        const response = await getTestInstances()
+        testInstances.value = response.data
+      } catch (error) {
+        ElMessage.error('获取测试实例列表失败')
+      }
+    }
+
+    // 创建新测试实例
+    const createNewInstance = async () => {
+      try {
+        await createTestInstance({
+          name: `测试实例_${new Date().getTime()}`
+        })
+        ElMessage.success('创建测试实例成功')
+        await fetchTestInstances()
+      } catch (error) {
+        ElMessage.error('创建测试实例失败')
+      }
+    }
+
+    // 开始测试实例
+    const startInstance = async (instance) => {
+      try {
+        await startTest(instance.id)
+        ElMessage.success('开始测试')
+        await fetchTestInstances()
+      } catch (error) {
+        ElMessage.error('开始测试失败')
+      }
+    }
+
+    // 中止测试实例
+    const abortInstance = async (instance) => {
+      try {
+        await ElMessageBox.confirm('确定要中止测试吗？')
+        await completeTest(instance.id, TestResult.UNKNOWN)
+        ElMessage.success('已中止测试')
+        await fetchTestInstances()
+      } catch (error) {
+        if (error !== 'cancel') {
+          ElMessage.error('中止测试失败')
+        }
+      }
+    }
+
+    // 显示实例详情
+    const showInstanceDetails = (instance) => {
+      selectedInstance.value = instance
+      instanceDetailsVisible.value = true
+    }
+
+    // 状态相关方法
+    const getInstanceStatusType = (status) => {
+      const types = {
+        [TestStatus.PENDING]: 'info',
+        [TestStatus.RUNNING]: 'warning',
+        [TestStatus.COMPLETED]: 'success',
+        [TestStatus.ABORTED]: 'danger'
+      }
+      return types[status] || 'info'
+    }
+
+    const getInstanceStatusText = (status) => {
+      const texts = {
+        [TestStatus.PENDING]: '待执行',
+        [TestStatus.RUNNING]: '执行中',
+        [TestStatus.COMPLETED]: '已完成',
+        [TestStatus.ABORTED]: '已中止'
+      }
+      return texts[status] || '未知'
+    }
+
+    const getItemStatusType = (status) => {
+      const types = {
+        [ExecutionStatus.PENDING]: 'info',
+        [ExecutionStatus.RUNNING]: 'warning',
+        [ExecutionStatus.COMPLETED]: 'success',
+        [ExecutionStatus.SKIPPED]: '',
+        [ExecutionStatus.TIMEOUT]: 'danger'
+      }
+      return types[status] || 'info'
+    }
+
+    const getItemStatusText = (status) => {
+      const texts = {
+        [ExecutionStatus.PENDING]: '待执行',
+        [ExecutionStatus.RUNNING]: '执行中',
+        [ExecutionStatus.COMPLETED]: '已完成',
+        [ExecutionStatus.SKIPPED]: '已跳过',
+        [ExecutionStatus.TIMEOUT]: '超时'
+      }
+      return texts[status] || '未知'
+    }
+
+    const getResultType = (result) => {
+      const types = {
+        [ResultStatus.PASS]: 'success',
+        [ResultStatus.FAIL]: 'danger',
+        [ResultStatus.ERROR]: 'danger',
+        [ResultStatus.UNKNOWN]: 'info'
+      }
+      return types[result] || 'info'
+    }
+
+    const getResultText = (result) => {
+      const texts = {
+        [ResultStatus.PASS]: '通过',
+        [ResultStatus.FAIL]: '失败',
+        [ResultStatus.ERROR]: '错误',
+        [ResultStatus.UNKNOWN]: '未知'
+      }
+      return texts[result] || '未知'
+    }
+
+    // 获取测试进度
+    const getTestProgress = (instance) => {
+      if (!instance.items || instance.items.length === 0) return 0
+      const completed = instance.items.filter(
+        item => item.status === ExecutionStatus.COMPLETED
+      ).length
+      return Math.round((completed / instance.items.length) * 100)
+    }
+
+    // 获取进度条状态
+    const getProgressStatus = (instance) => {
+      if (instance.status === TestStatus.ABORTED) return 'exception'
+      if (instance.result === ResultStatus.FAIL) return 'exception'
+      if (instance.status === TestStatus.COMPLETED) return 'success'
+      return ''
+    }
+
+    // 判断是否可以开始测试
+    const canStart = (instance) => {
+      return instance.status === TestStatus.PENDING
+    }
+
+    // 判断是否可以中止测试
+    const canAbort = (instance) => {
+      return instance.status === TestStatus.RUNNING
+    }
+
+    // 页面加载时获取测试实例列表
+    onMounted(() => {
+      fetchTestInstances()
+    })
+
     return {
       isDevicesPanelCollapsed,
       devices,
@@ -346,7 +664,25 @@ export default {
       paginatedOnlineDevices,
       paginatedOfflineDevices,
       handleOnlinePageChange,
-      handleOfflinePageChange
+      handleOfflinePageChange,
+      // 测试实例相关
+      testInstances,
+      instanceDetailsVisible,
+      selectedInstance,
+      createNewInstance,
+      startInstance,
+      abortInstance,
+      showInstanceDetails,
+      getInstanceStatusType,
+      getInstanceStatusText,
+      getItemStatusType,
+      getItemStatusText,
+      getResultType,
+      getResultText,
+      getTestProgress,
+      getProgressStatus,
+      canStart,
+      canAbort
     }
   }
 }
@@ -481,5 +817,13 @@ export default {
 
 .signal-poor {
   background-color: #f56c6c;
+}
+
+.mt-20 {
+  margin-top: 20px;
+}
+
+.header-right {
+  margin-left: auto;
 }
 </style> 
