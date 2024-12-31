@@ -120,15 +120,34 @@
       </el-collapse-transition>
     </el-card>
 
-    <!-- 测试用例列表面板 -->
+    <!-- 测试实例列表面板 -->
     <el-card class="box-card mb-20">
       <template #header>
         <div class="card-header">
           <div class="header-left">
-            <span>测试实例列表</span>
+            <el-button
+              type="text"
+              @click="isInstancesPanelCollapsed = !isInstancesPanelCollapsed"
+            >
+              <el-icon>
+                <component :is="isInstancesPanelCollapsed ? 'ArrowRight' : 'ArrowDown'" />
+              </el-icon>
+              <span>测试实例列表</span>
+            </el-button>
             <el-tag type="info" class="ml-10">
               {{ testInstances.length }}
             </el-tag>
+            <template v-if="isInstancesPanelCollapsed && currentInstance">
+              <el-divider direction="vertical" />
+              <span class="active-instance">当前测试：{{ currentInstance.product_sn }}</span>
+              <el-tag 
+                :type="getInstanceStatusType(currentInstance.status)" 
+                size="small" 
+                class="ml-10"
+              >
+                {{ getInstanceStatusText(currentInstance.status) }}
+              </el-tag>
+            </template>
           </div>
           <div class="header-right">
             <el-button type="primary" size="small" @click="handleCreate">
@@ -138,91 +157,95 @@
         </div>
       </template>
 
-      <el-table
-        :data="testInstances"
-        style="width: 100%"
-        border
-      >
-        <el-table-column
-          prop="product_sn"
-          label="产品序列号"
-          min-width="180"
-        />
-        <el-table-column
-          prop="status"
-          label="状态"
-          width="100"
-        >
-          <template #default="{ row }">
-            <el-tag :type="getInstanceStatusType(row.status)">
-              {{ getInstanceStatusText(row.status) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column
-          prop="result"
-          label="结果"
-          width="100"
-        >
-          <template #default="{ row }">
-            <el-tag :type="getResultType(row.result)" v-if="row.result">
-              {{ getResultText(row.result) }}
-            </el-tag>
-            <span v-else>-</span>
-          </template>
-        </el-table-column>
-        <el-table-column
-          label="进度"
-          width="200"
-        >
-          <template #default="{ row }">
-            <el-progress
-              :percentage="getTestProgress(row)"
-              :status="getProgressStatus(row)"
+      <el-collapse-transition>
+        <div v-show="!isInstancesPanelCollapsed">
+          <el-table
+            :data="testInstances"
+            style="width: 100%"
+            border
+          >
+            <el-table-column
+              prop="product_sn"
+              label="产品序列号"
+              min-width="180"
             />
-          </template>
-        </el-table-column>
-        <el-table-column
-          label="时间"
-          width="340"
-        >
-          <template #default="{ row }">
-            <div>开始：{{ formatDateTime(row.start_time) || '-' }}</div>
-            <div>结束：{{ formatDateTime(row.end_time) || '-' }}</div>
-          </template>
-        </el-table-column>
-        <el-table-column
-          label="操作"
-          width="200"
-          fixed="right"
-        >
-          <template #default="{ row }">
-            <el-button
-              v-if="canStart(row)"
-              type="primary"
-              size="small"
-              @click="startInstance(row)"
+            <el-table-column
+              prop="status"
+              label="状态"
+              width="100"
             >
-              开始测试
-            </el-button>
-            <el-button
-              v-if="canAbort(row)"
-              type="danger"
-              size="small"
-              @click="abortInstance(row)"
+              <template #default="{ row }">
+                <el-tag :type="getInstanceStatusType(row.status)">
+                  {{ getInstanceStatusText(row.status) }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column
+              prop="result"
+              label="结果"
+              width="100"
             >
-              中止测试
-            </el-button>
-            <el-button
-              type="info"
-              size="small"
-              @click="showInstanceDetails(row)"
+              <template #default="{ row }">
+                <el-tag :type="getResultType(row.result)" v-if="row.result">
+                  {{ getResultText(row.result) }}
+                </el-tag>
+                <span v-else>-</span>
+              </template>
+            </el-table-column>
+            <el-table-column
+              label="进度"
+              width="200"
             >
-              查看详情
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+              <template #default="{ row }">
+                <el-progress
+                  :percentage="getTestProgress(row)"
+                  :status="getProgressStatus(row)"
+                />
+              </template>
+            </el-table-column>
+            <el-table-column
+              label="时间"
+              width="340"
+            >
+              <template #default="{ row }">
+                <div>开始：{{ formatDateTime(row.start_time) || '-' }}</div>
+                <div>结束：{{ formatDateTime(row.end_time) || '-' }}</div>
+              </template>
+            </el-table-column>
+            <el-table-column
+              label="操作"
+              width="200"
+              fixed="right"
+            >
+              <template #default="{ row }">
+                <el-button
+                  v-if="canStart(row)"
+                  type="primary"
+                  size="small"
+                  @click="startInstance(row)"
+                >
+                  开始测试
+                </el-button>
+                <el-button
+                  v-if="canAbort(row)"
+                  type="danger"
+                  size="small"
+                  @click="abortInstance(row)"
+                >
+                  中止测试
+                </el-button>
+                <el-button
+                  type="info"
+                  size="small"
+                  @click="showInstanceDetails(row)"
+                >
+                  查看详情
+                </el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+      </el-collapse-transition>
     </el-card>
 
     <!-- 设备详情对话框 -->
@@ -742,6 +765,14 @@ export default {
       })
     }
 
+    const isInstancesPanelCollapsed = ref(false)
+    
+    // 当前测试实例（优先显示正在执行的实例，如果没有则显示第一个）
+    const currentInstance = computed(() => {
+      return testInstances.value.find(instance => instance.status === TestStatus.RUNNING) || 
+             testInstances.value[0]
+    })
+
     return {
       isDevicesPanelCollapsed,
       devices,
@@ -792,7 +823,9 @@ export default {
       createRules,
       createFormRef,
       handleCreate,
-      submitCreate
+      submitCreate,
+      isInstancesPanelCollapsed,
+      currentInstance
     }
   }
 }
@@ -935,5 +968,11 @@ export default {
 
 .header-right {
   margin-left: auto;
+}
+
+.active-instance {
+  margin-left: 10px;
+  color: #606266;
+  font-size: 14px;
 }
 </style> 
