@@ -131,7 +131,7 @@
             </el-tag>
           </div>
           <div class="header-right">
-            <el-button type="primary" size="small" @click="createNewInstance">
+            <el-button type="primary" size="small" @click="handleCreate">
               新建测试实例
             </el-button>
           </div>
@@ -260,49 +260,94 @@
       title="测试实例详情"
       width="800px"
     >
-      <template v-if="selectedInstance">
-        <el-descriptions :column="2" border>
-          <el-descriptions-item label="产品序列号">{{ selectedInstance.product_sn }}</el-descriptions-item>
-          <el-descriptions-item label="操作员">{{ selectedInstance.operator }}</el-descriptions-item>
-          <el-descriptions-item label="状态">
-            <el-tag :type="getInstanceStatusType(selectedInstance.status)">
-              {{ getInstanceStatusText(selectedInstance.status) }}
-            </el-tag>
-          </el-descriptions-item>
-          <el-descriptions-item label="结果" v-if="selectedInstance.result">
-            <el-tag :type="getResultType(selectedInstance.result)">
-              {{ getResultText(selectedInstance.result) }}
-            </el-tag>
-          </el-descriptions-item>
-          <el-descriptions-item label="开始时间">
-            {{ formatDateTime(selectedInstance.startTime) || '-' }}
-          </el-descriptions-item>
-          <el-descriptions-item label="结束时间">
-            {{ formatDateTime(selectedInstance.endTime) || '-' }}
-          </el-descriptions-item>
-        </el-descriptions>
+      <el-descriptions :column="2" border>
+        <el-descriptions-item label="产品序列号">{{ selectedInstance.product_sn }}</el-descriptions-item>
+        <el-descriptions-item label="操作员">{{ selectedInstance.operator }}</el-descriptions-item>
+        <el-descriptions-item label="状态">
+          <el-tag :type="getInstanceStatusType(selectedInstance.status)">
+            {{ getInstanceStatusText(selectedInstance.status) }}
+          </el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="结果" v-if="selectedInstance.result">
+          <el-tag :type="getResultType(selectedInstance.result)">
+            {{ getResultText(selectedInstance.result) }}
+          </el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="开始时间">
+          {{ formatDateTime(selectedInstance.startTime) || '-' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="结束时间">
+          {{ formatDateTime(selectedInstance.endTime) || '-' }}
+        </el-descriptions-item>
+      </el-descriptions>
 
-        <div class="mt-20">
-          <h4>测试项列表</h4>
-          <el-table :data="selectedInstance.items" border>
-            <el-table-column prop="name" label="测试项" min-width="180" />
-            <el-table-column prop="status" label="状态" width="100">
-              <template #default="{ row }">
-                <el-tag :type="getItemStatusType(row.status)">
-                  {{ getItemStatusText(row.status) }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="result" label="结果" width="100">
-              <template #default="{ row }">
-                <el-tag :type="getResultType(row.result)" v-if="row.result">
-                  {{ getResultText(row.result) }}
-                </el-tag>
-                <span v-else>-</span>
-              </template>
-            </el-table-column>
-          </el-table>
-        </div>
+      <div class="mt-20">
+        <h4>测试项列表</h4>
+        <el-table :data="selectedInstance.items" border>
+          <el-table-column prop="name" label="测试项" min-width="180" />
+          <el-table-column prop="status" label="状态" width="100">
+            <template #default="{ row }">
+              <el-tag :type="getItemStatusType(row.status)">
+                {{ getItemStatusText(row.status) }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="result" label="结果" width="100">
+            <template #default="{ row }">
+              <el-tag :type="getResultType(row.result)" v-if="row.result">
+                {{ getResultText(row.result) }}
+              </el-tag>
+              <span v-else>-</span>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+    </el-dialog>
+
+    <!-- 创建测试实例对话框 -->
+    <el-dialog
+      v-model="createDialogVisible"
+      title="新建测试实例"
+      width="500px"
+      destroy-on-close
+    >
+      <el-form
+        ref="createFormRef"
+        :model="createForm"
+        :rules="createRules"
+        label-width="100px"
+      >
+        <el-form-item label="真值表" prop="truth_table_id">
+          <el-select
+            v-model="createForm.truth_table_id"
+            placeholder="请选择真值表"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="table in truthTables"
+              :key="table.id"
+              :label="table.name"
+              :value="table.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="产品序列号" prop="product_sn">
+          <el-input
+            v-model="createForm.product_sn"
+            placeholder="请输入产品序列号"
+          />
+        </el-form-item>
+        <el-form-item label="操作员" prop="operator">
+          <el-input
+            v-model="createForm.operator"
+            disabled
+            placeholder="当前登录用户"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="createDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitCreate">确定</el-button>
       </template>
     </el-dialog>
   </div>
@@ -322,6 +367,7 @@ import {
   ExecutionStatus,
   ResultStatus
 } from '@/api/testInstance'
+import { getTruthTables } from '@/api/truthTable'
 
 export default {
   name: 'TestExecution',
@@ -505,18 +551,17 @@ export default {
       }
     }
 
-    // 创建新测试实例
-    const createNewInstance = async () => {
+    // 真值表数据
+    const truthTables = ref([])
+    
+    // 获取真值表列表
+    const fetchTruthTables = async () => {
       try {
-        await createTestInstance({
-          truth_table_id: 1, // 默认使用ID为1的真值表
-          product_sn: `P${new Date().getTime()}`, // 生成一个唯一的产品序列号
-          operator: 'admin' // 默认操作员
-        })
-        ElMessage.success('创建测试实例成功')
-        await fetchTestInstances()
+        const response = await getTruthTables()
+        truthTables.value = response.data.data || []
       } catch (error) {
-        ElMessage.error('创建测试实例失败')
+        console.error('获取真值表列表失败:', error)
+        ElMessage.error('获取真值表列表失败')
       }
     }
 
@@ -644,7 +689,60 @@ export default {
     // 页面加载时获取测试实例列表
     onMounted(() => {
       fetchTestInstances()
+      fetchTruthTables()
     })
+
+    const createDialogVisible = ref(false)
+    const createForm = ref({
+      truth_table_id: '',
+      product_sn: '',
+      operator: 'root'
+    })
+
+    const createRules = {
+      truth_table_id: [
+        { required: true, message: '请选择真值表', trigger: 'change' }
+      ],
+      product_sn: [
+        { required: true, message: '请输入产品序列号', trigger: 'blur' }
+      ],
+      operator: [
+        { required: true, message: '请输入操作员', trigger: 'blur' }
+      ]
+    }
+
+    const createFormRef = ref()
+
+    const handleCreate = () => {
+      createDialogVisible.value = true
+      createForm.value = {
+        truth_table_id: '',
+        product_sn: '',
+        operator: 'root'
+      }
+    }
+
+    const submitCreate = async () => {
+      if (!createFormRef.value) return
+      
+      await createFormRef.value.validate(async (valid) => {
+        if (valid) {
+          try {
+            await createTestInstance({
+              truth_table_id: createForm.value.truth_table_id,
+              product_sn: createForm.value.product_sn,
+              operator: createForm.value.operator
+            })
+            ElMessage.success('创建测试实例成功')
+            createDialogVisible.value = false
+            await fetchTestInstances()
+          } catch (error) {
+            console.error('创建测试实例失败:', error)
+            ElMessage.error('创建测试实例失败')
+          }
+        }
+      })
+    }
 
     return {
       isDevicesPanelCollapsed,
@@ -677,20 +775,16 @@ export default {
       testInstances,
       instanceDetailsVisible,
       selectedInstance,
-      createNewInstance,
       startInstance,
       abortInstance,
       showInstanceDetails,
-      getInstanceStatusType,
-      getInstanceStatusText,
-      getItemStatusType,
-      getItemStatusText,
-      getResultType,
-      getResultText,
-      getTestProgress,
-      getProgressStatus,
-      canStart,
-      canAbort
+      truthTables,
+      createDialogVisible,
+      createForm,
+      createRules,
+      createFormRef,
+      handleCreate,
+      submitCreate
     }
   }
 }
