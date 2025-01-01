@@ -147,19 +147,6 @@ CREATE TABLE IF NOT EXISTS test_items (
   INDEX idx_point_index (point_index)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='测试项表';
 
--- 测试项值表
-CREATE TABLE IF NOT EXISTS test_item_values (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  test_item_id INT NOT NULL COMMENT '所属测试项ID',
-  point_name VARCHAR(50) NOT NULL COMMENT '点位名称',
-  input_value FLOAT COMMENT '输入值',
-  expected_value FLOAT COMMENT '预期值',
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  FOREIGN KEY (test_item_id) REFERENCES test_items(id) ON DELETE CASCADE,
-  INDEX idx_test_item (test_item_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='测试项值表';
-
 -- =====================================================
 -- 初始数据插入
 -- =====================================================
@@ -268,13 +255,6 @@ INSERT INTO test_items (test_group_id, device_id, point_index, name, description
 (3, 3, 1, '电机启动测试', '验证电机启动控制功能', 0, 1, 1, 5000),
 (3, 2, 2, '电机运行测试', '验证电机运行状态检测', 1, 1, 0, 5000),
 (4, 3, 1, '电机停止测试', '验证电机停止控制功能', 0, 0, 1, 5000);
-
--- 插入测试项值数据
-INSERT INTO test_item_values (test_item_id, point_name, input_value, expected_value) VALUES
-(1, 'DI1', 0.0, 1.0),
-(2, 'DI1', 1.0, 0.0),
-(3, 'DI2', 1.0, 0.0),
-(4, 'DO1', 1.0, 0.0);
 
 -- 开启外键检查
 SET FOREIGN_KEY_CHECKS = 1;

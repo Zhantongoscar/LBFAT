@@ -256,30 +256,111 @@
                 </el-tag>
               </el-descriptions-item>
               <el-descriptions-item label="开始时间">
-                {{ formatDateTime(selectedInstance.startTime) || '-' }}
+                {{ formatDateTime(selectedInstance.start_time) || '-' }}
               </el-descriptions-item>
               <el-descriptions-item label="结束时间">
-                {{ formatDateTime(selectedInstance.endTime) || '-' }}
+                {{ formatDateTime(selectedInstance.end_time) || '-' }}
               </el-descriptions-item>
             </el-descriptions>
 
-            <div class="mt-20">
-              <h4>测试项列表</h4>
-              <el-table :data="selectedInstance.items" border>
-                <el-table-column prop="name" label="测试项" min-width="180" />
-                <el-table-column prop="status" label="状态" width="100">
+            <!-- 测试项列表 -->
+            <div class="test-items-section mt-20">
+              <div class="section-header">
+                <h4>测试项列表</h4>
+                <div class="controls">
+                  <el-select v-model="itemStatusFilter" placeholder="状态筛选" clearable>
+                    <el-option
+                      v-for="status in itemStatusOptions"
+                      :key="status.value"
+                      :label="status.label"
+                      :value="status.value"
+                    />
+                  </el-select>
+                </div>
+              </div>
+              
+              <el-table
+                :data="filteredTestItems"
+                row-key="id"
+                border
+                :tree-props="{
+                  children: 'items',
+                  hasChildren: 'hasChildren'
+                }"
+              >
+                <el-table-column prop="name" label="名称" min-width="200">
                   <template #default="{ row }">
-                    <el-tag :type="getItemStatusType(row.status)">
-                      {{ getItemStatusText(row.status) }}
+                    <span v-if="row.level !== undefined">
+                      <el-tag size="small" :type="row.level === 1 ? 'danger' : ''">
+                        {{ row.level === 1 ? '安全类' : '普通类' }}
+                      </el-tag>
+                      {{ row.description }}
+                    </span>
+                    <span v-else>{{ row.name }}</span>
+                  </template>
+                </el-table-column>
+                
+                <el-table-column prop="execution_status" label="状态" width="100">
+                  <template #default="{ row }">
+                    <el-tag v-if="row.execution_status" :type="getItemStatusType(row.execution_status)">
+                      {{ getItemStatusText(row.execution_status) }}
                     </el-tag>
                   </template>
                 </el-table-column>
-                <el-table-column prop="result" label="结果" width="100">
+                
+                <el-table-column prop="result_status" label="结果" width="100">
                   <template #default="{ row }">
-                    <el-tag :type="getResultType(row.result)" v-if="row.result">
-                      {{ getResultText(row.result) }}
+                    <el-tag v-if="row.result_status" :type="getResultType(row.result_status)">
+                      {{ getResultText(row.result_status) }}
                     </el-tag>
-                    <span v-else>-</span>
+                  </template>
+                </el-table-column>
+                
+                <el-table-column label="测试值" width="150">
+                  <template #default="{ row }">
+                    <template v-if="row.actual_value !== undefined">
+                      <div>实际值：{{ row.actual_value }}</div>
+                      <div>预期值：{{ row.expected_values }}</div>
+                    </template>
+                  </template>
+                </el-table-column>
+                
+                <el-table-column label="时间" width="340">
+                  <template #default="{ row }">
+                    <template v-if="row.start_time || row.end_time">
+                      <div>开始：{{ formatDateTime(row.start_time) || '-' }}</div>
+                      <div>结束：{{ formatDateTime(row.end_time) || '-' }}</div>
+                    </template>
+                  </template>
+                </el-table-column>
+                
+                <el-table-column label="操作" width="200" fixed="right">
+                  <template #default="{ row }">
+                    <template v-if="!row.level">
+                      <el-button
+                        v-if="canExecuteItem(row)"
+                        type="primary"
+                        link
+                        @click="handleExecuteItem(row)"
+                      >
+                        执行
+                      </el-button>
+                      <el-button
+                        v-if="canSkipItem(row)"
+                        type="warning"
+                        link
+                        @click="handleSkipItem(row)"
+                      >
+                        跳过
+                      </el-button>
+                      <el-button
+                        type="info"
+                        link
+                        @click="showItemDetails(row)"
+                      >
+                        详情
+                      </el-button>
+                    </template>
                   </template>
                 </el-table-column>
               </el-table>
@@ -457,6 +538,37 @@
         <el-button @click="editDialogVisible = false">取消</el-button>
         <el-button type="primary" @click="submitEdit">确定</el-button>
       </template>
+    </el-dialog>
+
+    <!-- 测试项详情对话框 -->
+    <el-dialog
+      v-model="itemDetailsVisible"
+      title="测试项详情"
+      width="600px"
+    >
+      <el-descriptions :column="2" border v-if="selectedItem">
+        <el-descriptions-item label="测试项名称">{{ selectedItem.name }}</el-descriptions-item>
+        <el-descriptions-item label="所属测试组">{{ selectedItem.test_group?.description }}</el-descriptions-item>
+        <el-descriptions-item label="执行状态">
+          <el-tag :type="getItemStatusType(selectedItem.execution_status)">
+            {{ getItemStatusText(selectedItem.execution_status) }}
+          </el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="测试结果">
+          <el-tag :type="getResultType(selectedItem.result_status)">
+            {{ getResultText(selectedItem.result_status) }}
+          </el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="输入值">{{ selectedItem.input_values }}</el-descriptions-item>
+        <el-descriptions-item label="预期值">{{ selectedItem.expected_values }}</el-descriptions-item>
+        <el-descriptions-item label="实际值">{{ selectedItem.actual_value || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="超时时间">{{ selectedItem.timeout }}ms</el-descriptions-item>
+        <el-descriptions-item label="开始时间">{{ formatDateTime(selectedItem.start_time) || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="结束时间">{{ formatDateTime(selectedItem.end_time) || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="错误信息" :span="2">
+          {{ selectedItem.error_message || '-' }}
+        </el-descriptions-item>
+      </el-descriptions>
     </el-dialog>
   </div>
 </template>
@@ -951,6 +1063,59 @@ export default {
       selectedInstance.value = row
     }
 
+    // 测试项详情对话框
+    const itemDetailsVisible = ref(false)
+    const selectedItem = ref(null)
+
+    // 处理表格行点击
+    const showItemDetails = (item) => {
+      selectedItem.value = item
+      itemDetailsVisible.value = true
+    }
+
+    // 测试项列表
+    const filteredTestItems = computed(() => {
+      if (!selectedInstance.value) return []
+      return selectedInstance.value.items.filter(item => {
+        if (itemStatusFilter.value) {
+          return item.execution_status === itemStatusFilter.value
+        }
+        return true
+      })
+    })
+
+    // 状态筛选选项
+    const itemStatusOptions = [
+      { value: ExecutionStatus.PENDING, label: '待执行' },
+      { value: ExecutionStatus.RUNNING, label: '执行中' },
+      { value: ExecutionStatus.COMPLETED, label: '已完成' },
+      { value: ExecutionStatus.SKIPPED, label: '已跳过' },
+      { value: ExecutionStatus.TIMEOUT, label: '超时' }
+    ]
+
+    // 状态筛选
+    const itemStatusFilter = ref('')
+
+    // 判断是否可以执行测试项
+    const canExecuteItem = (item) => {
+      return item.execution_status === ExecutionStatus.PENDING
+    }
+
+    // 处理执行测试项
+    const handleExecuteItem = (item) => {
+      // 处理逻辑
+    }
+
+    // 判断是否可以跳过测试项
+    const canSkipItem = (item) => {
+      return item.execution_status === ExecutionStatus.PENDING
+    }
+
+    // 处理跳过测试项
+    const handleSkipItem = (item) => {
+      // 处理逻辑
+    }
+
     return {
       isDevicesPanelCollapsed,
       devices,
@@ -1013,7 +1178,17 @@ export default {
       currentInstance,
       canDelete,
       handleDelete,
-      handleRowClick
+      handleRowClick,
+      itemDetailsVisible,
+      selectedItem,
+      showItemDetails,
+      filteredTestItems,
+      itemStatusOptions,
+      itemStatusFilter,
+      canExecuteItem,
+      handleExecuteItem,
+      canSkipItem,
+      handleSkipItem
     }
   }
 }
