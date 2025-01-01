@@ -137,4 +137,26 @@ exports.updateTestItemStatus = async (req, res) => {
     console.error('Error updating test item status:', error);
     res.status(500).json({ message: '更新测试项状态失败' });
   }
+};
+
+// 删除测试实例
+exports.deleteTestInstance = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const instance = await TestInstance.findByPk(id);
+    
+    if (!instance) {
+      return res.status(404).json({ message: '测试实例不存在' });
+    }
+
+    if (instance.status !== TestStatus.PENDING) {
+      return res.status(400).json({ message: '只有待执行的测试实例可以删除' });
+    }
+
+    await instance.destroy();
+    res.status(200).json({ message: '删除成功' });
+  } catch (error) {
+    console.error('Error deleting test instance:', error);
+    res.status(500).json({ message: '删除测试实例失败' });
+  }
 }; 

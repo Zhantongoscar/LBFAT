@@ -20,4 +20,7 @@ router.post('/:id/complete', testInstanceController.completeTest);
 // 更新测试项状态
 router.put('/:id/items/:itemId', testInstanceController.updateTestItemStatus);
 
+// 删除测试实例
+router.delete('/:id', testInstanceController.deleteTestInstance);
+
 module.exports = router; 
