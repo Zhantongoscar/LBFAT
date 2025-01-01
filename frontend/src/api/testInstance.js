@@ -30,6 +30,11 @@ export function getTestInstances(params) {
   return api.get('/test-instances', { params })
 }
 
+// 更新测试实例
+export function updateTestInstance(instanceId, data) {
+  return api.put(`/test-instances/${instanceId}`, data)
+}
+
 // 删除测试实例
 export function deleteTestInstance(instanceId) {
   return api.delete(`/test-instances/${instanceId}`)

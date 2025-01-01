@@ -163,6 +163,7 @@
             :data="testInstances"
             style="width: 100%"
             border
+            @row-click="handleRowClick"
           >
             <el-table-column
               prop="product_sn"
@@ -227,13 +228,6 @@
                   编辑
                 </el-button>
                 <el-button
-                  type="primary"
-                  link
-                  @click="showInstanceDetails(row)"
-                >
-                  详情
-                </el-button>
-                <el-button
                   v-if="canDelete(row)"
                   type="danger"
                   link
@@ -244,6 +238,53 @@
               </template>
             </el-table-column>
           </el-table>
+
+          <!-- 测试实例详情工作区 -->
+          <div v-if="selectedInstance" class="instance-details-workspace mt-20">
+            <h3>测试实例详情</h3>
+            <el-descriptions :column="2" border>
+              <el-descriptions-item label="产品序列号">{{ selectedInstance.product_sn }}</el-descriptions-item>
+              <el-descriptions-item label="操作员">{{ selectedInstance.operator }}</el-descriptions-item>
+              <el-descriptions-item label="状态">
+                <el-tag :type="getInstanceStatusType(selectedInstance.status)">
+                  {{ getInstanceStatusText(selectedInstance.status) }}
+                </el-tag>
+              </el-descriptions-item>
+              <el-descriptions-item label="结果" v-if="selectedInstance.result">
+                <el-tag :type="getResultType(selectedInstance.result)">
+                  {{ getResultText(selectedInstance.result) }}
+                </el-tag>
+              </el-descriptions-item>
+              <el-descriptions-item label="开始时间">
+                {{ formatDateTime(selectedInstance.startTime) || '-' }}
+              </el-descriptions-item>
+              <el-descriptions-item label="结束时间">
+                {{ formatDateTime(selectedInstance.endTime) || '-' }}
+              </el-descriptions-item>
+            </el-descriptions>
+
+            <div class="mt-20">
+              <h4>测试项列表</h4>
+              <el-table :data="selectedInstance.items" border>
+                <el-table-column prop="name" label="测试项" min-width="180" />
+                <el-table-column prop="status" label="状态" width="100">
+                  <template #default="{ row }">
+                    <el-tag :type="getItemStatusType(row.status)">
+                      {{ getItemStatusText(row.status) }}
+                    </el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="result" label="结果" width="100">
+                  <template #default="{ row }">
+                    <el-tag :type="getResultType(row.result)" v-if="row.result">
+                      {{ getResultText(row.result) }}
+                    </el-tag>
+                    <span v-else>-</span>
+                  </template>
+                </el-table-column>
+              </el-table>
+            </div>
+          </div>
         </div>
       </el-collapse-transition>
     </el-card>
@@ -905,6 +946,11 @@ export default {
       }
     }
 
+    // 处理表格行点击
+    const handleRowClick = (row) => {
+      selectedInstance.value = row
+    }
+
     return {
       isDevicesPanelCollapsed,
       devices,
@@ -966,7 +1012,8 @@ export default {
       isInstancesPanelCollapsed,
       currentInstance,
       canDelete,
-      handleDelete
+      handleDelete,
+      handleRowClick
     }
   }
 }
@@ -1115,5 +1162,22 @@ export default {
   margin-left: 10px;
   color: #606266;
   font-size: 14px;
+}
+
+.instance-details-workspace {
+  background-color: #f5f7fa;
+  border-radius: 4px;
+  padding: 20px;
+  margin-top: 20px;
+}
+
+.instance-details-workspace h3 {
+  margin: 0 0 20px 0;
+  color: #303133;
+}
+
+.instance-details-workspace h4 {
+  margin: 20px 0 15px 0;
+  color: #303133;
 }
 </style> 
