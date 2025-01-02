@@ -1052,8 +1052,7 @@ export default {
       
       try {
         loadingTestItems.value = true
-        await createTestItemInstances(selectedInstance.value.id)
-        await fetchTestInstances() // 重新加载测试实例列表以获取最新数据
+        await fetchTestInstances() // 直接重新加载测试实例列表以获取最新数据
         ElMessage.success('测试项加载成功')
       } catch (error) {
         console.error('加载测试项失败:', error)

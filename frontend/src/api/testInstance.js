@@ -1,4 +1,4 @@
-import request from '@/utils/api'
+import api from '@/utils/api'
 
 // 测试实例状态枚举
 export const TestStatus = {
@@ -34,41 +34,27 @@ export const ResultStatus = {
 
 // 获取测试实例列表
 export function getTestInstances() {
-  return request({
-    url: '/test-instances',
-    method: 'get'
-  })
+  return api.get('/test-instances')
 }
 
 // 创建测试实例
 export function createTestInstance(data) {
-  return request({
-    url: '/test-instances',
-    method: 'post',
-    data
-  })
+  return api.post('/test-instances', data)
 }
 
 // 更新测试实例
 export function updateTestInstance(id, data) {
-  return request({
-    url: `/test-instances/${id}`,
-    method: 'put',
-    data
-  })
+  return api.put(`/test-instances/${id}`, data)
 }
 
 // 删除测试实例
 export function deleteTestInstance(id) {
-  return request({
-    url: `/test-instances/${id}`,
-    method: 'delete'
-  })
+  return api.delete(`/test-instances/${id}`)
 }
 
 // 获取测试实例详情
 export function getTestInstanceDetail(id) {
-  return request({
+  return api({
     url: `/test-instances/${id}`,
     method: 'get'
   })
@@ -76,7 +62,7 @@ export function getTestInstanceDetail(id) {
 
 // 开始测试
 export function startTest(id) {
-  return request({
+  return api({
     url: `/test-instances/${id}/start`,
     method: 'post'
   })
@@ -84,7 +70,7 @@ export function startTest(id) {
 
 // 完成测试
 export function completeTest(id, result) {
-  return request({
+  return api({
     url: `/test-instances/${id}/complete`,
     method: 'post',
     data: { result }
@@ -93,15 +79,12 @@ export function completeTest(id, result) {
 
 // 获取测试项列表
 export function getTestItems(instanceId) {
-  return request({
-    url: `/test-instances/${instanceId}/items`,
-    method: 'get'
-  })
+  return api.get(`/test-instances/${instanceId}/items`)
 }
 
 // 执行测试项
 export function executeTestItem(instanceId, itemId) {
-  return request({
+  return api({
     url: `/test-instances/${instanceId}/items/${itemId}/execute`,
     method: 'post'
   })
@@ -109,7 +92,7 @@ export function executeTestItem(instanceId, itemId) {
 
 // 跳过测试项
 export function skipTestItem(instanceId, itemId) {
-  return request({
+  return api({
     url: `/test-instances/${instanceId}/items/${itemId}/skip`,
     method: 'post'
   })
@@ -117,16 +100,8 @@ export function skipTestItem(instanceId, itemId) {
 
 // 获取测试项详情
 export function getTestItemDetail(instanceId, itemId) {
-  return request({
+  return api({
     url: `/test-instances/${instanceId}/items/${itemId}`,
     method: 'get'
-  })
-}
-
-// 创建测试项实例
-export function createTestItemInstances(instanceId) {
-  return request({
-    url: `/test-instances/${instanceId}/items/create`,
-    method: 'post'
   })
 } 
