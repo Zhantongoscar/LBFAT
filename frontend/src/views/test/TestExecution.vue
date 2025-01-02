@@ -291,15 +291,15 @@
             <span>测试项列表</span>
             <el-tag type="info" class="ml-10">{{ selectedInstance.product_sn }}</el-tag>
           </div>
-          <div class="section-controls">
-            <el-select v-model="itemStatusFilter" placeholder="状态筛选" clearable>
-              <el-option
-                v-for="status in itemStatusOptions"
-                :key="status.value"
-                :label="status.label"
-                :value="status.value"
-              />
-            </el-select>
+          <div class="header-right">
+            <el-button 
+              type="primary" 
+              size="small" 
+              @click="handleLoadTestItems"
+              :loading="loadingTestItems"
+            >
+              加载测试项
+            </el-button>
           </div>
         </div>
       </template>
@@ -308,6 +308,7 @@
         :data="filteredTestItems"
         row-key="id"
         border
+        v-loading="loadingTestItems"
         :tree-props="{
           children: 'items',
           hasChildren: 'hasChildren'
@@ -511,7 +512,8 @@ import {
   TestStatus,
   TestResult,
   ExecutionStatus,
-  ResultStatus
+  ResultStatus,
+  createTestItemInstances
 } from '@/api/testInstance'
 import { getTruthTables } from '@/api/truthTable'
 
@@ -1041,6 +1043,26 @@ export default {
       // 处理逻辑
     }
 
+    // 加载测试项相关
+    const loadingTestItems = ref(false)
+
+    // 处理加载测试项
+    const handleLoadTestItems = async () => {
+      if (!selectedInstance.value) return
+      
+      try {
+        loadingTestItems.value = true
+        await createTestItemInstances(selectedInstance.value.id)
+        await fetchTestInstances() // 重新加载测试实例列表以获取最新数据
+        ElMessage.success('测试项加载成功')
+      } catch (error) {
+        console.error('加载测试项失败:', error)
+        ElMessage.error(error.response?.data?.message || '加载测试项失败')
+      } finally {
+        loadingTestItems.value = false
+      }
+    }
+
     return {
       isDevicesPanelCollapsed,
       devices,
@@ -1113,7 +1135,9 @@ export default {
       canExecuteItem,
       handleExecuteItem,
       canSkipItem,
-      handleSkipItem
+      handleSkipItem,
+      loadingTestItems,
+      handleLoadTestItems
     }
   }
 }

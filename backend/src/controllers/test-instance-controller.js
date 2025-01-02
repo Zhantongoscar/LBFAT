@@ -1,5 +1,6 @@
-const { TestInstance, TestItemInstance } = require('../models');
+const { TestInstance, TestItemInstance, TestItem, TestGroup } = require('../models');
 const { TestStatus, TestResult } = require('../constants/test-status');
+const sequelize = require('../config/database');
 
 // 获取测试实例列表
 exports.getTestInstances = async (req, res) => {
@@ -158,5 +159,63 @@ exports.deleteTestInstance = async (req, res) => {
   } catch (error) {
     console.error('Error deleting test instance:', error);
     res.status(500).json({ message: '删除测试实例失败' });
+  }
+};
+
+// 创建测试项实例
+exports.createTestItemInstances = async (req, res) => {
+  const transaction = await sequelize.transaction();
+  
+  try {
+    const { id } = req.params; // 测试实例ID
+    
+    // 获取测试实例
+    const instance = await TestInstance.findByPk(id, { transaction });
+    if (!instance) {
+      await transaction.rollback();
+      return res.status(404).json({ message: '测试实例不存在' });
+    }
+
+    // 获取真值表关联的所有测试组
+    const testGroups = await TestGroup.findAll({
+      where: { truth_table_id: instance.truth_table_id },
+      transaction
+    });
+
+    // 获取所有测试组关联的测试项
+    const testItems = await TestItem.findAll({
+      where: {
+        test_group_id: testGroups.map(group => group.id)
+      },
+      transaction
+    });
+
+    // 为每个测试项创建测试项实例
+    const testItemInstances = await Promise.all(
+      testItems.map(item => 
+        TestItemInstance.create({
+          instance_id: instance.id,
+          test_item_id: item.id,
+          execution_status: 'pending',
+          result_status: 'unknown',
+          actual_value: null,
+          error_message: null
+        }, { transaction })
+      )
+    );
+
+    await transaction.commit();
+    
+    res.status(201).json({
+      message: '测试项创建成功',
+      count: testItemInstances.length
+    });
+  } catch (error) {
+    await transaction.rollback();
+    console.error('Error creating test item instances:', error);
+    res.status(500).json({ 
+      message: '创建测试项失败',
+      error: error.message 
+    });
   }
 }; 

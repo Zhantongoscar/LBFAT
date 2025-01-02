@@ -121,4 +121,12 @@ export function getTestItemDetail(instanceId, itemId) {
     url: `/test-instances/${instanceId}/items/${itemId}`,
     method: 'get'
   })
+}
+
+// 创建测试项实例
+export function createTestItemInstances(instanceId) {
+  return request({
+    url: `/test-instances/${instanceId}/items/create`,
+    method: 'post'
+  })
 } 
