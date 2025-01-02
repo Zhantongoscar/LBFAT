@@ -6,8 +6,9 @@ WORKDIR /app
 
 COPY package*.json ./
 
-# 添加 vuex 依赖到 package.json
-RUN sed -i '/"dependencies": {/a\    "vuex": "^4.0.2",' package.json
+# 添加 vuex 和 sass 依赖到 package.json
+RUN sed -i '/"dependencies": {/a\    "vuex": "^4.0.2",' package.json && \
+    npm install -D sass
 
 RUN npm install
 

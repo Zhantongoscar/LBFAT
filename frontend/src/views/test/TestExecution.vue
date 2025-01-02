@@ -125,29 +125,10 @@
       <template #header>
         <div class="card-header">
           <div class="header-left">
-            <el-button
-              type="text"
-              @click="isInstancesPanelCollapsed = !isInstancesPanelCollapsed"
-            >
-              <el-icon>
-                <component :is="isInstancesPanelCollapsed ? 'ArrowRight' : 'ArrowDown'" />
-              </el-icon>
-              <span>测试实例列表</span>
-            </el-button>
+            <span>测试实例列表</span>
             <el-tag type="info" class="ml-10">
               {{ testInstances.length }}
             </el-tag>
-            <template v-if="isInstancesPanelCollapsed && currentInstance">
-              <el-divider direction="vertical" />
-              <span class="active-instance">当前测试：{{ currentInstance.product_sn }}</span>
-              <el-tag 
-                :type="getInstanceStatusType(currentInstance.status)" 
-                size="small" 
-                class="ml-10"
-              >
-                {{ getInstanceStatusText(currentInstance.status) }}
-              </el-tag>
-            </template>
           </div>
           <div class="header-right">
             <el-button type="primary" size="small" @click="handleCreate">
@@ -157,217 +138,257 @@
         </div>
       </template>
 
-      <el-collapse-transition>
-        <div v-show="!isInstancesPanelCollapsed">
-          <el-table
-            :data="testInstances"
-            style="width: 100%"
-            border
-            @row-click="handleRowClick"
-          >
-            <el-table-column
-              prop="product_sn"
-              label="产品序列号"
-              min-width="180"
+      <el-table
+        :data="testInstances"
+        style="width: 100%"
+        border
+        @row-click="handleRowClick"
+      >
+        <el-table-column
+          prop="product_sn"
+          label="产品序列号"
+          min-width="180"
+        />
+        <el-table-column
+          prop="status"
+          label="状态"
+          width="100"
+        >
+          <template #default="{ row }">
+            <el-tag :type="getInstanceStatusType(row.status)">
+              {{ getInstanceStatusText(row.status) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="result"
+          label="结果"
+          width="100"
+        >
+          <template #default="{ row }">
+            <el-tag :type="getResultType(row.result)" v-if="row.result">
+              {{ getResultText(row.result) }}
+            </el-tag>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="进度"
+          width="200"
+        >
+          <template #default="{ row }">
+            <el-progress
+              :percentage="getTestProgress(row)"
+              :status="getProgressStatus(row)"
             />
-            <el-table-column
-              prop="status"
-              label="状态"
-              width="100"
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="时间"
+          width="340"
+        >
+          <template #default="{ row }">
+            <div>开始：{{ formatDateTime(row.start_time) || '-' }}</div>
+            <div>结束：{{ formatDateTime(row.end_time) || '-' }}</div>
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="操作"
+          width="100"
+          fixed="right"
+        >
+          <template #default="{ row }">
+            <el-button
+              v-if="canDelete(row)"
+              type="danger"
+              link
+              @click="handleDelete(row)"
             >
-              <template #default="{ row }">
-                <el-tag :type="getInstanceStatusType(row.status)">
-                  {{ getInstanceStatusText(row.status) }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column
-              prop="result"
-              label="结果"
-              width="100"
-            >
-              <template #default="{ row }">
-                <el-tag :type="getResultType(row.result)" v-if="row.result">
-                  {{ getResultText(row.result) }}
-                </el-tag>
-                <span v-else>-</span>
-              </template>
-            </el-table-column>
-            <el-table-column
-              label="进度"
-              width="200"
-            >
-              <template #default="{ row }">
-                <el-progress
-                  :percentage="getTestProgress(row)"
-                  :status="getProgressStatus(row)"
-                />
-              </template>
-            </el-table-column>
-            <el-table-column
-              label="时间"
-              width="340"
-            >
-              <template #default="{ row }">
-                <div>开始：{{ formatDateTime(row.start_time) || '-' }}</div>
-                <div>结束：{{ formatDateTime(row.end_time) || '-' }}</div>
-              </template>
-            </el-table-column>
-            <el-table-column
-              label="操作"
-              width="200"
-              fixed="right"
-            >
-              <template #default="{ row }">
-                <el-button
-                  v-if="canEdit(row)"
-                  type="primary"
-                  link
-                  @click="handleEdit(row)"
-                >
-                  编辑
-                </el-button>
-                <el-button
-                  v-if="canDelete(row)"
-                  type="danger"
-                  link
-                  @click="handleDelete(row)"
-                >
-                  删除
-                </el-button>
-              </template>
-            </el-table-column>
-          </el-table>
+              删除
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
 
-          <!-- 测试实例详情工作区 -->
-          <div v-if="selectedInstance" class="instance-details-workspace mt-20">
-            <h3>测试实例详情</h3>
-            <el-descriptions :column="2" border>
-              <el-descriptions-item label="产品序列号">{{ selectedInstance.product_sn }}</el-descriptions-item>
-              <el-descriptions-item label="操作员">{{ selectedInstance.operator }}</el-descriptions-item>
-              <el-descriptions-item label="状态">
-                <el-tag :type="getInstanceStatusType(selectedInstance.status)">
-                  {{ getInstanceStatusText(selectedInstance.status) }}
-                </el-tag>
-              </el-descriptions-item>
-              <el-descriptions-item label="结果" v-if="selectedInstance.result">
-                <el-tag :type="getResultType(selectedInstance.result)">
-                  {{ getResultText(selectedInstance.result) }}
-                </el-tag>
-              </el-descriptions-item>
-              <el-descriptions-item label="开始时间">
-                {{ formatDateTime(selectedInstance.start_time) || '-' }}
-              </el-descriptions-item>
-              <el-descriptions-item label="结束时间">
-                {{ formatDateTime(selectedInstance.end_time) || '-' }}
-              </el-descriptions-item>
-            </el-descriptions>
-
-            <!-- 测试项列表 -->
-            <div class="test-items-section mt-20">
-              <div class="section-header">
-                <h4>测试项列表</h4>
-                <div class="controls">
-                  <el-select v-model="itemStatusFilter" placeholder="状态筛选" clearable>
-                    <el-option
-                      v-for="status in itemStatusOptions"
-                      :key="status.value"
-                      :label="status.label"
-                      :value="status.value"
-                    />
-                  </el-select>
-                </div>
-              </div>
-              
-              <el-table
-                :data="filteredTestItems"
-                row-key="id"
-                border
-                :tree-props="{
-                  children: 'items',
-                  hasChildren: 'hasChildren'
-                }"
+    <!-- 测试实例详情面板 -->
+    <el-card class="box-card mb-20" v-if="selectedInstance">
+      <template #header>
+        <div class="card-header">
+          <div class="header-left">
+            <span>测试实例详情</span>
+            <el-tag type="info" class="ml-10">{{ selectedInstance.product_sn }}</el-tag>
+            <el-tag 
+              :type="getInstanceStatusType(selectedInstance.status)" 
+              size="small" 
+              class="ml-10"
+            >
+              {{ getInstanceStatusText(selectedInstance.status) }}
+            </el-tag>
+          </div>
+          <div class="header-right">
+            <el-button-group>
+              <el-button 
+                type="primary" 
+                size="small"
+                v-if="canStart(selectedInstance)"
+                @click="startInstance(selectedInstance)"
               >
-                <el-table-column prop="name" label="名称" min-width="200">
-                  <template #default="{ row }">
-                    <span v-if="row.level !== undefined">
-                      <el-tag size="small" :type="row.level === 1 ? 'danger' : ''">
-                        {{ row.level === 1 ? '安全类' : '普通类' }}
-                      </el-tag>
-                      {{ row.description }}
-                    </span>
-                    <span v-else>{{ row.name }}</span>
-                  </template>
-                </el-table-column>
-                
-                <el-table-column prop="execution_status" label="状态" width="100">
-                  <template #default="{ row }">
-                    <el-tag v-if="row.execution_status" :type="getItemStatusType(row.execution_status)">
-                      {{ getItemStatusText(row.execution_status) }}
-                    </el-tag>
-                  </template>
-                </el-table-column>
-                
-                <el-table-column prop="result_status" label="结果" width="100">
-                  <template #default="{ row }">
-                    <el-tag v-if="row.result_status" :type="getResultType(row.result_status)">
-                      {{ getResultText(row.result_status) }}
-                    </el-tag>
-                  </template>
-                </el-table-column>
-                
-                <el-table-column label="测试值" width="150">
-                  <template #default="{ row }">
-                    <template v-if="row.actual_value !== undefined">
-                      <div>实际值：{{ row.actual_value }}</div>
-                      <div>预期值：{{ row.expected_values }}</div>
-                    </template>
-                  </template>
-                </el-table-column>
-                
-                <el-table-column label="时间" width="340">
-                  <template #default="{ row }">
-                    <template v-if="row.start_time || row.end_time">
-                      <div>开始：{{ formatDateTime(row.start_time) || '-' }}</div>
-                      <div>结束：{{ formatDateTime(row.end_time) || '-' }}</div>
-                    </template>
-                  </template>
-                </el-table-column>
-                
-                <el-table-column label="操作" width="200" fixed="right">
-                  <template #default="{ row }">
-                    <template v-if="!row.level">
-                      <el-button
-                        v-if="canExecuteItem(row)"
-                        type="primary"
-                        link
-                        @click="handleExecuteItem(row)"
-                      >
-                        执行
-                      </el-button>
-                      <el-button
-                        v-if="canSkipItem(row)"
-                        type="warning"
-                        link
-                        @click="handleSkipItem(row)"
-                      >
-                        跳过
-                      </el-button>
-                      <el-button
-                        type="info"
-                        link
-                        @click="showItemDetails(row)"
-                      >
-                        详情
-                      </el-button>
-                    </template>
-                  </template>
-                </el-table-column>
-              </el-table>
-            </div>
+                开始测试
+              </el-button>
+              <el-button 
+                type="warning" 
+                size="small"
+                v-if="canAbort(selectedInstance)"
+                @click="abortInstance(selectedInstance)"
+              >
+                中止测试
+              </el-button>
+            </el-button-group>
           </div>
         </div>
-      </el-collapse-transition>
+      </template>
+
+      <el-descriptions :column="2" border>
+        <el-descriptions-item label="产品序列号">{{ selectedInstance.product_sn }}</el-descriptions-item>
+        <el-descriptions-item label="操作员">{{ selectedInstance.operator }}</el-descriptions-item>
+        <el-descriptions-item label="状态">
+          <el-tag :type="getInstanceStatusType(selectedInstance.status)">
+            {{ getInstanceStatusText(selectedInstance.status) }}
+          </el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="结果" v-if="selectedInstance.result">
+          <el-tag :type="getResultType(selectedInstance.result)">
+            {{ getResultText(selectedInstance.result) }}
+          </el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="开始时间">
+          {{ formatDateTime(selectedInstance.start_time) || '-' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="结束时间">
+          {{ formatDateTime(selectedInstance.end_time) || '-' }}
+        </el-descriptions-item>
+      </el-descriptions>
+
+      <div class="progress-info mt-20">
+        <div class="progress-header">
+          <span>测试进度</span>
+          <span class="progress-percentage">{{ getTestProgress(selectedInstance) }}%</span>
+        </div>
+        <el-progress 
+          :percentage="getTestProgress(selectedInstance)"
+          :status="getProgressStatus(selectedInstance)"
+          :stroke-width="20"
+        />
+      </div>
+    </el-card>
+
+    <!-- 测试项列表面板 -->
+    <el-card class="box-card" v-if="selectedInstance">
+      <template #header>
+        <div class="card-header">
+          <div class="header-left">
+            <span>测试项列表</span>
+            <el-tag type="info" class="ml-10">{{ selectedInstance.product_sn }}</el-tag>
+          </div>
+          <div class="section-controls">
+            <el-select v-model="itemStatusFilter" placeholder="状态筛选" clearable>
+              <el-option
+                v-for="status in itemStatusOptions"
+                :key="status.value"
+                :label="status.label"
+                :value="status.value"
+              />
+            </el-select>
+          </div>
+        </div>
+      </template>
+
+      <el-table
+        :data="filteredTestItems"
+        row-key="id"
+        border
+        :tree-props="{
+          children: 'items',
+          hasChildren: 'hasChildren'
+        }"
+      >
+        <el-table-column prop="name" label="名称" min-width="200">
+          <template #default="{ row }">
+            <span v-if="row.level !== undefined">
+              <el-tag size="small" :type="row.level === 1 ? 'danger' : ''">
+                {{ row.level === 1 ? '安全类' : '普通类' }}
+              </el-tag>
+              {{ row.description }}
+            </span>
+            <span v-else>{{ row.name }}</span>
+          </template>
+        </el-table-column>
+        
+        <el-table-column prop="execution_status" label="状态" width="100">
+          <template #default="{ row }">
+            <el-tag v-if="row.execution_status" :type="getItemStatusType(row.execution_status)">
+              {{ getItemStatusText(row.execution_status) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        
+        <el-table-column prop="result_status" label="结果" width="100">
+          <template #default="{ row }">
+            <el-tag v-if="row.result_status" :type="getResultType(row.result_status)">
+              {{ getResultText(row.result_status) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        
+        <el-table-column label="测试值" width="150">
+          <template #default="{ row }">
+            <template v-if="row.actual_value !== undefined">
+              <div>实际值：{{ row.actual_value }}</div>
+              <div>预期值：{{ row.expected_values }}</div>
+            </template>
+          </template>
+        </el-table-column>
+        
+        <el-table-column label="时间" width="340">
+          <template #default="{ row }">
+            <template v-if="row.start_time || row.end_time">
+              <div>开始：{{ formatDateTime(row.start_time) || '-' }}</div>
+              <div>结束：{{ formatDateTime(row.end_time) || '-' }}</div>
+            </template>
+          </template>
+        </el-table-column>
+        
+        <el-table-column label="操作" width="200" fixed="right">
+          <template #default="{ row }">
+            <template v-if="!row.level">
+              <el-button
+                v-if="canExecuteItem(row)"
+                type="primary"
+                link
+                @click="handleExecuteItem(row)"
+              >
+                执行
+              </el-button>
+              <el-button
+                v-if="canSkipItem(row)"
+                type="warning"
+                link
+                @click="handleSkipItem(row)"
+              >
+                跳过
+              </el-button>
+              <el-button
+                type="info"
+                link
+                @click="showItemDetails(row)"
+              >
+                详情
+              </el-button>
+            </template>
+          </template>
+        </el-table-column>
+      </el-table>
     </el-card>
 
     <!-- 设备详情对话框 -->
@@ -395,56 +416,6 @@
           {{ formatDateTime(selectedDevice?.lastUpdateTime) }}
         </el-descriptions-item>
       </el-descriptions>
-    </el-dialog>
-
-    <!-- 实例详情对话框 -->
-    <el-dialog
-      v-model="instanceDetailsVisible"
-      title="测试实例详情"
-      width="800px"
-    >
-      <el-descriptions :column="2" border>
-        <el-descriptions-item label="产品序列号">{{ selectedInstance.product_sn }}</el-descriptions-item>
-        <el-descriptions-item label="操作员">{{ selectedInstance.operator }}</el-descriptions-item>
-        <el-descriptions-item label="状态">
-          <el-tag :type="getInstanceStatusType(selectedInstance.status)">
-            {{ getInstanceStatusText(selectedInstance.status) }}
-          </el-tag>
-        </el-descriptions-item>
-        <el-descriptions-item label="结果" v-if="selectedInstance.result">
-          <el-tag :type="getResultType(selectedInstance.result)">
-            {{ getResultText(selectedInstance.result) }}
-          </el-tag>
-        </el-descriptions-item>
-        <el-descriptions-item label="开始时间">
-          {{ formatDateTime(selectedInstance.startTime) || '-' }}
-        </el-descriptions-item>
-        <el-descriptions-item label="结束时间">
-          {{ formatDateTime(selectedInstance.endTime) || '-' }}
-        </el-descriptions-item>
-      </el-descriptions>
-
-      <div class="mt-20">
-        <h4>测试项列表</h4>
-        <el-table :data="selectedInstance.items" border>
-          <el-table-column prop="name" label="测试项" min-width="180" />
-          <el-table-column prop="status" label="状态" width="100">
-            <template #default="{ row }">
-              <el-tag :type="getItemStatusType(row.status)">
-                {{ getItemStatusText(row.status) }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column prop="result" label="结果" width="100">
-            <template #default="{ row }">
-              <el-tag :type="getResultType(row.result)" v-if="row.result">
-                {{ getResultText(row.result) }}
-              </el-tag>
-              <span v-else>-</span>
-            </template>
-          </el-table-column>
-        </el-table>
-      </div>
     </el-dialog>
 
     <!-- 创建测试实例对话框 -->
@@ -491,52 +462,6 @@
       <template #footer>
         <el-button @click="createDialogVisible = false">取消</el-button>
         <el-button type="primary" @click="submitCreate">确定</el-button>
-      </template>
-    </el-dialog>
-
-    <!-- 编辑相关 -->
-    <el-dialog
-      v-model="editDialogVisible"
-      title="编辑测试实例"
-      width="500px"
-      destroy-on-close
-    >
-      <el-form
-        ref="editFormRef"
-        :model="editForm"
-        :rules="editRules"
-        label-width="100px"
-      >
-        <el-form-item label="真值表" prop="truth_table_id">
-          <el-select
-            v-model="editForm.truth_table_id"
-            placeholder="请选择真值表"
-            style="width: 100%"
-          >
-            <el-option
-              v-for="table in truthTables"
-              :key="table.id"
-              :label="table.name"
-              :value="table.id"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="产品序列号" prop="product_sn">
-          <el-input
-            v-model="editForm.product_sn"
-            placeholder="请输入产品序列号"
-          />
-        </el-form-item>
-        <el-form-item label="操作员" prop="operator">
-          <el-input
-            v-model="editForm.operator"
-            placeholder="请输入操作员"
-          />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="editDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitEdit">确定</el-button>
       </template>
     </el-dialog>
 
@@ -1194,165 +1119,154 @@ export default {
 }
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .test-execution {
   padding: 20px;
-}
 
-.box-card {
-  margin-bottom: 20px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-}
+  .box-card {
+    margin-bottom: 20px;
+  }
 
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 
-.header-left {
-  display: flex;
-  align-items: center;
-}
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
 
-.ml-10 {
-  margin-left: 10px;
-}
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+  }
 
-.mb-20 {
-  margin-bottom: 20px;
-}
+  .device-status-panel {
+    .devices-section {
+      margin-bottom: 20px;
 
-/* 设备状态面板样式 */
-.device-status-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  margin-top: 10px;
-}
+      &:last-child {
+        margin-bottom: 0;
+      }
 
-.devices-section {
-  background-color: #fff;
-  border-radius: 4px;
-  padding: 15px;
-}
+      .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
 
-.online-section {
-  border: 1px solid #e1f3d8;
-  background-color: #f0f9eb;
-}
+        .section-controls {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+      }
 
-.offline-section {
-  border: 1px solid #fde2e2;
-  background-color: #fef0f0;
-}
+      .devices-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 10px;
 
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-}
+        .device-item {
+          padding: 10px;
+          border: 1px solid #dcdfe6;
+          border-radius: 4px;
+          cursor: pointer;
+          transition: all 0.3s;
 
-.section-controls {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
+          &:hover {
+            background-color: #f5f7fa;
+          }
 
-.devices-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-  gap: 10px;
-  padding: 10px;
-}
+          &.online {
+            border-color: #67c23a;
+          }
 
-.device-item {
-  padding: 8px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.3s;
-  text-align: center;
-}
+          &.offline {
+            border-color: #f56c6c;
+          }
 
-.device-icon {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
+          .device-icon {
+            display: flex;
+            align-items: center;
+            gap: 8px;
 
-.device-name {
-  font-size: 11px;
-  color: #606266;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-}
+            .device-name {
+              flex: 1;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              white-space: nowrap;
+            }
 
-.signal-indicator {
-  position: absolute;
-  top: -2px;
-  right: -2px;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-}
+            .signal-indicator {
+              width: 8px;
+              height: 8px;
+              border-radius: 50%;
 
-.empty-tip {
-  text-align: center;
-  color: #909399;
-  padding: 20px;
-  width: 100%;
-}
+              &.signal-excellent {
+                background-color: #67c23a;
+              }
 
-/* 信号强度指示器颜色 */
-.signal-excellent {
-  background-color: #67c23a;
-}
+              &.signal-good {
+                background-color: #409eff;
+              }
 
-.signal-good {
-  background-color: #409eff;
-}
+              &.signal-fair {
+                background-color: #e6a23c;
+              }
 
-.signal-fair {
-  background-color: #e6a23c;
-}
+              &.signal-poor {
+                background-color: #f56c6c;
+              }
+            }
+          }
+        }
 
-.signal-poor {
-  background-color: #f56c6c;
-}
+        .empty-tip {
+          grid-column: 1 / -1;
+          text-align: center;
+          color: #909399;
+          padding: 20px;
+        }
+      }
+    }
+  }
 
-.mt-20 {
-  margin-top: 20px;
-}
+  .progress-info {
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
 
-.header-right {
-  margin-left: auto;
-}
+      .progress-percentage {
+        font-size: 16px;
+        font-weight: bold;
+        color: #409eff;
+      }
+    }
+  }
 
-.active-instance {
-  margin-left: 10px;
-  color: #606266;
-  font-size: 14px;
-}
+  .section-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
 
-.instance-details-workspace {
-  background-color: #f5f7fa;
-  border-radius: 4px;
-  padding: 20px;
-  margin-top: 20px;
-}
+  .mb-20 {
+    margin-bottom: 20px;
+  }
 
-.instance-details-workspace h3 {
-  margin: 0 0 20px 0;
-  color: #303133;
-}
+  .mt-20 {
+    margin-top: 20px;
+  }
 
-.instance-details-workspace h4 {
-  margin: 20px 0 15px 0;
-  color: #303133;
+  .ml-10 {
+    margin-left: 10px;
+  }
 }
 </style> 
