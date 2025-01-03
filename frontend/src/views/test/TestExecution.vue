@@ -283,12 +283,12 @@
       </div>
     </el-card>
 
-    <!-- 测试项列表面板 -->
+    <!-- 实例操作项列表面板 -->
     <el-card class="box-card" v-if="selectedInstance">
       <template #header>
         <div class="card-header">
           <div class="header-left">
-            <span>测试项列表</span>
+            <span>实例操作项列表</span>
             <el-tag type="info" class="ml-10">{{ selectedInstance.product_sn }}</el-tag>
           </div>
           <div class="header-right">
@@ -1008,7 +1008,7 @@ export default {
       itemDetailsVisible.value = true
     }
 
-    // 测试项列表
+    // 实例操作项列表
     const filteredTestItems = computed(() => {
       if (!selectedInstance.value) return []
       return selectedInstance.value.items.filter(item => {
@@ -1074,7 +1074,7 @@ export default {
       }
     }
 
-    // 刷新测试项列表
+    // 刷新实例操作项列表
     const refreshTestItems = async () => {
       if (!selectedInstance.value) {
         ElMessage.warning('请先选择一个测试实例')
