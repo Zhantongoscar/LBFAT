@@ -52,13 +52,16 @@ export default {
     return api.post('/test-items', data)
       .then(response => {
         console.log('API响应数据:', response);
-        if (response.data && response.data.code === 200) {
-          return response.data.data;
+        if (response.data && (response.data.code === 200 || response.data.code === 201)) {
+          return response.data;
         }
-        throw new Error('创建测试项失败');
+        throw new Error(response.data?.message || '创建测试项失败');
       })
       .catch(error => {
         console.error('API调用失败:', error);
+        if (error.response?.data?.message) {
+          throw new Error(error.response.data.message);
+        }
         throw error;
       });
   },

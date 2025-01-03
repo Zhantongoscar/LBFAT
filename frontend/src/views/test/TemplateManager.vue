@@ -919,7 +919,6 @@ export default {
         if (valid) {
           try {
             const data = {
-              id: testItemForm.id,
               test_group_id: testItemForm.test_group_id,
               device_id: parseInt(testItemForm.device_id),
               point_index: parseInt(testItemForm.point_index),
@@ -932,26 +931,31 @@ export default {
             console.log('准备提交的表单数据:', testItemForm);
             console.log('处理后的提交数据:', data);
             
+            let response;
             if (data.id) {
-              console.log('发送更新请求，ID:', data.id, '完整请求数据:', JSON.stringify(data, null, 2));
-              const response = await testItemApi.update(data.id, data);
-              console.log('更新响应:', response);
-              ElMessage.success('更新成功');
+              console.log('发送更新请求，ID:', data.id);
+              response = await testItemApi.update(data.id, data);
             } else {
-              console.log('发送创建请求，完整请求数据:', JSON.stringify(data, null, 2));
-              const response = await testItemApi.create(data);
-              console.log('创建响应:', response);
-              ElMessage.success('创建成功');
+              console.log('发送创建请求');
+              response = await testItemApi.create(data);
             }
             
-            testItemDialogVisible.value = false;
-            await loadTestItems(currentTestGroup.value.id);
+            console.log('API响应:', response);
+            
+            if (response.code === 201 || response.code === 200) {
+              ElMessage.success(response.message || '保存成功');
+              testItemDialogVisible.value = false;
+              await loadTestItems(currentTestGroup.value.id);
+            } else {
+              throw new Error(response.message || '保存失败');
+            }
           } catch (error) {
             console.error('保存测试项失败:', error);
-            ElMessage.error('保存失败');
+            ElMessage.error(error.message || '保存失败');
           }
         } else {
           console.log('表单验证失败');
+          ElMessage.warning('请填写完整的表单信息');
         }
       });
     };

@@ -63,10 +63,34 @@ class TestItemController {
   // 创建新测试项
   static async create(req, res) {
     try {
+      console.log('\n========== 创建测试项开始 ==========');
+      console.log('请求体数据:', JSON.stringify(req.body, null, 2));
+      
       const item = await TestItem.create(req.body);
-      res.status(201).json(item);
+      console.log('创建成功，新记录:', JSON.stringify(item, null, 2));
+      
+      res.status(201).json({
+        code: 201,
+        message: '创建成功',
+        data: item
+      });
+      
+      console.log('\n========== 创建测试项完成 ==========\n');
     } catch (error) {
-      res.status(400).json({ error: error.message });
+      console.error('\n========== 创建测试项失败 ==========');
+      console.error('错误类型:', error.name);
+      console.error('错误消息:', error.message);
+      console.error('错误堆栈:', error.stack);
+      console.error('================================\n');
+      
+      // 根据错误类型返回不同的状态码
+      const statusCode = error.name === 'SequelizeValidationError' ? 400 : 500;
+      
+      res.status(statusCode).json({
+        code: statusCode,
+        message: '创建失败',
+        error: error.message
+      });
     }
   }
 
