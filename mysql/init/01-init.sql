@@ -133,7 +133,7 @@ CREATE TABLE IF NOT EXISTS test_items (
   test_group_id INT NOT NULL COMMENT '所属测试组ID',
   device_id INT NOT NULL COMMENT '关联设备ID',
   point_index INT NOT NULL COMMENT '设备点位索引',
-  name VARCHAR(100) NOT NULL COMMENT '测试项名称',
+  name VARCHAR(100) COMMENT '测试项名称',
   description TEXT COMMENT '测试项描述',
   sequence INT NOT NULL DEFAULT 0 COMMENT '显示顺序',
   input_values FLOAT NOT NULL COMMENT '输入值',
