@@ -104,4 +104,17 @@ export function getTestItemDetail(instanceId, itemId) {
     url: `/test-instances/${instanceId}/items/${itemId}`,
     method: 'get'
   })
+}
+
+// 获取/创建测试项
+export function getOrCreateTestItems(instanceId) {
+  return api.get(`/test-instances/${instanceId}/items`)
+}
+
+// 创建测试项
+export function createTestItems(instanceId) {
+  return api({
+    url: `/test-instances/${instanceId}/items/create`,
+    method: 'post'
+  })
 } 

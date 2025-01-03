@@ -292,14 +292,22 @@
             <el-tag type="info" class="ml-10">{{ selectedInstance.product_sn }}</el-tag>
           </div>
           <div class="header-right">
-            <el-button 
-              type="primary" 
-              size="small" 
-              @click="handleLoadTestItems"
-              :loading="loadingTestItems"
-            >
-              加载测试项
-            </el-button>
+            <el-button-group>
+              <el-button
+                type="success"
+                size="small"
+                @click="handleCreateTestItems"
+              >
+                创建项
+              </el-button>
+              <el-button
+                type="info"
+                size="small"
+                @click="refreshTestItems"
+              >
+                刷新
+              </el-button>
+            </el-button-group>
           </div>
         </div>
       </template>
@@ -513,7 +521,7 @@ import {
   TestResult,
   ExecutionStatus,
   ResultStatus,
-  createTestItemInstances
+  getOrCreateTestItems
 } from '@/api/testInstance'
 import { getTruthTables } from '@/api/truthTable'
 
@@ -1046,17 +1054,41 @@ export default {
     // 加载测试项相关
     const loadingTestItems = ref(false)
 
-    // 处理加载测试项
-    const handleLoadTestItems = async () => {
-      if (!selectedInstance.value) return
+    // 创建测试项
+    const handleCreateTestItems = async () => {
+      if (!selectedInstance.value) {
+        ElMessage.warning('请先选择一个测试实例')
+        return
+      }
       
+      loadingTestItems.value = true
       try {
-        loadingTestItems.value = true
-        await fetchTestInstances() // 直接重新加载测试实例列表以获取最新数据
-        ElMessage.success('测试项加载成功')
+        await createTestItems(selectedInstance.value.id)
+        ElMessage.success('测试项创建成功')
+        await refreshTestItems()
       } catch (error) {
-        console.error('加载测试项失败:', error)
-        ElMessage.error(error.response?.data?.message || '加载测试项失败')
+        console.error('创建测试项失败:', error)
+        ElMessage.error('创建测试项失败')
+      } finally {
+        loadingTestItems.value = false
+      }
+    }
+
+    // 刷新测试项列表
+    const refreshTestItems = async () => {
+      if (!selectedInstance.value) {
+        ElMessage.warning('请先选择一个测试实例')
+        return
+      }
+      
+      loadingTestItems.value = true
+      try {
+        const response = await getTestItems(selectedInstance.value.id)
+        selectedInstance.value.items = response.data
+        ElMessage.success('刷新成功')
+      } catch (error) {
+        console.error('刷新测试项失败:', error)
+        ElMessage.error('刷新失败')
       } finally {
         loadingTestItems.value = false
       }
@@ -1136,7 +1168,8 @@ export default {
       canSkipItem,
       handleSkipItem,
       loadingTestItems,
-      handleLoadTestItems
+      handleCreateTestItems,
+      refreshTestItems
     }
   }
 }

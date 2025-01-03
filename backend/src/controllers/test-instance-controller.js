@@ -254,51 +254,88 @@ module.exports = {
     try {
       const { id } = req.params; // 测试实例ID
       
-      // 获取测试实例
-      const instance = await TestInstance.findByPk(id, { transaction });
+      // 1. 获取测试实例及其关联的真值表信息
+      const instance = await TestInstance.findByPk(id, {
+        include: [{
+          model: TruthTable,
+          include: [{
+            model: TestGroup,
+            include: [TestItem]
+          }]
+        }],
+        transaction
+      });
+
       if (!instance) {
         await transaction.rollback();
-        return res.status(404).json({ message: '测试实例不存在' });
+        return res.status(404).json({
+          code: 404,
+          message: '测试实例不存在'
+        });
       }
 
-      // 获取真值表关联的所有测试组
-      const testGroups = await TestGroup.findAll({
-        where: { truth_table_id: instance.truth_table_id },
+      if (!instance.TruthTable) {
+        await transaction.rollback();
+        return res.status(404).json({
+          code: 404,
+          message: '未找到关联的真值表'
+        });
+      }
+
+      // 2. 检查是否已存在测试项
+      const existingItems = await TestItemInstance.findAll({
+        where: { instance_id: id },
         transaction
       });
 
-      // 获取所有测试组关联的测试项
-      const testItems = await TestItem.findAll({
-        where: {
-          test_group_id: testGroups.map(group => group.id)
-        },
-        transaction
-      });
+      if (existingItems && existingItems.length > 0) {
+        await transaction.rollback();
+        return res.status(400).json({
+          code: 400,
+          message: '该测试实例已存在测试项'
+        });
+      }
 
-      // 为每个测试项创建测试项实例
-      const testItemInstances = await Promise.all(
-        testItems.map(item => 
-          TestItemInstance.create({
+      // 3. 创建测试项实例
+      const testItemInstances = [];
+      for (const group of instance.TruthTable.TestGroups) {
+        for (const templateItem of group.TestItems) {
+          const newItem = await TestItemInstance.create({
             instance_id: instance.id,
-            test_item_id: item.id,
+            test_item_id: templateItem.id,
+            test_group_id: group.id,
+            name: templateItem.name,
+            description: templateItem.description,
+            device_id: templateItem.device_id,
+            point_index: templateItem.point_index,
+            input_values: templateItem.input_values,
+            expected_values: templateItem.expected_values,
+            timeout: templateItem.timeout,
+            sequence: templateItem.sequence,
             execution_status: 'pending',
             result_status: 'unknown',
             actual_value: null,
             error_message: null
-          }, { transaction })
-        )
-      );
+          }, { transaction });
+          testItemInstances.push(newItem);
+        }
+      }
 
       await transaction.commit();
       
       res.status(201).json({
+        code: 201,
         message: '测试项创建成功',
-        count: testItemInstances.length
+        data: {
+          count: testItemInstances.length,
+          items: testItemInstances
+        }
       });
     } catch (error) {
       await transaction.rollback();
-      console.error('Error creating test item instances:', error);
+      console.error('创建测试项实例失败:', error);
       res.status(500).json({ 
+        code: 500,
         message: '创建测试项失败',
         error: error.message 
       });
