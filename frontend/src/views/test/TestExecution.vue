@@ -1064,8 +1064,13 @@ export default {
       
       loadingTestItems.value = true
       try {
-        await createInstanceItems(selectedInstance.value.id)
-        ElMessage.success('测试项创建成功')
+        const response = await createInstanceItems(selectedInstance.value.id)
+        // 根据返回的状态码判断是创建成功还是已存在
+        if (response.data.code === 201) {
+          ElMessage.success('测试项创建成功')
+        } else if (response.data.code === 200) {
+          ElMessage.info('测试项已存在')
+        }
         await refreshTestItems()
       } catch (error) {
         console.error('创建测试项失败:', error)

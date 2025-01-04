@@ -6,13 +6,20 @@ const sequelize = require('../config/database');
 async function getOrCreateTestItems(instanceId) {
   try {
     // 1. 先查询该实例是否有测试项
-    const existingItems = await TestItem.findAll({
-      where: { test_instance_id: instanceId }
+    const existingItems = await TestItemInstance.findAll({
+      where: { instance_id: instanceId }
     });
 
-    // 2. 如果已有测试项，直接返回
+    // 2. 如果已有测试项，直接返回成功
     if (existingItems && existingItems.length > 0) {
-      return existingItems;
+      return {
+        code: 200,
+        message: "测试项已存在",
+        data: {
+          count: existingItems.length,
+          items: existingItems
+        }
+      };
     }
 
     // 3. 如果没有测试项，则需要创建
@@ -27,27 +34,28 @@ async function getOrCreateTestItems(instanceId) {
       }]
     });
 
-    // 3.2 基于真值表和测试组的测试项模板创建新的测试项
-    if (testInstance && testInstance.TruthTable) {
+    // 3.2 基于真值表和测试组创建新的测试项实例
+    if (testInstance && testInstance.truthTable) {
       const newItems = [];
-      for (const group of testInstance.TruthTable.TestGroups) {
-        for (const templateItem of group.TestItems) {
-          const newItem = await TestItem.create({
-            test_instance_id: instanceId,
-            test_group_id: group.id,
-            name: templateItem.name,
-            description: templateItem.description,
-            device_id: templateItem.device_id,
-            point_index: templateItem.point_index,
-            input_values: templateItem.input_values,
-            expected_values: templateItem.expected_values,
-            timeout: templateItem.timeout,
-            sequence: templateItem.sequence
+      for (const group of testInstance.truthTable.groups) {
+        for (const item of group.items) {
+          const newItem = await TestItemInstance.create({
+            instance_id: instanceId,
+            test_item_id: item.id,
+            execution_status: 'pending',
+            result_status: 'unknown'
           });
           newItems.push(newItem);
         }
       }
-      return newItems;
+      return {
+        code: 201,
+        message: "测试项创建成功",
+        data: {
+          count: newItems.length,
+          items: newItems
+        }
+      };
     }
 
     throw new Error('无法创建测试项：找不到相关的测试实例或真值表');
@@ -325,13 +333,12 @@ module.exports = {
         if (existingItems && existingItems.length > 0) {
             console.log('该测试实例已存在测试项');
             await transaction.rollback();
-            return res.status(400).json({
-                code: 400,
-                message: '该测试实例已存在测试项',
-                debug: {
-                    instanceId: id,
-                    existingItemsCount: existingItems.length,
-                    timestamp: new Date().toISOString()
+            return res.status(200).json({
+                code: 200,
+                message: '测试项已存在',
+                data: {
+                    count: existingItems.length,
+                    items: existingItems
                 }
             });
         }
