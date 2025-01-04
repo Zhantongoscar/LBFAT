@@ -112,9 +112,10 @@ export function getOrCreateTestItems(instanceId) {
 }
 
 // 创建测试项
-export function createTestItems(instanceId) {
+export function createInstanceItems(instanceId) {
   return api({
     url: `/test-instances/${instanceId}/items/create`,
     method: 'post'
   })
-} 
+}
+

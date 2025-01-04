@@ -296,7 +296,7 @@
               <el-button
                 type="success"
                 size="small"
-                @click="handleCreateTestItems"
+                @click="handleCreateInstanceItems"
               >
                 创建项
               </el-button>
@@ -521,7 +521,8 @@ import {
   TestResult,
   ExecutionStatus,
   ResultStatus,
-  getOrCreateTestItems
+  getOrCreateTestItems,
+  createInstanceItems
 } from '@/api/testInstance'
 import { getTruthTables } from '@/api/truthTable'
 
@@ -1055,7 +1056,7 @@ export default {
     const loadingTestItems = ref(false)
 
     // 创建测试项
-    const handleCreateTestItems = async () => {
+    const handleCreateInstanceItems = async () => {
       if (!selectedInstance.value) {
         ElMessage.warning('请先选择一个测试实例')
         return
@@ -1063,7 +1064,7 @@ export default {
       
       loadingTestItems.value = true
       try {
-        await createTestItems(selectedInstance.value.id)
+        await createInstanceItems(selectedInstance.value.id)
         ElMessage.success('测试项创建成功')
         await refreshTestItems()
       } catch (error) {
@@ -1168,7 +1169,7 @@ export default {
       canSkipItem,
       handleSkipItem,
       loadingTestItems,
-      handleCreateTestItems,
+      handleCreateInstanceItems,
       refreshTestItems
     }
   }

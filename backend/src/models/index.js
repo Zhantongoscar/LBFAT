@@ -42,6 +42,28 @@ TestInstance.belongsTo(TruthTable, {
     as: 'truthTable'
 });
 
+// 添加真值表和测试组的关联
+TruthTable.hasMany(TestGroup, {
+    foreignKey: 'truth_table_id',
+    as: 'groups'
+});
+
+TestGroup.belongsTo(TruthTable, {
+    foreignKey: 'truth_table_id',
+    as: 'truthTable'
+});
+
+// 添加测试组和测试项的关联
+TestGroup.hasMany(TestItem, {
+    foreignKey: 'test_group_id',
+    as: 'items'
+});
+
+TestItem.belongsTo(TestGroup, {
+    foreignKey: 'test_group_id',
+    as: 'group'
+});
+
 module.exports = {
     sequelize,
     ProjectSubscription,

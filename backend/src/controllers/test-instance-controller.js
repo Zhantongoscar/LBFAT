@@ -249,96 +249,180 @@ module.exports = {
 
   // 创建测试项实例
   createTestItemInstances: async (req, res) => {
+    console.log('\n========== 创建测试项实例开始 ==========');
+    console.log('请求参数:', {
+        url: req.originalUrl,
+        method: req.method,
+        params: req.params,
+        body: req.body
+    });
+
     const transaction = await sequelize.transaction();
     
     try {
-      const { id } = req.params; // 测试实例ID
-      
-      // 1. 获取测试实例及其关联的真值表信息
-      const instance = await TestInstance.findByPk(id, {
-        include: [{
-          model: TruthTable,
-          include: [{
-            model: TestGroup,
-            include: [TestItem]
-          }]
-        }],
-        transaction
-      });
-
-      if (!instance) {
-        await transaction.rollback();
-        return res.status(404).json({
-          code: 404,
-          message: '测试实例不存在'
+        const { id } = req.params;
+        console.log('测试实例ID:', id);
+        
+        // 1. 查询测试实例及关联数据
+        console.log('\n----- 步骤1: 查询测试实例 -----');
+        const instance = await TestInstance.findByPk(id, {
+            include: [{
+                model: TruthTable,
+                as: 'truthTable',
+                include: [{
+                    model: TestGroup,
+                    as: 'groups',
+                    include: [{
+                        model: TestItem,
+                        as: 'items'
+                    }]
+                }]
+            }],
+            transaction
         });
-      }
+        console.log('查询到的测试实例:', JSON.stringify(instance, null, 2));
 
-      if (!instance.TruthTable) {
-        await transaction.rollback();
-        return res.status(404).json({
-          code: 404,
-          message: '未找到关联的真值表'
-        });
-      }
-
-      // 2. 检查是否已存在测试项
-      const existingItems = await TestItemInstance.findAll({
-        where: { instance_id: id },
-        transaction
-      });
-
-      if (existingItems && existingItems.length > 0) {
-        await transaction.rollback();
-        return res.status(400).json({
-          code: 400,
-          message: '该测试实例已存在测试项'
-        });
-      }
-
-      // 3. 创建测试项实例
-      const testItemInstances = [];
-      for (const group of instance.TruthTable.TestGroups) {
-        for (const templateItem of group.TestItems) {
-          const newItem = await TestItemInstance.create({
-            instance_id: instance.id,
-            test_item_id: templateItem.id,
-            test_group_id: group.id,
-            name: templateItem.name,
-            description: templateItem.description,
-            device_id: templateItem.device_id,
-            point_index: templateItem.point_index,
-            input_values: templateItem.input_values,
-            expected_values: templateItem.expected_values,
-            timeout: templateItem.timeout,
-            sequence: templateItem.sequence,
-            execution_status: 'pending',
-            result_status: 'unknown',
-            actual_value: null,
-            error_message: null
-          }, { transaction });
-          testItemInstances.push(newItem);
+        // 2. 检查测试实例是否存在
+        console.log('\n----- 步骤2: 检查测试实例 -----');
+        if (!instance) {
+            console.log('测试实例不存在');
+            await transaction.rollback();
+            return res.status(404).json({
+                code: 404,
+                message: '测试实例不存在',
+                debug: {
+                    instanceId: id,
+                    timestamp: new Date().toISOString()
+                }
+            });
         }
-      }
 
-      await transaction.commit();
-      
-      res.status(201).json({
-        code: 201,
-        message: '测试项创建成功',
-        data: {
-          count: testItemInstances.length,
-          items: testItemInstances
+        // 3. 检查关联的真值表
+        console.log('\n----- 步骤3: 检查真值表 -----');
+        if (!instance.truthTable) {
+            console.log('未找到关联的真值表');
+            await transaction.rollback();
+            return res.status(404).json({
+                code: 404,
+                message: '未找到关联的真值表',
+                debug: {
+                    instanceId: id,
+                    truthTableId: instance.truth_table_id,
+                    timestamp: new Date().toISOString()
+                }
+            });
         }
-      });
+        console.log('关联的真值表:', JSON.stringify(instance.truthTable, null, 2));
+
+        // 4. 检查已存在的测试项
+        console.log('\n----- 步骤4: 检查已存在的测试项 -----');
+        const existingItems = await TestItemInstance.findAll({
+            where: { instance_id: id },
+            transaction
+        });
+        console.log('已存在的测试项数量:', existingItems.length);
+
+        if (existingItems && existingItems.length > 0) {
+            console.log('该测试实例已存在测试项');
+            await transaction.rollback();
+            return res.status(400).json({
+                code: 400,
+                message: '该测试实例已存在测试项',
+                debug: {
+                    instanceId: id,
+                    existingItemsCount: existingItems.length,
+                    timestamp: new Date().toISOString()
+                }
+            });
+        }
+
+        // 5. 创建测试项实例
+        console.log('\n----- 步骤5: 创建测试项实例 -----');
+        const testItemInstances = [];
+        console.log('测试组数量:', instance.truthTable.groups.length);
+
+        for (const group of instance.truthTable.groups) {
+            console.log('\n处理测试组:', {
+                groupId: group.id,
+                description: group.description,
+                itemCount: group.items.length
+            });
+
+            for (const templateItem of group.items) {
+                console.log('创建测试项:', {
+                    name: templateItem.name,
+                    deviceId: templateItem.device_id,
+                    pointIndex: templateItem.point_index
+                });
+
+                const newItem = await TestItemInstance.create({
+                    instance_id: instance.id,
+                    test_item_id: templateItem.id,
+                    test_group_id: group.id,
+                    name: templateItem.name,
+                    description: templateItem.description,
+                    device_id: templateItem.device_id,
+                    point_index: templateItem.point_index,
+                    input_values: templateItem.input_values,
+                    expected_values: templateItem.expected_values,
+                    timeout: templateItem.timeout,
+                    sequence: templateItem.sequence,
+                    execution_status: 'pending',
+                    result_status: 'unknown',
+                    actual_value: null,
+                    error_message: null
+                }, { transaction });
+
+                testItemInstances.push(newItem);
+            }
+        }
+
+        console.log('\n----- 步骤6: 提交事务 -----');
+        await transaction.commit();
+        console.log('事务提交成功');
+        
+        const response = {
+            code: 201,
+            message: '测试项创建成功',
+            data: {
+                count: testItemInstances.length,
+                items: testItemInstances
+            },
+            debug: {
+                instanceId: id,
+                createdItemsCount: testItemInstances.length,
+                timestamp: new Date().toISOString()
+            }
+        };
+        console.log('\n响应数据:', JSON.stringify(response, null, 2));
+        res.status(201).json(response);
+
     } catch (error) {
-      await transaction.rollback();
-      console.error('创建测试项实例失败:', error);
-      res.status(500).json({ 
-        code: 500,
-        message: '创建测试项失败',
-        error: error.message 
-      });
+        console.error('\n========== 创建测试项实例失败 ==========');
+        console.error('错误类型:', error.name);
+        console.error('错误消息:', error.message);
+        console.error('错误堆栈:', error.stack);
+        
+        await transaction.rollback();
+        console.log('事务已回滚');
+
+        res.status(500).json({ 
+            code: 500,
+            message: '创建测试项失败',
+            error: error.message,
+            debug: {
+                errorType: error.name,
+                errorMessage: error.message,
+                timestamp: new Date().toISOString(),
+                // 如果是Sequelize错误，添加额外信息
+                sequelizeError: error.name.includes('Sequelize') ? {
+                    fields: error.fields,
+                    sql: error.sql,
+                    parameters: error.parameters
+                } : undefined
+            }
+        });
     }
+    console.log('\n========== 创建测试项实例结束 ==========\n');
   }
 }; 
