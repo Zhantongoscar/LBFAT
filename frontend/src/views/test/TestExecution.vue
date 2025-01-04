@@ -1071,7 +1071,8 @@ export default {
         } else if (response.data.code === 200) {
           ElMessage.info('测试项已存在')
         }
-        await refreshTestItems()
+        // 无论创建成功还是已存在，都刷新列表
+        await getOrCreateTestItems(selectedInstance.value.id)
       } catch (error) {
         console.error('创建测试项失败:', error)
         ElMessage.error('创建测试项失败')
@@ -1089,9 +1090,11 @@ export default {
       
       loadingTestItems.value = true
       try {
-        const response = await getTestItems(selectedInstance.value.id)
-        selectedInstance.value.items = response.data
-        ElMessage.success('刷新成功')
+        const response = await getOrCreateTestItems(selectedInstance.value.id)
+        if (response.data && response.data.data) {
+          selectedInstance.value.items = response.data.data.items
+          ElMessage.success('刷新成功')
+        }
       } catch (error) {
         console.error('刷新测试项失败:', error)
         ElMessage.error('刷新失败')
