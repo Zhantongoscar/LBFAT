@@ -324,19 +324,13 @@
       >
         <el-table-column prop="name" label="名称" min-width="200">
           <template #default="{ row }">
-            <span v-if="row.level !== undefined">
-              <el-tag size="small" :type="row.level === 1 ? 'danger' : ''">
-                {{ row.level === 1 ? '安全类' : '普通类' }}
-              </el-tag>
-              {{ row.description }}
-            </span>
-            <span v-else>{{ row.name }}</span>
+            <span>{{ row.name || row.description || '-' }}</span>
           </template>
         </el-table-column>
         
         <el-table-column prop="execution_status" label="状态" width="100">
           <template #default="{ row }">
-            <el-tag v-if="row.execution_status" :type="getItemStatusType(row.execution_status)">
+            <el-tag :type="getItemStatusType(row.execution_status)">
               {{ getItemStatusText(row.execution_status) }}
             </el-tag>
           </template>
@@ -344,7 +338,7 @@
         
         <el-table-column prop="result_status" label="结果" width="100">
           <template #default="{ row }">
-            <el-tag v-if="row.result_status" :type="getResultType(row.result_status)">
+            <el-tag :type="getResultType(row.result_status)">
               {{ getResultText(row.result_status) }}
             </el-tag>
           </template>
@@ -352,49 +346,43 @@
         
         <el-table-column label="测试值" width="150">
           <template #default="{ row }">
-            <template v-if="row.actual_value !== undefined">
-              <div>实际值：{{ row.actual_value }}</div>
-              <div>预期值：{{ row.expected_values }}</div>
-            </template>
+            <div>实际值：{{ row.actual_value || '-' }}</div>
+            <div>预期值：{{ row.expected_values || '-' }}</div>
           </template>
         </el-table-column>
         
         <el-table-column label="时间" width="340">
           <template #default="{ row }">
-            <template v-if="row.start_time || row.end_time">
-              <div>开始：{{ formatDateTime(row.start_time) || '-' }}</div>
-              <div>结束：{{ formatDateTime(row.end_time) || '-' }}</div>
-            </template>
+            <div>开始：{{ formatDateTime(row.start_time) || '-' }}</div>
+            <div>结束：{{ formatDateTime(row.end_time) || '-' }}</div>
           </template>
         </el-table-column>
         
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
-            <template v-if="!row.level">
-              <el-button
-                v-if="canExecuteItem(row)"
-                type="primary"
-                link
-                @click="handleExecuteItem(row)"
-              >
-                执行
-              </el-button>
-              <el-button
-                v-if="canSkipItem(row)"
-                type="warning"
-                link
-                @click="handleSkipItem(row)"
-              >
-                跳过
-              </el-button>
-              <el-button
-                type="info"
-                link
-                @click="showItemDetails(row)"
-              >
-                详情
-              </el-button>
-            </template>
+            <el-button
+              v-if="canExecuteItem(row)"
+              type="primary"
+              link
+              @click="handleExecuteItem(row)"
+            >
+              执行
+            </el-button>
+            <el-button
+              v-if="canSkipItem(row)"
+              type="warning"
+              link
+              @click="handleSkipItem(row)"
+            >
+              跳过
+            </el-button>
+            <el-button
+              type="info"
+              link
+              @click="showItemDetails(row)"
+            >
+              详情
+            </el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -1011,13 +999,13 @@ export default {
 
     // 实例操作项列表
     const filteredTestItems = computed(() => {
-      if (!selectedInstance.value) return []
-      return selectedInstance.value.items.filter(item => {
-        if (itemStatusFilter.value) {
-          return item.execution_status === itemStatusFilter.value
-        }
-        return true
-      })
+      if (!selectedInstance.value || !selectedInstance.value.items) return []
+      console.log('当前测试项列表:', selectedInstance.value.items)
+      const items = selectedInstance.value.items || []
+      if (itemStatusFilter.value) {
+        return items.filter(item => item.execution_status === itemStatusFilter.value)
+      }
+      return items
     })
 
     // 状态筛选选项
@@ -1071,8 +1059,12 @@ export default {
         } else if (response.data.code === 200) {
           ElMessage.info('测试项已存在')
         }
-        // 无论创建成功还是已存在，都刷新列表
-        await getOrCreateTestItems(selectedInstance.value.id)
+        // 获取最新的测试项列表
+        const itemsResponse = await getOrCreateTestItems(selectedInstance.value.id)
+        console.log('获取到的测试项数据:', itemsResponse.data)
+        if (itemsResponse.data && itemsResponse.data.data) {
+          selectedInstance.value.items = itemsResponse.data.data.items
+        }
       } catch (error) {
         console.error('创建测试项失败:', error)
         ElMessage.error('创建测试项失败')
@@ -1091,9 +1083,9 @@ export default {
       loadingTestItems.value = true
       try {
         const response = await getOrCreateTestItems(selectedInstance.value.id)
+        console.log('刷新获取到的测试项数据:', response.data)
         if (response.data && response.data.data) {
-          selectedInstance.value.items = response.data.data.items
-          ElMessage.success('刷新成功')
+          selectedInstance.value.items = response.data.data.items || []
         }
       } catch (error) {
         console.error('刷新测试项失败:', error)
