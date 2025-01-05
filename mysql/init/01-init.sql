@@ -232,13 +232,15 @@ INSERT INTO device_type_points (device_type_id, point_index, point_type, point_n
 
 -- 插入图纸数据
 INSERT INTO drawings (id, drawing_number, version, description) VALUES
-(1, 'DWG-001', '1.0', '安全开关测试图纸'),
-(2, 'DWG-002', '1.0', '电机控制测试图纸');
+(1, '3018598347', '1.0', 'EOS1350'),
+(2, '3018571155', '1.0', 'EOS1350'),
+(3, 'DWG-001', '1.0', '安全开关测试图纸'),
+(4, 'DWG-002', '1.0', '电机控制测试图纸');
 
 -- 插入测试真值表数据
 INSERT INTO truth_tables (id, name, drawing_id, version, description) VALUES
-(1, '安全开关测试', 1, '1.0', '安全开关功能测试真值表'),
-(2, '电机控制测试', 2, '1.0', '电机控制功能测试真值表');
+(1, '安全开关测试', 3, '1.0', '安全开关功能测试真值表'),
+(2, '电机控制测试', 4, '1.0', '电机控制功能测试真值表');
 
 -- 插入测试组数据
 INSERT INTO test_groups (id, truth_table_id, level, description, sequence) VALUES

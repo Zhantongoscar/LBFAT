@@ -56,22 +56,6 @@
           :collapse-transition="false"
           class="el-menu-vertical"
         >
-          <el-menu-item index="/projects">
-            <el-icon><Document /></el-icon>
-            <template #title>项目管理</template>
-          </el-menu-item>
-          <el-menu-item index="/device-config">
-            <el-icon><Setting /></el-icon>
-            <template #title>设备配置</template>
-          </el-menu-item>
-          <el-menu-item index="/devices">
-            <el-icon><Monitor /></el-icon>
-            <template #title>设备管理</template>
-          </el-menu-item>
-          <el-menu-item index="/users" v-if="userStore.isAdmin">
-            <el-icon><User /></el-icon>
-            <template #title>用户管理</template>
-          </el-menu-item>
           <el-sub-menu index="/test">
             <template #title>
               <el-icon><Tools /></el-icon>
@@ -90,9 +74,21 @@
               <template #title>测试报告</template>
             </el-menu-item>
           </el-sub-menu>
-          <el-menu-item index="/messages">
+          <el-menu-item index="/projects" title="配置检查设备的mqtt 订阅topic">
+            <el-icon><Document /></el-icon>
+            <template #title>订阅管理</template>
+          </el-menu-item>
+          <el-menu-item index="/device-config" title="订阅每种设备的名称和通道">
+            <el-icon><Setting /></el-icon>
+            <template #title>设备订阅</template>
+          </el-menu-item>
+          <el-menu-item index="/devices" title="本测试装置使用测试设备的订阅维护">
+            <el-icon><Monitor /></el-icon>
+            <template #title>测试设备</template>
+          </el-menu-item>
+          <el-menu-item index="/messages" title="监控当前检查的收发报文">
             <el-icon><Message /></el-icon>
-            <template #title>消息管理</template>
+            <template #title>消息监控</template>
           </el-menu-item>
           <el-menu-item index="/device-test">
             <el-icon><Operation /></el-icon>
@@ -101,6 +97,10 @@
           <el-menu-item index="/drawings">
             <el-icon><Picture /></el-icon>
             <template #title>图纸管理</template>
+          </el-menu-item>
+          <el-menu-item index="/users" v-if="userStore.isAdmin">
+            <el-icon><User /></el-icon>
+            <template #title>用户管理</template>
           </el-menu-item>
         </el-menu>
       </el-aside>
@@ -208,7 +208,7 @@ export default {
 }
 
 .aside-container {
-  background-color: #304156;
+  background-color: #003755;
   transition: width 0.3s;
   position: relative;
 }
@@ -218,17 +218,17 @@ export default {
   line-height: 40px;
   text-align: center;
   cursor: pointer;
-  color: #bfcbd9;
+  color: #ffffff;
   transition: background 0.3s;
 }
 
 .collapse-btn:hover {
-  background: rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .el-menu-vertical {
   border-right: none;
-  background-color: #304156;
+  background-color: #003755;
 }
 
 .el-menu-vertical:not(.el-menu--collapse) {
@@ -238,53 +238,53 @@ export default {
 /* 菜单项样式 */
 .el-menu {
   border-right: none;
-  background-color: #304156;
+  background-color: #003755;
 }
 
 .el-menu-item {
-  color: #bfcbd9 !important;
-  background-color: #304156 !important;
+  color: #ffffff !important;
+  background-color: #003755 !important;
 }
 
 .el-menu-item.is-active {
-  color: #409EFF !important;
-  background-color: #263445 !important;
+  color: #ffffff !important;
+  background-color: #004d7a !important;
 }
 
 .el-menu-item:hover {
-  background-color: #263445 !important;
+  background-color: #004d7a !important;
 }
 
 .el-sub-menu__title {
-  color: #bfcbd9 !important;
-  background-color: #304156 !important;
+  color: #ffffff !important;
+  background-color: #003755 !important;
 }
 
 .el-sub-menu__title:hover {
-  background-color: #263445 !important;
+  background-color: #004d7a !important;
 }
 
 /* 子菜单样式 */
 .el-menu--popup {
-  background-color: #304156 !important;
+  background-color: #003755 !important;
 }
 
 .el-sub-menu .el-menu {
-  background-color: #304156 !important;
+  background-color: #003755 !important;
 }
 
 .el-sub-menu .el-menu-item {
-  background-color: #304156 !important;
-  color: #bfcbd9 !important;
+  background-color: #003755 !important;
+  color: #ffffff !important;
 }
 
 .el-sub-menu .el-menu-item:hover {
-  background-color: #263445 !important;
+  background-color: #004d7a !important;
 }
 
 .el-sub-menu .el-menu-item.is-active {
-  color: #409EFF !important;
-  background-color: #263445 !important;
+  color: #ffffff !important;
+  background-color: #004d7a !important;
 }
 
 /* 图标样式 */
