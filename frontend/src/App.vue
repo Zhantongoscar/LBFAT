@@ -65,6 +65,10 @@
               <el-icon><Document /></el-icon>
               <template #title>真值表管理</template>
             </el-menu-item>
+            <el-menu-item index="/projects" title="配置检查设备的mqtt 订阅topic">
+              <el-icon><Document /></el-icon>
+              <template #title>订阅管理</template>
+            </el-menu-item>
             <el-menu-item index="/test/execution">
               <el-icon><VideoPlay /></el-icon>
               <template #title>测试执行</template>
@@ -74,26 +78,34 @@
               <template #title>测试报告</template>
             </el-menu-item>
           </el-sub-menu>
-          <el-menu-item index="/projects" title="配置检查设备的mqtt 订阅topic">
-            <el-icon><Document /></el-icon>
-            <template #title>订阅管理</template>
-          </el-menu-item>
-          <el-menu-item index="/device-config" title="订阅每种设备的名称和通道">
-            <el-icon><Setting /></el-icon>
-            <template #title>设备订阅</template>
-          </el-menu-item>
-          <el-menu-item index="/devices" title="本测试装置使用测试设备的订阅维护">
-            <el-icon><Monitor /></el-icon>
-            <template #title>测试设备</template>
-          </el-menu-item>
-          <el-menu-item index="/messages" title="监控当前检查的收发报文">
-            <el-icon><Message /></el-icon>
-            <template #title>消息监控</template>
-          </el-menu-item>
-          <el-menu-item index="/device-test">
-            <el-icon><Operation /></el-icon>
-            <template #title>设备测试</template>
-          </el-menu-item>
+          <el-sub-menu index="/device">
+            <template #title>
+              <el-icon><Monitor /></el-icon>
+              <span>设备</span>
+            </template>
+            <el-menu-item index="/device-config" title="定义测试设备的类型和子通道类型">
+              <el-icon><Setting /></el-icon>
+              <template #title>设备定义</template>
+            </el-menu-item>
+            <el-menu-item index="/devices" title="本测试装置使用测试设备的订阅维护">
+              <el-icon><Monitor /></el-icon>
+              <template #title>在用设备</template>
+            </el-menu-item>
+          </el-sub-menu>
+          <el-sub-menu index="/debug">
+            <template #title>
+              <el-icon><Operation /></el-icon>
+              <span>调试</span>
+            </template>
+            <el-menu-item index="/messages" title="监控当前检查的收发报文">
+              <el-icon><Message /></el-icon>
+              <template #title>消息监控</template>
+            </el-menu-item>
+            <el-menu-item index="/device-test" title="调试在线设备">
+              <el-icon><Operation /></el-icon>
+              <template #title>设备测试</template>
+            </el-menu-item>
+          </el-sub-menu>
           <el-menu-item index="/drawings">
             <el-icon><Picture /></el-icon>
             <template #title>图纸管理</template>
