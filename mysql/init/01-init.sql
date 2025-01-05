@@ -244,7 +244,7 @@ INSERT INTO drawings (id, drawing_number, version, description) VALUES
 
 -- 插入测试真值表数据
 INSERT INTO truth_tables (id, name, drawing_id, version, description) VALUES
-(1, '安全开关测试', 3, '1.0', '安全开关功能测试真值表'),
+(1, '默认真值表测试_16331', 1, '1.0', '16331-001'),
 (2, '电机控制测试', 4, '1.0', '电机控制功能测试真值表');
 
 -- 插入测试组数据
