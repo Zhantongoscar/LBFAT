@@ -94,7 +94,7 @@ services:
       - "8080:80"
     environment:
       - VITE_API_URL=/api
-      - HOST_IP=${HOST_IP:-localhost}
+      - HOST_IP=${HOST_IP:-0.0.0.0}
     depends_on:
       - backend
     networks:
