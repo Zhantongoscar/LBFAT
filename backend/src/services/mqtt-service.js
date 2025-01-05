@@ -43,13 +43,22 @@ class MQTTService {
         const port = process.env.MQTT_PORT || 1883;
         const url = `mqtt://${host}:${port}`;
 
-        logger.info(`Connecting to MQTT broker at ${url}`);
+        // 使用固定的clientId
+        const clientId = `backend_${process.pid}`;
+        logger.info(`Connecting to MQTT broker at ${url} with clientId: ${clientId}`);
+
+        // 如果存在旧连接，先断开
+        if (this.client) {
+            logger.info('断开旧的MQTT连接');
+            this.client.end(true);
+            this.client = null;
+        }
 
         for (let i = 0; i < retries; i++) {
             try {
                 await new Promise((resolve, reject) => {
                     this.client = mqtt.connect(url, {
-                        clientId: `backend_${process.pid}_${Date.now()}`,
+                        clientId: clientId,
                         clean: true,
                         connectTimeout: 4000,
                         reconnectPeriod: 1000
@@ -65,6 +74,63 @@ class MQTTService {
                         } catch (error) {
                             logger.error('MQTT初始订阅失败:', error);
                             reject(error);
+                        }
+                    });
+
+                    this.client.on('message', async (topic, message) => {
+                        try {
+                            logger.info('收到MQTT消息:', {
+                                topic,
+                                message: message.toString()
+                            });
+                            const payload = JSON.parse(message.toString());
+                            // 处理设备状态消息
+                            if (topic.endsWith('/status')) {
+                                const [projectName, moduleType, serialNumber] = topic.split('/').slice(0, -1);
+                                
+                                // 更新数据库中的设备状态
+                                try {
+                                    const sql = `
+                                        UPDATE devices 
+                                        SET status = ?, 
+                                            rssi = ?,
+                                            updated_at = CURRENT_TIMESTAMP 
+                                        WHERE project_name = ? 
+                                        AND module_type = ? 
+                                        AND serial_number = ?
+                                    `;
+                                    await db.query(sql, [
+                                        payload.status,
+                                        payload.rssi,
+                                        projectName,
+                                        moduleType,
+                                        serialNumber
+                                    ]);
+                                    logger.info('设备状态已更新到数据库:', {
+                                        projectName,
+                                        moduleType,
+                                        serialNumber,
+                                        status: payload.status,
+                                        rssi: payload.rssi
+                                    });
+                                } catch (dbError) {
+                                    logger.error('更新设备状态失败:', dbError);
+                                }
+
+                                // 广播状态更新到WebSocket客户端
+                                WebSocketService.broadcastDeviceStatus({
+                                    type: 'device_status',
+                                    device: {
+                                        projectName,
+                                        moduleType,
+                                        serialNumber,
+                                        status: payload.status,
+                                        rssi: payload.rssi
+                                    }
+                                });
+                            }
+                        } catch (error) {
+                            logger.error('处理MQTT消息失败:', error);
                         }
                     });
 
