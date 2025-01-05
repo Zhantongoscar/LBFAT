@@ -12,8 +12,10 @@ export default {
     },
 
     // 更新项目订阅状态
-    updateSubscription(projectName, data) {
-        return api.put(`/projects/${projectName}/subscription`, data);
+    updateSubscription(projectName, isSubscribed) {
+        return api.put(`/projects/${projectName}/subscription`, {
+            isSubscribed: isSubscribed === 1 ? true : false
+        });
     },
 
     // 删除项目

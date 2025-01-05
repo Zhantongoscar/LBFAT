@@ -109,12 +109,13 @@ export default {
       }
 
       try {
-        await projectApi.createProject(newProject.value.name)
+        await projectApi.createProject({ projectName: newProject.value.name })
         ElMessage.success('创建项目成功')
         dialogVisible.value = false
         loadProjects()
       } catch (error) {
-        ElMessage.error('创建项目失败')
+        console.error('创建项目失败:', error)
+        ElMessage.error(error.response?.data?.message || '创建项目失败')
       }
     }
 
@@ -126,10 +127,11 @@ export default {
           project.is_subscribed
         )
         ElMessage.success('更新订阅状态成功')
-        loadProjects() // 重新加载列表以确保数据同步
+        await loadProjects() // 重新加载列表以确保数据同步
       } catch (error) {
-        project.is_subscribed = !project.is_subscribed // 恢复状态
-        ElMessage.error('更新订阅状态失败')
+        console.error('更新订阅状态失败:', error)
+        project.is_subscribed = project.is_subscribed === 1 ? 0 : 1 // 恢复状态
+        ElMessage.error(error.response?.data?.message || '更新订阅状态失败')
       }
     }
 
