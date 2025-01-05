@@ -256,13 +256,22 @@ class MQTTService {
     }
 
     // 发送命令到设备
-    sendCommand(projectName, moduleType, serialNumber, channel, command) {
-        if (!this.client) {
+    sendCommand(projectName, moduleType, serialNumber, channel, command, value) {
+        if (!this.client || !this.client.connected) {
             throw new Error('MQTT client not connected');
         }
-        const topic = `${projectName}/${moduleType}/${serialNumber}/${channel}/command`;
-        const message = { command };
-        this.client.publish(topic, JSON.stringify(message));
+        const deviceId = `${projectName}/${moduleType}/${serialNumber}`;
+        const topic = `${deviceId}/command`;
+        const message = {
+            type: "command",
+            command: command,
+            device: {
+                id: deviceId,
+                channel: channel
+            },
+            value: value
+        };
+        this.client.publish(topic, JSON.stringify(message), { qos: 1 });
         logger.info(`Sent command to topic ${topic}:`, message);
     }
 

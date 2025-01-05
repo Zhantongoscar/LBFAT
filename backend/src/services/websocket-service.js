@@ -41,7 +41,20 @@ class WebSocketService extends EventEmitter {
                     const data = JSON.parse(message);
                     logger.info('收到WebSocket消息:', data);
 
-                    if (data.type === 'mqtt_publish') {
+                    // 处理命令消息
+                    if (data.type === 'command') {
+                        const mqttService = require('./mqtt-service');
+                        const [projectName, moduleType, serialNumber] = data.device.id.split('/');
+                        await mqttService.sendCommand(
+                            projectName,
+                            moduleType,
+                            serialNumber,
+                            data.device.channel,
+                            data.command,
+                            data.value
+                        );
+                    }
+                    else if (data.type === 'mqtt_publish') {
                         const mqttService = require('./mqtt-service');
                         logger.info('准备发布MQTT消息:', {
                             topic: data.topic,
