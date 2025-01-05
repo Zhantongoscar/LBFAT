@@ -11,14 +11,9 @@
 
       <!-- 图纸列表 -->
       <el-table :data="drawings" style="width: 100%" v-loading="loading">
-        <el-table-column prop="drawing_number" label="图纸编号" width="150" />
-        <el-table-column prop="version" label="版本号" width="100" />
+        <el-table-column prop="drawing_number" label="图纸编号" width="200" />
+        <el-table-column prop="version" label="版本号" width="200" />
         <el-table-column prop="description" label="描述" show-overflow-tooltip />
-        <el-table-column prop="created_at" label="创建时间" width="180">
-          <template #default="{ row }">
-            {{ formatDate(row.created_at) }}
-          </template>
-        </el-table-column>
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
             <el-button-group>

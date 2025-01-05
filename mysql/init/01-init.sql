@@ -156,6 +156,11 @@ INSERT INTO users (username, password, display_name, role, status)
 VALUES ('root', 'root', '系统管理员', 'admin', 'active')
 ON DUPLICATE KEY UPDATE password = VALUES(password);
 
+-- 插入默认普通用户账户 (user/user)
+INSERT INTO users (username, password, display_name, role, status)
+VALUES ('user', 'user', '普通用户', 'user', 'active')
+ON DUPLICATE KEY UPDATE password = VALUES(password);
+
 -- 插入项目数据
 INSERT INTO project_subscriptions (project_name, is_subscribed) VALUES
 ('lb_test', true),
@@ -232,8 +237,8 @@ INSERT INTO device_type_points (device_type_id, point_index, point_type, point_n
 
 -- 插入图纸数据
 INSERT INTO drawings (id, drawing_number, version, description) VALUES
-(1, '3018598347', '1.0', 'EOS1350'),
-(2, '3018571155', '1.0', 'EOS1350'),
+(1, ' LOOD-16331-001', '3018598347', 'EOS1350'),
+(2, ' LOOD-14233-001', '3018571155', 'EOS1350'),
 (3, 'DWG-001', '1.0', '安全开关测试图纸'),
 (4, 'DWG-002', '1.0', '电机控制测试图纸');
 

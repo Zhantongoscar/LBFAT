@@ -67,7 +67,7 @@
         <el-form-item label="状态" prop="status">
           <el-select v-model="userForm.status" style="width: 100%">
             <el-option label="启用" value="active" />
-            <el-option label="禁用" value="disabled" />
+            <el-option label="禁用" value="inactive" />
           </el-select>
         </el-form-item>
       </el-form>
@@ -126,7 +126,7 @@ export default {
         { required: true, message: '请选择角色', trigger: 'change' }
       ],
       status: [
-        { required: true, message: '请选���状态', trigger: 'change' }
+        { required: true, message: '请选择状态', trigger: 'change' }
       ]
     }
 
