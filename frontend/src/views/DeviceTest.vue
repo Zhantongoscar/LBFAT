@@ -59,6 +59,54 @@
       </div>
     </div>
 
+    <!-- Online Logs -->
+    <el-card class="section-card">
+      <template #header>
+        <div class="section-header">
+          <span>Online Logs</span>
+          <el-button type="primary" size="small" @click="clearDeviceStatusMessages">
+            清除显示
+          </el-button>
+        </div>
+      </template>
+      <el-table :data="deviceStatusMessages" style="width: 100%" height="200">
+        <el-table-column prop="timestamp" label="时间" width="180" />
+        <el-table-column prop="deviceId" label="设备ID" width="120" />
+        <el-table-column prop="status" label="状态">
+          <template #default="scope">
+            <el-tag :type="scope.row.status === 'online' ? 'success' : 'danger'">
+              {{ scope.row.status === 'online' ? '上线' : '下线' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="message" label="消息内容" />
+      </el-table>
+    </el-card>
+
+    <!-- Command Logs -->
+    <el-card class="section-card">
+      <template #header>
+        <div class="section-header">
+          <span>Command Logs</span>
+          <el-button type="primary" size="small" @click="clearDeviceCommands">
+            清除显示
+          </el-button>
+        </div>
+      </template>
+      <el-table :data="deviceCommands" style="width: 100%" height="200">
+        <el-table-column label="报文信息">
+          <template #default="scope">
+            <div style="white-space: pre-line;">
+              {{ scope.row.timestamp }}
+              Topic: {{ scope.row.rawTopic }}
+              QoS: 0
+              {{ scope.row.content }}
+            </div>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
+
     <el-dialog v-model="messageDetailVisible" title="消息详情" width="600px">
       <pre v-if="selectedMessage">{{ JSON.stringify(selectedMessage, null, 2) }}</pre>
     </el-dialog>
@@ -74,18 +122,21 @@ import { ElMessage } from 'element-plus'
 export default {
   name: 'DeviceTest',
   setup() {
-    const { ws, isConnected } = useWebSocket()
+    const { ws, isConnected, addMessageListener, removeMessageListener } = useWebSocket()
     const devices = ref([])
     const messages = ref([])
+    const deviceStatusMessages = ref([])
+    const deviceCommands = ref([])
     const form = ref({
       deviceId: '',
       channel: 1,
-      writeValue: 0
+      value: ''
     })
     const messageDetailVisible = ref(false)
     const selectedMessage = ref(null)
     const loading = ref(false)
     const selectedDevice = ref(null)
+    const listenerAdded = ref(false)
 
     // 过滤出在线设备
     const onlineDevices = computed(() => {
@@ -229,32 +280,87 @@ export default {
     };
 
     // 处理WebSocket消息
-    const handleWebSocketMessage = (event) => {
+    const handleMessage = (message) => {
       try {
-        const data = JSON.parse(event.data);
-        console.log('收到WebSocket消息:', data);
-
-        // 处理设备状态更新
-        if (data.type === 'device_status') {
-          const deviceIndex = devices.value.findIndex(d => 
-            d.project_name === data.device.project_name &&
-            d.module_type === data.device.module_type &&
-            d.serial_number === data.device.serial_number
-          );
-
-          if (deviceIndex !== -1) {
-            devices.value[deviceIndex].status = data.status;
-            devices.value[deviceIndex].rssi = data.rssi;
-          }
-        }
-        // 处理命令响应
-        else if (data.type === 'response') {
-          addMessage('receive', data.device.id, data.payload, data.device.channel);
+        const data = JSON.parse(message.data)
+        console.log('收到WebSocket消息:', data)
+        
+        switch (data.type) {
+          case 'device_status':
+            deviceStatusMessages.value.unshift({
+              timestamp: new Date().toLocaleString(),
+              deviceId: `${data.device.projectName}/${data.device.moduleType}/${data.device.serialNumber}`,
+              status: data.device.status,
+              message: `RSSI: ${data.device.rssi}`,
+              rawTopic: data.topic,
+              rawMessage: data.rawMessage
+            })
+            if (deviceStatusMessages.value.length > 100) {
+              deviceStatusMessages.value = deviceStatusMessages.value.slice(0, 100)
+            }
+            saveMessages()
+            break
+            
+          case 'mqtt_message':
+            if (data.messageType === 'response') {
+              deviceCommands.value.unshift({
+                timestamp: new Date().toLocaleString(),
+                deviceId: `${data.device.projectName}/${data.device.moduleType}/${data.device.serialNumber}`,
+                channel: data.device.channel,
+                type: 'response',
+                content: JSON.stringify(data.payload),
+                rawTopic: data.topic
+              })
+              if (deviceCommands.value.length > 100) {
+                deviceCommands.value = deviceCommands.value.slice(0, 100)
+              }
+              saveMessages()
+            }
+            break
         }
       } catch (error) {
-        console.error('处理WebSocket消息失败:', error);
+        console.error('解析消息失败:', error)
       }
-    };
+    }
+
+    // 清除设备状态消息
+    const clearDeviceStatusMessages = () => {
+      deviceStatusMessages.value = []
+      localStorage.removeItem('deviceStatusMessages')
+    }
+
+    // 清除设备命令消息
+    const clearDeviceCommands = () => {
+      deviceCommands.value = []
+      localStorage.removeItem('deviceCommands')
+    }
+
+    // 从localStorage加载消息
+    const loadMessages = () => {
+      try {
+        const savedStatusMessages = localStorage.getItem('deviceStatusMessages')
+        if (savedStatusMessages) {
+          deviceStatusMessages.value = JSON.parse(savedStatusMessages)
+        }
+
+        const savedCommands = localStorage.getItem('deviceCommands')
+        if (savedCommands) {
+          deviceCommands.value = JSON.parse(savedCommands)
+        }
+      } catch (error) {
+        console.error('加载保存的消息失败:', error)
+      }
+    }
+
+    // 保存消息到localStorage
+    const saveMessages = () => {
+      try {
+        localStorage.setItem('deviceStatusMessages', JSON.stringify(deviceStatusMessages.value))
+        localStorage.setItem('deviceCommands', JSON.stringify(deviceCommands.value))
+      } catch (error) {
+        console.error('保存消息失败:', error)
+      }
+    }
 
     // 显示消息详情
     const showMessageDetail = (message) => {
@@ -265,31 +371,42 @@ export default {
     // 组件挂载时添加WebSocket监听
     onMounted(() => {
       loadDevices()
+      loadMessages()
       if (ws.value) {
-        ws.value.addEventListener('message', handleWebSocketMessage)
+        addMessageListener(handleMessage)
+        listenerAdded.value = true
       }
     })
 
     // 组件卸载时移除WebSocket监听
     onUnmounted(() => {
-      if (ws.value) {
-        ws.value.removeEventListener('message', handleWebSocketMessage)
+      if (listenerAdded.value) {
+        removeMessageListener(handleMessage)
       }
     })
 
     return {
       devices,
-      onlineDevices,
       messages,
+      deviceStatusMessages,
+      deviceCommands,
       form,
       messageDetailVisible,
       selectedMessage,
+      loading,
+      selectedDevice,
+      onlineDevices,
       handleDeviceChange,
+      refreshDeviceList,
+      clearMessages,
       handleRead,
       handleWrite,
-      clearMessages,
-      loadDevices,
-      showMessageDetail
+      showMessageDetail: (message) => {
+        selectedMessage.value = message
+        messageDetailVisible.value = true
+      },
+      clearDeviceStatusMessages,
+      clearDeviceCommands
     }
   }
 }
@@ -301,67 +418,65 @@ export default {
 }
 
 .header-actions {
+  margin-bottom: 20px;
   display: flex;
   gap: 10px;
-  margin-bottom: 20px;
 }
 
 .command-form {
-  margin: 20px 0;
+  margin-bottom: 20px;
   padding: 20px;
-  border: 1px solid #ebeef5;
+  background-color: #f5f7fa;
   border-radius: 4px;
 }
 
 .channel-control {
-  display: flex;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.channel-label {
-  margin-right: 10px;
-  font-weight: 500;
-}
-
-.command-buttons {
+  margin-bottom: 15px;
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
+.channel-label {
+  min-width: 60px;
+}
+
+.command-buttons {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
 .message-log {
-  border: 1px solid #ebeef5;
-  border-radius: 4px;
-  padding: 20px;
+  margin-bottom: 20px;
 }
 
 .message-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
 }
 
 .message-header h3 {
   margin: 0;
 }
 
-.no-data {
-  text-align: center;
-  color: #909399;
-  padding: 30px 0;
-}
-
 .message-list {
-  max-height: 400px;
+  border: 1px solid #e4e7ed;
+  border-radius: 4px;
+  max-height: 300px;
   overflow-y: auto;
 }
 
 .message-item {
   padding: 10px;
-  border-bottom: 1px solid #ebeef5;
+  border-bottom: 1px solid #e4e7ed;
   cursor: pointer;
+}
+
+.message-item:last-child {
+  border-bottom: none;
 }
 
 .message-item:hover {
@@ -370,26 +485,40 @@ export default {
 
 .message-content {
   display: flex;
-  align-items: center;
   gap: 15px;
+  align-items: center;
 }
 
 .time {
   color: #909399;
-  font-size: 13px;
+  font-size: 0.9em;
 }
 
 .type {
-  color: #409eff;
-  font-weight: 500;
+  color: #409EFF;
 }
 
 .channel {
-  color: #606266;
+  color: #67C23A;
 }
 
 .content {
-  color: #303133;
-  flex: 1;
+  color: #606266;
+}
+
+.no-data {
+  text-align: center;
+  padding: 20px;
+  color: #909399;
+}
+
+.section-card {
+  margin-bottom: 20px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 </style> 
