@@ -1,5 +1,20 @@
 <template>
   <div class="device-list">
+    <!-- 订阅的Topic列表 -->
+    <div class="topic-list-section">
+      <el-card class="box-card">
+        <template #header>
+          <div class="card-header">
+            <span>订阅的Topic列表</span>
+          </div>
+        </template>
+        <el-table :data="subscribedTopics" style="width: 100%" size="small" :border="true">
+          <el-table-column prop="topic" label="Topic" />
+          <el-table-column prop="subscribeTime" label="订阅时间" width="180" align="center" />
+        </el-table>
+      </el-card>
+    </div>
+
     <div class="header">
       <h1>设备管理</h1>
       <div class="header-actions">
@@ -136,6 +151,7 @@ const submitting = ref(false)
 const deviceTypes = ref([])
 const deviceFormRef = ref(null)
 const projects = ref([])
+const subscribedTopics = ref([])
 
 const deviceForm = ref({
   project_name: '',
@@ -314,16 +330,62 @@ const handleProjectSubmit = async () => {
   }
 }
 
+// 加载订阅的Topic列表
+const loadSubscribedTopics = () => {
+  subscribedTopics.value = [
+    {
+      topic: 'lb_test/+/+/status',
+      subscribeTime: new Date().toLocaleString()
+    },
+    {
+      topic: 'lb_test/+/+/+/response',
+      subscribeTime: new Date().toLocaleString()
+    }
+  ]
+}
+
 onMounted(() => {
   loadDevices()
   loadDeviceTypes()
   loadProjects()
+  loadSubscribedTopics()
 })
 </script>
 
 <style scoped>
 .device-list {
   padding: 20px;
+}
+
+.topic-list-section {
+  margin-bottom: 20px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-header span {
+  font-size: 14px;
+  font-weight: 500;
+  color: #606266;
+}
+
+:deep(.el-card__header) {
+  padding: 12px 16px;
+  border-bottom: 1px solid #ebeef5;
+  background-color: #f5f7fa;
+}
+
+:deep(.el-card__body) {
+  padding: 12px;
+}
+
+:deep(.el-table) {
+  --el-table-border-color: #ebeef5;
+  --el-table-header-background-color: #f5f7fa;
 }
 
 .header {
