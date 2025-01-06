@@ -96,16 +96,6 @@
               <template #title>设备测试</template>
             </el-menu-item>
           </el-sub-menu>
-          <el-sub-menu index="/debug">
-            <template #title>
-              <el-icon><Operation /></el-icon>
-              <span>调试</span>
-            </template>
-            <el-menu-item index="/messages" title="监控当前检查的收发报文">
-              <el-icon><Message /></el-icon>
-              <template #title>消息监控</template>
-            </el-menu-item>
-          </el-sub-menu>
           <el-menu-item index="/drawings">
             <el-icon><Picture /></el-icon>
             <template #title>图纸管理</template>

@@ -62,8 +62,8 @@
 
     <!-- Online Logs and Command Logs -->
     <div class="logs-section">
-      <el-collapse>
-        <el-collapse-item>
+      <el-collapse v-model="activeCollapse">
+        <el-collapse-item name="1">
           <template #title>
             <div class="collapse-title">
               <i class="el-icon-arrow-right"></i>
@@ -143,6 +143,7 @@ export default {
     const loading = ref(false)
     const selectedDevice = ref(null)
     const listenerAdded = ref(false)
+    const activeCollapse = ref(['1'])
 
     // 过滤出在线设备
     const onlineDevices = computed(() => {
@@ -423,6 +424,7 @@ export default {
       clearDeviceStatusMessages,
       clearDeviceCommands,
       getDisplayValue,
+      activeCollapse,
     }
   }
 }
