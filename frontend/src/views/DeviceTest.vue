@@ -171,18 +171,18 @@ export default {
 
       try {
         const deviceId = `${selectedDevice.value.project_name}/${selectedDevice.value.module_type}/${selectedDevice.value.serial_number}`;
+        const topic = `${deviceId}/${form.value.channel}/command`;
         const message = {
-          type: 'command',
-          command: 'read',
-          device: {
-            id: deviceId,
-            channel: form.value.channel
-          }
+          command: 'read'
         };
 
         if (ws.value && ws.value.readyState === WebSocket.OPEN) {
-          ws.value.send(JSON.stringify(message));
-          addMessage('send', `${deviceId}/command`, message, form.value.channel);
+          ws.value.send(JSON.stringify({
+            type: 'mqtt_publish',
+            topic: topic,
+            payload: message
+          }));
+          addMessage('send', topic, message, form.value.channel);
         } else {
           ElMessage.error('WebSocket连接已断开');
         }
@@ -206,19 +206,19 @@ export default {
 
       try {
         const deviceId = `${selectedDevice.value.project_name}/${selectedDevice.value.module_type}/${selectedDevice.value.serial_number}`;
+        const topic = `${deviceId}/${form.value.channel}/command`;
         const message = {
-          type: 'command',
           command: 'write',
-          device: {
-            id: deviceId,
-            channel: form.value.channel
-          },
           value: parseFloat(form.value.value)
         };
 
         if (ws.value && ws.value.readyState === WebSocket.OPEN) {
-          ws.value.send(JSON.stringify(message));
-          addMessage('send', `${deviceId}/command`, message, form.value.channel);
+          ws.value.send(JSON.stringify({
+            type: 'mqtt_publish',
+            topic: topic,
+            payload: message
+          }));
+          addMessage('send', topic, message, form.value.channel);
         } else {
           ElMessage.error('WebSocket连接已断开');
         }
