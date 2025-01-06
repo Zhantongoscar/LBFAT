@@ -1,124 +1,54 @@
 <template>
   <div class="test-execution">
-    <!-- 测试设备状态（可收纳） -->
-    <el-card class="box-card mb-20">
-      <template #header>
-        <div class="card-header">
-          <div class="header-left">
-            <span>测试设备状态</span>
-            <el-tag type="info" class="ml-10">
-              {{ filteredOnlineDevices.length }}/{{ devices.length }}
-            </el-tag>
-          </div>
-          <el-button
-            type="text"
-            @click="isDevicesPanelCollapsed = !isDevicesPanelCollapsed"
-          >
-            <el-icon :size="16">
-              <ArrowDown v-if="!isDevicesPanelCollapsed" />
-              <ArrowRight v-else />
-            </el-icon>
-            {{ isDevicesPanelCollapsed ? '展开' : '收起' }}
-          </el-button>
-        </div>
-      </template>
+    <!-- 测试设备状态 -->
+    <div class="device-status-section">
+      <div class="section-header">
+        <h3>测试设备状态 <span class="device-count">{{ onlineCount }}/{{ devices.length }}</span></h3>
+        <el-button type="primary" size="small" @click="refreshDevices">收起</el-button>
+      </div>
 
-      <el-collapse-transition>
-        <div v-show="!isDevicesPanelCollapsed" class="device-status-panel">
-          <!-- 在线设备区域 -->
-          <div class="devices-section online-section">
-            <div class="section-header">
-              <el-tag type="success" size="small">在线设备</el-tag>
-              <div class="section-controls">
-                <el-select v-model="onlineDeviceType" placeholder="设备类型" size="small" clearable>
-                  <el-option label="全部" value="" />
-                  <el-option v-for="type in deviceTypes" :key="type" :label="type" :value="type" />
-                </el-select>
-                <el-pagination
-                  v-if="filteredOnlineDevices.length > pageSize"
-                  :current-page="onlineCurrentPage"
-                  :page-size="pageSize"
-                  :total="filteredOnlineDevices.length"
-                  layout="prev, pager, next"
-                  small
-                  @current-change="handleOnlinePageChange"
-                />
+      <div class="device-groups">
+        <!-- 在线设备 -->
+        <div class="device-group">
+          <div class="group-title">在线设备</div>
+          <div class="device-list">
+            <div v-for="device in onlineDevices" 
+                :key="`${device.project_name}-${device.module_type}-${device.serial_number}`"
+                class="device-card"
+                :class="{ 'selected': selectedDevices.includes(device.id) }"
+                @click="toggleDeviceSelection(device)"
+            >
+              <div class="device-icon">
+                <el-icon><Monitor /></el-icon>
               </div>
-            </div>
-            <div class="devices-grid">
-              <div
-                v-for="device in paginatedOnlineDevices"
-                :key="device.id"
-                class="device-item online"
-                @click="showDeviceDetails(device)"
-              >
-                <el-tooltip
-                  :content="'信号强度: ' + device.rssi + ' dBm'"
-                  placement="top"
-                >
-                  <div class="device-icon">
-                    <el-icon :size="20">
-                      <Monitor v-if="device.type === 'EDB'" />
-                      <Cpu v-if="device.type === 'CPU'" />
-                      <Connection v-else />
-                    </el-icon>
-                    <span class="device-name">{{ device.name }}</span>
-                    <div class="signal-indicator" :class="getSignalLevel(device.rssi)"></div>
-                  </div>
-                </el-tooltip>
-              </div>
-              <div v-if="filteredOnlineDevices.length === 0" class="empty-tip">
-                暂无在线设备
-              </div>
-            </div>
-          </div>
-
-          <!-- 离线设备区域 -->
-          <div class="devices-section offline-section">
-            <div class="section-header">
-              <el-tag type="danger" size="small">离线设备</el-tag>
-              <div class="section-controls">
-                <el-select v-model="offlineDeviceType" placeholder="设备类型" size="small" clearable>
-                  <el-option label="全部" value="" />
-                  <el-option v-for="type in deviceTypes" :key="type" :label="type" :value="type" />
-                </el-select>
-                <el-pagination
-                  v-if="filteredOfflineDevices.length > pageSize"
-                  :current-page="offlineCurrentPage"
-                  :page-size="pageSize"
-                  :total="filteredOfflineDevices.length"
-                  layout="prev, pager, next"
-                  small
-                  @current-change="handleOfflinePageChange"
-                />
-              </div>
-            </div>
-            <div class="devices-grid">
-              <div
-                v-for="device in paginatedOfflineDevices"
-                :key="device.id"
-                class="device-item offline"
-                @click="showDeviceDetails(device)"
-              >
-                <el-tooltip content="设备离线" placement="top">
-                  <div class="device-icon">
-                    <el-icon :size="20">
-                      <Monitor v-if="device.type === 'EDB'" />
-                      <Cpu v-if="device.type === 'CPU'" />
-                      <Connection v-else />
-                    </el-icon>
-                    <span class="device-name">{{ device.name }}</span>
-                  </div>
-                </el-tooltip>
-              </div>
-              <div v-if="filteredOfflineDevices.length === 0" class="empty-tip">
-                暂无离线设备
+              <div class="device-info">
+                <div class="device-name">{{ device.module_type }}-{{ device.serial_number }}</div>
+                <el-tag size="small" type="success">在线</el-tag>
               </div>
             </div>
           </div>
         </div>
-      </el-collapse-transition>
-    </el-card>
+
+        <!-- 离线设备 -->
+        <div class="device-group">
+          <div class="group-title">离线设备</div>
+          <div class="device-list">
+            <div v-for="device in offlineDevices" 
+                :key="`${device.project_name}-${device.module_type}-${device.serial_number}`"
+                class="device-card offline"
+            >
+              <div class="device-icon">
+                <el-icon><Monitor /></el-icon>
+              </div>
+              <div class="device-info">
+                <div class="device-name">{{ device.module_type }}-{{ device.serial_number }}</div>
+                <el-tag size="small" type="danger">离线</el-tag>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- 测试实例列表面板 -->
     <el-card class="box-card mb-20">
@@ -513,6 +443,7 @@ import {
   createInstanceItems
 } from '@/api/testInstance'
 import { getTruthTables } from '@/api/truthTable'
+import axios from 'axios'
 
 export default {
   name: 'TestExecution',
@@ -527,62 +458,62 @@ export default {
     // 设备面板收纳状态
     const isDevicesPanelCollapsed = ref(true)
 
-    // 模拟设备数据
-    const devices = ref([
-      { 
-        id: 1, 
-        name: 'EDB-1', 
-        type: 'EDB', 
-        serialNumber: 'EDB001', 
-        online: true, 
-        rssi: -65, 
-        lastUpdateTime: new Date() 
-      },
-      { 
-        id: 2, 
-        name: 'EDB-2', 
-        type: 'EDB', 
-        serialNumber: 'EDB002', 
-        online: true, 
-        rssi: -75, 
-        lastUpdateTime: new Date() 
-      },
-      { 
-        id: 3, 
-        name: 'CPU-1', 
-        type: 'CPU', 
-        serialNumber: 'CPU001', 
-        online: false, 
-        lastUpdateTime: new Date() 
-      },
-      { 
-        id: 4, 
-        name: 'EDB-3', 
-        type: 'EDB', 
-        serialNumber: 'EDB003', 
-        online: true, 
-        rssi: -85, 
-        lastUpdateTime: new Date() 
-      },
-      { 
-        id: 5, 
-        name: 'EDB-4', 
-        type: 'EDB', 
-        serialNumber: 'EDB004', 
-        online: false, 
-        lastUpdateTime: new Date() 
-      }
-    ])
+    // 设备数据
+    const devices = ref([])
+    const selectedDevices = ref([])
+    const loading = ref(false)
 
     // 计算属性：在线设备
-    const onlineDevices = computed(() => devices.value.filter(d => d.online))
+    const onlineDevices = computed(() => {
+      return devices.value.filter(device => device.status === 'online')
+    })
     
     // 计算属性：离线设备
-    const offlineDevices = computed(() => devices.value.filter(d => !d.online))
+    const offlineDevices = computed(() => {
+      return devices.value.filter(device => device.status !== 'online')
+    })
 
-    // 设备统计
+    // 在线设备数量
     const onlineCount = computed(() => onlineDevices.value.length)
     const totalCount = computed(() => devices.value.length)
+
+    // 加载设备列表
+    const loadDevices = async () => {
+      try {
+        loading.value = true
+        const response = await axios.get('/api/devices')
+        if (response?.data?.code === 200) {
+          devices.value = response.data.data
+        }
+      } catch (error) {
+        console.error('加载设备列表失败:', error)
+        ElMessage.error('加载设备列表失败')
+      } finally {
+        loading.value = false
+      }
+    }
+
+    // 刷新设备列表
+    const refreshDevices = () => {
+      loadDevices()
+    }
+
+    // 切换设备选择状态
+    const toggleDeviceSelection = (device) => {
+      const index = selectedDevices.value.indexOf(device.id)
+      if (index === -1) {
+        selectedDevices.value.push(device.id)
+      } else {
+        selectedDevices.value.splice(index, 1)
+      }
+    }
+
+    // 组件挂载时加载设备列表
+    onMounted(() => {
+      loadDevices()
+      fetchTestInstances()
+      fetchTruthTables()
+    })
 
     // 设备详情对话框
     const deviceDetailsVisible = ref(false)
@@ -1170,7 +1101,12 @@ export default {
       handleSkipItem,
       loadingTestItems,
       handleCreateInstanceItems,
-      refreshTestItems
+      refreshTestItems,
+      selectedDevices,
+      loading,
+      loadDevices,
+      refreshDevices,
+      toggleDeviceSelection
     }
   }
 }
@@ -1202,92 +1138,96 @@ export default {
     }
   }
 
-  .device-status-panel {
-    .devices-section {
+  .device-status-section {
+    margin-bottom: 20px;
+    background-color: #fff;
+    border-radius: 4px;
+    border: 1px solid #dcdfe6;
+    padding: 20px;
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       margin-bottom: 20px;
 
-      &:last-child {
-        margin-bottom: 0;
-      }
-
-      .section-header {
+      h3 {
+        margin: 0;
+        font-size: 16px;
+        color: #303133;
         display: flex;
-        justify-content: space-between;
         align-items: center;
-        margin-bottom: 10px;
-
-        .section-controls {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }
+        gap: 8px;
       }
 
-      .devices-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-        gap: 10px;
+      .device-count {
+        font-size: 14px;
+        color: #909399;
+      }
+    }
 
-        .device-item {
-          padding: 10px;
-          border: 1px solid #dcdfe6;
-          border-radius: 4px;
-          cursor: pointer;
-          transition: all 0.3s;
+    .device-groups {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
 
-          &:hover {
-            background-color: #f5f7fa;
-          }
+      .device-group {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
 
-          &.online {
-            border-color: #67c23a;
-          }
+        .group-title {
+          font-size: 14px;
+          color: #606266;
+          font-weight: 500;
+        }
 
-          &.offline {
-            border-color: #f56c6c;
-          }
+        .device-list {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+          gap: 12px;
 
-          .device-icon {
+          .device-card {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 4px;
+            border: 1px solid #dcdfe6;
+            cursor: pointer;
+            transition: all 0.3s;
 
-            .device-name {
-              flex: 1;
-              overflow: hidden;
-              text-overflow: ellipsis;
-              white-space: nowrap;
+            &:hover {
+              border-color: #409eff;
+              box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
             }
 
-            .signal-indicator {
-              width: 8px;
-              height: 8px;
-              border-radius: 50%;
+            &.selected {
+              border-color: #409eff;
+              background-color: #ecf5ff;
+            }
 
-              &.signal-excellent {
-                background-color: #67c23a;
-              }
+            &.offline {
+              opacity: 0.7;
+              cursor: not-allowed;
+            }
 
-              &.signal-good {
-                background-color: #409eff;
-              }
+            .device-icon {
+              font-size: 24px;
+              color: #409eff;
+            }
 
-              &.signal-fair {
-                background-color: #e6a23c;
-              }
+            .device-info {
+              display: flex;
+              flex-direction: column;
+              gap: 4px;
 
-              &.signal-poor {
-                background-color: #f56c6c;
+              .device-name {
+                font-size: 14px;
+                color: #303133;
               }
             }
           }
-        }
-
-        .empty-tip {
-          grid-column: 1 / -1;
-          text-align: center;
-          color: #909399;
-          padding: 20px;
         }
       }
     }
