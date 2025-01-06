@@ -55,17 +55,16 @@
           </div>
         </template>
         <el-table :data="deviceCommands" style="width: 100%" height="200">
-          <el-table-column prop="timestamp" label="时间" width="180" />
-          <el-table-column prop="deviceId" label="设备ID" width="120" />
-          <el-table-column prop="channel" label="通道" width="80" />
-          <el-table-column prop="type" label="类型" width="100">
+          <el-table-column label="报文信息">
             <template #default="scope">
-              <el-tag :type="scope.row.type === 'command' ? 'primary' : 'success'">
-                {{ scope.row.type === 'command' ? '命令' : '回复' }}
-              </el-tag>
+              <div style="white-space: pre-line;">
+                {{ scope.row.timestamp }}
+                Topic: {{ scope.row.rawTopic }}
+                QoS: 0
+                {{ scope.row.content }}
+              </div>
             </template>
           </el-table-column>
-          <el-table-column prop="content" label="内容" />
         </el-table>
       </el-card>
     </el-card>
@@ -203,7 +202,7 @@ export default {
     // 设置消息监听器
     const setupMessageListener = (ws) => {
       if (ws && !listenerAdded.value) {
-        ws.addEventListener('message', handleMessage)
+        wsInstance.addMessageListener(handleMessage)
         listenerAdded.value = true
       }
     }
@@ -211,7 +210,7 @@ export default {
     // 移除消息监听器
     const removeMessageListener = (ws) => {
       if (ws && listenerAdded.value) {
-        ws.removeEventListener('message', handleMessage)
+        wsInstance.removeMessageListener(handleMessage)
         listenerAdded.value = false
       }
     }
@@ -272,7 +271,6 @@ export default {
       if (wsInstance.ws.value) {
         removeMessageListener(wsInstance.ws.value)
       }
-      wsInstance.cleanup()
     })
 
     return {

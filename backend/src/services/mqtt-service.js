@@ -84,6 +84,7 @@ class MQTTService {
                                 message: message.toString()
                             });
                             const payload = JSON.parse(message.toString());
+                            
                             // 处理设备状态消息
                             if (topic.endsWith('/status')) {
                                 const [projectName, moduleType, serialNumber] = topic.split('/').slice(0, -1);
@@ -127,6 +128,32 @@ class MQTTService {
                                         status: payload.status,
                                         rssi: payload.rssi
                                     }
+                                });
+                            }
+                            // 处理设备响应消息
+                            else if (topic.endsWith('/response')) {
+                                const [projectName, moduleType, serialNumber, channel] = topic.split('/').slice(0, -1);
+                                
+                                // 广播响应消息到WebSocket客户端
+                                WebSocketService.broadcast({
+                                    type: 'mqtt_message',
+                                    messageType: 'response',
+                                    topic,
+                                    device: {
+                                        projectName,
+                                        moduleType,
+                                        serialNumber,
+                                        channel
+                                    },
+                                    payload
+                                });
+                                
+                                logger.info('设备响应消息已广播:', {
+                                    projectName,
+                                    moduleType,
+                                    serialNumber,
+                                    channel,
+                                    payload
                                 });
                             }
                         } catch (error) {
