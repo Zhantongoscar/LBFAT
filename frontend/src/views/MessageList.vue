@@ -24,7 +24,7 @@
       <el-card class="section-card">
         <template #header>
           <div class="section-header">
-            <span>设备上下线消息</span>
+            <span>Online Logs</span>
             <el-button type="primary" size="small" @click="clearDeviceStatusMessages">
               清除显示
             </el-button>
@@ -48,7 +48,7 @@
       <el-card class="section-card">
         <template #header>
           <div class="section-header">
-            <span>设备命令消息</span>
+            <span>Command Logs</span>
             <el-button type="primary" size="small" @click="clearDeviceCommands">
               清除显示
             </el-button>

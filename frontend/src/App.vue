@@ -91,6 +91,10 @@
               <el-icon><Monitor /></el-icon>
               <template #title>在用设备</template>
             </el-menu-item>
+            <el-menu-item index="/device-test" title="调试在线设备">
+              <el-icon><Operation /></el-icon>
+              <template #title>设备测试</template>
+            </el-menu-item>
           </el-sub-menu>
           <el-sub-menu index="/debug">
             <template #title>
@@ -100,10 +104,6 @@
             <el-menu-item index="/messages" title="监控当前检查的收发报文">
               <el-icon><Message /></el-icon>
               <template #title>消息监控</template>
-            </el-menu-item>
-            <el-menu-item index="/device-test" title="调试在线设备">
-              <el-icon><Operation /></el-icon>
-              <template #title>设备测试</template>
             </el-menu-item>
           </el-sub-menu>
           <el-menu-item index="/drawings">
