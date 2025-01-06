@@ -52,60 +52,66 @@
           <div class="message-content" @click="showMessageDetail(message)">
             <span class="time">{{ new Date(message.time).toLocaleTimeString() }}</span>
             <span class="type">{{ message.type === 'send' ? '发送' : '接收' }}</span>
+            <span class="device" v-if="selectedDevice">{{ selectedDevice.project_name }}/{{ selectedDevice.module_type }}/{{ selectedDevice.serial_number }}</span>
             <span class="channel">通道: {{ message.channel }}</span>
-            <span class="content">{{ message.content }}</span>
+            <span class="value">{{ getDisplayValue(message) }}</span>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Online Logs -->
-    <el-card class="section-card">
-      <template #header>
-        <div class="section-header">
-          <span>Online Logs</span>
-          <el-button type="primary" size="small" @click="clearDeviceStatusMessages">
-            清除显示
-          </el-button>
-        </div>
-      </template>
-      <el-table :data="deviceStatusMessages" style="width: 100%" height="200">
-        <el-table-column prop="timestamp" label="时间" width="180" />
-        <el-table-column prop="deviceId" label="设备ID" width="120" />
-        <el-table-column prop="status" label="状态">
-          <template #default="scope">
-            <el-tag :type="scope.row.status === 'online' ? 'success' : 'danger'">
-              {{ scope.row.status === 'online' ? '上线' : '下线' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="message" label="消息内容" />
-      </el-table>
-    </el-card>
-
-    <!-- Command Logs -->
-    <el-card class="section-card">
-      <template #header>
-        <div class="section-header">
-          <span>Command Logs</span>
-          <el-button type="primary" size="small" @click="clearDeviceCommands">
-            清除显示
-          </el-button>
-        </div>
-      </template>
-      <el-table :data="deviceCommands" style="width: 100%" height="200">
-        <el-table-column label="报文信息">
-          <template #default="scope">
-            <div style="white-space: pre-line;">
-              {{ scope.row.timestamp }}
-              Topic: {{ scope.row.rawTopic }}
-              QoS: 0
-              {{ scope.row.content }}
+    <!-- Online Logs and Command Logs -->
+    <div class="logs-section">
+      <el-collapse>
+        <el-collapse-item>
+          <template #title>
+            <div class="collapse-title">
+              <i class="el-icon-arrow-right"></i>
+              <span class="title-text">消息记录</span>
             </div>
           </template>
-        </el-table-column>
-      </el-table>
-    </el-card>
+          <div class="logs-content">
+            <div class="logs-header">
+              <h4>Online Logs</h4>
+              <el-button type="primary" size="small" @click="clearDeviceStatusMessages">
+                清除显示
+              </el-button>
+            </div>
+            <el-table :data="deviceStatusMessages" style="width: 100%" height="200" size="small">
+              <el-table-column prop="timestamp" label="时间" width="180" />
+              <el-table-column prop="deviceId" label="设备ID" width="120" />
+              <el-table-column prop="status" label="状态" width="100">
+                <template #default="scope">
+                  <el-tag size="small" :type="scope.row.status === 'online' ? 'success' : 'danger'">
+                    {{ scope.row.status === 'online' ? '上线' : '下线' }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column prop="message" label="消息内容" />
+            </el-table>
+
+            <div class="logs-header" style="margin-top: 20px;">
+              <h4>Command Logs</h4>
+              <el-button type="primary" size="small" @click="clearDeviceCommands">
+                清除显示
+              </el-button>
+            </div>
+            <el-table :data="deviceCommands" style="width: 100%" height="200" size="small">
+              <el-table-column label="报文信息">
+                <template #default="scope">
+                  <div style="white-space: pre-line;">
+                    {{ scope.row.timestamp }}
+                    Topic: {{ scope.row.rawTopic }}
+                    QoS: 0
+                    {{ scope.row.content }}
+                  </div>
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
+        </el-collapse-item>
+      </el-collapse>
+    </div>
 
     <el-dialog v-model="messageDetailVisible" title="消息详情" width="600px">
       <pre v-if="selectedMessage">{{ JSON.stringify(selectedMessage, null, 2) }}</pre>
@@ -368,6 +374,15 @@ export default {
       messageDetailVisible.value = true
     }
 
+    // 获取显示值
+    const getDisplayValue = (message) => {
+      if (message.type === 'send') {
+        return message.payload.command === 'read' ? '读取' : `写入: ${message.payload.value}`
+      } else {
+        return `值: ${message.payload.value}`
+      }
+    }
+
     // 组件挂载时添加WebSocket监听
     onMounted(() => {
       loadDevices()
@@ -406,7 +421,8 @@ export default {
         messageDetailVisible.value = true
       },
       clearDeviceStatusMessages,
-      clearDeviceCommands
+      clearDeviceCommands,
+      getDisplayValue,
     }
   }
 }
@@ -520,5 +536,92 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex: 1;
+}
+
+/* 添加折叠面板样式 */
+:deep(.el-collapse-item__header) {
+  padding: 0 20px;
+  background-color: #f5f7fa;
+}
+
+:deep(.el-collapse-item__content) {
+  padding: 20px;
+}
+
+.device {
+  color: #409EFF;
+  font-size: 0.9em;
+}
+
+.value {
+  color: #67C23A;
+  font-weight: bold;
+}
+
+.logs-section {
+  margin-top: 30px;
+  border-top: 1px solid #ebeef5;
+  padding-top: 20px;
+}
+
+.collapse-title {
+  display: flex;
+  align-items: center;
+  color: #606266;
+  font-size: 14px;
+}
+
+.collapse-title i {
+  margin-right: 8px;
+  transition: transform 0.3s;
+}
+
+:deep(.el-collapse-item.is-active) .collapse-title i {
+  transform: rotate(90deg);
+}
+
+.title-text {
+  color: #606266;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.logs-content {
+  padding: 16px;
+}
+
+.logs-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.logs-header h4 {
+  margin: 0;
+  color: #606266;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+:deep(.el-collapse) {
+  border: none;
+}
+
+:deep(.el-collapse-item__header) {
+  border: none;
+  padding: 8px 16px;
+  background-color: transparent;
+  font-size: 14px;
+}
+
+:deep(.el-collapse-item__content) {
+  padding: 0;
+}
+
+:deep(.el-table) {
+  --el-table-border-color: #ebeef5;
+  --el-table-header-background-color: #f5f7fa;
 }
 </style> 
