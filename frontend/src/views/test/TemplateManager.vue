@@ -1060,37 +1060,36 @@ export default {
 
     // 处理删除测试项
     const handleDeleteTestItem = async (row) => {
-      console.log('准备删除测试项:', row);
+      console.log('=== 删除测试项开始 ===');
+      console.log('要删除的数据:', JSON.stringify(row, null, 2));
       try {
         await ElMessageBox.confirm('确定要删除该测试项吗？', '提示', {
           type: 'warning'
         });
         
-        console.log('发送删除请求，ID:', row.id);
-        const response = await testItemApi.delete(row.id);
-        console.log('删除响应:', response);
-        
-        // 204状态码表示删除成功
-        ElMessage.success('删除成功');
-        
-        // 立即从本地列表中移除被删除的项
-        testItems.value = testItems.value.filter(item => item.id !== row.id);
-        console.log('本地列表更新后的测试项:', testItems.value);
-        
-        // 延迟一小段时间后重新加载列表，确保后端数据已更新
-        setTimeout(async () => {
-          if (currentTestGroup.value && currentTestGroup.value.id) {
-            console.log('重新加载测试项列表...');
-            await loadTestItems(currentTestGroup.value.id);
-            console.log('测试项列表已更新');
-          }
-        }, 100);
+        console.log('[DELETE] 发送删除请求***，ID:', row.id);
+        try {
+          const response = await testItemApi.delete(row.id);
+          console.log('[DELETE] 删除请求响应:', response);
+          ElMessage.success('删除成功');
+        } catch (deleteError) {
+          console.error('[DELETE] 删除请求失败:', deleteError);
+          ElMessage.error('删除失败: ' + (deleteError.message || '未知错误'));
+          throw deleteError;
+        }
       } catch (error) {
         if (error !== 'cancel') {
-          console.error('删除测试项失败:', error);
-          // 如果是网络错误或其他错误，才显示错误消息
-          if (error.response && error.response.status !== 204) {
-            ElMessage.error('删除失败: ' + (error.message || '未知错误'));
+          console.error('[ERROR] 删除测试项失败:', error);
+        }
+      } finally {
+        // 无论删除成功还是失败，都刷新列表
+        console.log('[REFRESH] 开始刷新测试项列表...');
+        if (currentTestGroup.value && currentTestGroup.value.id) {
+          try {
+            await loadTestItems(currentTestGroup.value.id);
+            console.log('[REFRESH] 测试项列表已更新');
+          } catch (refreshError) {
+            console.error('[REFRESH] 刷新列表失败:', refreshError);
           }
         }
       }

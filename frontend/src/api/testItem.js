@@ -87,6 +87,11 @@ export default {
     return api.delete(`/test-items/${id}`)
       .then(response => {
         console.log('API响应数据:', response);
+        // 204状态码表示删除成功
+        if (response.status === 204) {
+          return true;
+        }
+        // 兼容其他成功状态
         if (response.data && response.data.code === 200) {
           return response.data.data;
         }
