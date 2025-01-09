@@ -9,9 +9,9 @@ router.get('/:truth_table_id/groups', testGroupController.getTestGroups)
 router.post('/:truth_table_id/groups', testGroupController.createTestGroup)
 
 // 更新测试组
-router.put('/:truth_table_id/groups/:id', testGroupController.updateTestGroup)
+router.put('/:truth_table_id/groups/:group_id', testGroupController.updateTestGroup)
 
 // 删除测试组
-router.delete('/:truth_table_id/groups/:id', testGroupController.deleteTestGroup)
+router.delete('/:truth_table_id/groups/:group_id', testGroupController.deleteTestGroup)
 
 module.exports = router 
