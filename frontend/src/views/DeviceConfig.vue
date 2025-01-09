@@ -201,11 +201,11 @@ export default {
         if (i < currentPoints.length) {
           newPoints.push({
             ...currentPoints[i],
-            point_index: i + 1  // 确保 point_index 正确
+            point_index: i  // 修改为从0开始
           });
         } else {
           newPoints.push({
-            point_index: i + 1,
+            point_index: i,  // 修改为从0开始
             point_type: 'DI',
             point_name: '',
             description: ''
@@ -336,9 +336,9 @@ export default {
         const formData = {
           ...deviceForm.value,
           points: deviceForm.value.points.map((p, index) => ({
-            point_index: index + 1,
+            point_index: index,  // 修改为从0开始
             point_type: p.point_type,
-            description: p.description || `${p.point_type}${index + 1}`
+            description: p.description || `${p.point_type}${index}`  // 修改为从0开始
           }))
         };
 
