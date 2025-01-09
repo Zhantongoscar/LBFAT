@@ -350,13 +350,32 @@
           :rules="testItemRules"
           label-width="100px"
         >
-          <el-form-item label="设备ID" prop="device_id">
-            <el-input-number 
+          <el-form-item label="测试组" prop="test_group_id">
+            <el-input v-model="testItemForm.test_group_id" disabled />
+          </el-form-item>
+          <el-form-item label="设备" prop="device_id">
+            <el-select 
               v-model="testItemForm.device_id" 
-              :min="1"
-              :max="999"
-              placeholder="请输入设备ID"
-            />
+              placeholder="请选择设备" 
+              clearable 
+              filterable
+              :loading="deviceListLoading"
+            >
+              <el-option
+                v-for="device in sortedDeviceList"
+                :key="device.id"
+                :label="`${device.project_name} - ${device.module_type} (${device.serial_number})`"
+                :value="device.id"
+              >
+                <span style="float: left">{{ device.project_name }} - {{ device.module_type }}</span>
+                <span style="float: right; color: #8492a6; font-size: 13px">
+                  {{ device.serial_number }}
+                  <el-tag size="small" :type="device.status === 'online' ? 'success' : 'info'">
+                    {{ device.status === 'online' ? '在线' : '离线' }}
+                  </el-tag>
+                </span>
+              </el-option>
+            </el-select>
           </el-form-item>
           <el-form-item label="单元序号" prop="point_index">
             <el-input-number 
@@ -419,6 +438,7 @@ import { useRouter } from 'vue-router'
 import { getAvailableDrawings, getTruthTables, createTruthTable, updateTruthTable, deleteTruthTable, getTruthTable } from '@/api/truthTable'
 import { getTestGroups, createTestGroup, updateTestGroup, deleteTestGroup } from '@/api/testGroup'
 import testItemApi from '@/api/testItem'
+import api from '@/utils/api'
 
 export default {
   name: 'TemplateManager',
@@ -491,8 +511,94 @@ export default {
     const testItemDialogVisible = ref(false)
     const testItemDialogTitle = ref('')
     const testItemFormRef = ref(null)
+    const deviceList = ref([])
+    const deviceListLoading = ref(false)
+
+    // 获取设备列表
+    const fetchDevices = async () => {
+      console.log('=== 开始获取设备列表 ===');
+      deviceListLoading.value = true;
+      try {
+        console.log('调用 API 获取设备列表...');
+        const res = await api.get('/devices');
+        console.log('设备列表 API 响应:', res);
+        
+        if (res && res.data && res.data.code === 200) {
+          console.log('设备列表响应数据:', res.data);
+          const devices = res.data.data;
+          if (Array.isArray(devices)) {
+            deviceList.value = devices.map(device => ({
+              id: device.id,
+              project_name: device.project_name || '',
+              module_type: device.module_type || '',
+              serial_number: device.serial_number || '',
+              status: device.status || 'offline'
+            }));
+            console.log('设备列表更新成功，当前数量:', deviceList.value.length);
+            console.log('当前设备列表数据:', JSON.stringify(deviceList.value, null, 2));
+          } else if (Array.isArray(res.data)) { // 直接处理数组格式的响应
+            deviceList.value = res.data.map(device => ({
+              id: device.id,
+              project_name: device.project_name || '',
+              module_type: device.module_type || '',
+              serial_number: device.serial_number || '',
+              status: device.status || 'offline'
+            }));
+            console.log('设备列表更新成功(直接数组)，当前数量:', deviceList.value.length);
+            console.log('当前设备列表数据:', JSON.stringify(deviceList.value, null, 2));
+          } else {
+            console.error('设备列表数据格式错误:', res.data);
+            throw new Error('获取设备列表失败: 数据格式错误');
+          }
+        } else if (Array.isArray(res.data)) { // 处理直接返回数组的情况
+          deviceList.value = res.data.map(device => ({
+            id: device.id,
+            project_name: device.project_name || '',
+            module_type: device.module_type || '',
+            serial_number: device.serial_number || '',
+            status: device.status || 'offline'
+          }));
+          console.log('设备列表更新成功(直接响应)，当前数量:', deviceList.value.length);
+          console.log('当前设备列表数据:', JSON.stringify(deviceList.value, null, 2));
+        } else {
+          console.error('API 响应格式错误:', res);
+          throw new Error('获取设备列表失败: 响应格式错误');
+        }
+      } catch (error) {
+        console.error('获取设备列表失败，详细错误:', error);
+        ElMessage.error('获取设备列表失败: ' + (error.message || '未知错误'));
+        deviceList.value = [];
+      } finally {
+        deviceListLoading.value = false;
+      }
+    };
+
+    // 监听设备列表变化
+    watch(deviceList, (newValue) => {
+      console.log('设备列表发生变化，新数量:', newValue.length);
+      console.log('新的设备列表:', JSON.stringify(newValue, null, 2));
+    });
+
+    // 计算属性：过滤和排序后的设备列表
+    const sortedDeviceList = computed(() => {
+      return deviceList.value
+        .slice()
+        .sort((a, b) => {
+          // 首先按项目名称排序
+          if (a.project_name !== b.project_name) {
+            return a.project_name.localeCompare(b.project_name);
+          }
+          // 然后按模块类型排序
+          if (a.module_type !== b.module_type) {
+            return a.module_type.localeCompare(b.module_type);
+          }
+          // 最后按序列号排序
+          return a.serial_number.localeCompare(b.serial_number);
+        });
+    });
+
     const testItemForm = reactive({
-      device_id: 1,
+      device_id: '',
       point_index: 1,
       description: '',
       input_values: 0,
@@ -501,12 +607,62 @@ export default {
       test_group_id: null
     });
 
-    const testItemRules = {
-      device_id: [{ required: true, message: '请输入设备ID', trigger: 'blur' }],
-      point_index: [{ required: true, message: '请输入单元序号', trigger: 'blur' }],
-      input_values: [{ required: true, message: '请输入输入值', trigger: 'blur' }],
-      expected_values: [{ required: true, message: '请输入期望值', trigger: 'blur' }],
-      timeout: [{ required: true, message: '请输入超时时间', trigger: 'blur' }]
+    // 显示创建测试项对话框
+    const showCreateTestItemDialog = async () => {
+      console.log('=== 打开新建测试项对话框 ===');
+      console.log('对话框打开前的设备列表数量:', deviceList.value.length);
+      
+      testItemDialogTitle.value = '新建测试项';
+      testItemForm.id = undefined;
+      testItemForm.test_group_id = currentTestGroup.value.id;
+      testItemForm.device_id = '';
+      testItemForm.point_index = 1;
+      testItemForm.description = '';
+      testItemForm.input_values = 0;
+      testItemForm.expected_values = 0;
+      testItemForm.timeout = 5000;
+      
+      console.log('重新获取设备列表...');
+      await fetchDevices();
+      console.log('对话框打开后的设备列表数量:', deviceList.value.length);
+      console.log('可选择的设备列表:', JSON.stringify(deviceList.value, null, 2));
+      
+      testItemDialogVisible.value = true;
+    };
+
+    // 显示编辑测试项对话框
+    const handleEditTestItem = async (row) => {
+      console.log('编辑测试项，原始数据:', row);
+      if (!row || !row.id) {
+        console.error('编辑的行数据为空');
+        return;
+      }
+
+      testItemDialogTitle.value = '编辑测试项';
+      testItemLoading.value = true;
+
+      try {
+        // 每次编辑时都重新获取设备列表
+        await fetchDevices();
+        
+        // 设置表单数据，保留id用于区分编辑模式
+        testItemForm.id = row.id;
+        testItemForm.test_group_id = row.test_group_id;
+        testItemForm.device_id = row.device_id; // 直接使用原始值，不需要转换
+        testItemForm.point_index = parseInt(row.point_index) || 1;
+        testItemForm.description = row.description || '';
+        testItemForm.input_values = parseFloat(row.input_values) || 0;
+        testItemForm.expected_values = parseFloat(row.expected_values) || 0;
+        testItemForm.timeout = parseInt(row.timeout) || 5000;
+
+        console.log('表单数据设置完成:', testItemForm);
+      } catch (error) {
+        console.error('处理测试项数据失败:', error);
+        ElMessage.error('处理数据失败');
+      } finally {
+        testItemLoading.value = false;
+        testItemDialogVisible.value = true;
+      }
     };
 
     // 获取真值表列表
@@ -840,74 +996,26 @@ export default {
         return;
       }
       
+      console.log('开始加载测试组的测试项, 组ID:', groupId);
       testItemLoading.value = true;
-      console.log('开始加载测试项数据，组ID:', groupId);
       
       try {
         const response = await testItemApi.getByGroupId(groupId);
-        console.log('API响应:', response);
+        console.log('获取到的测试项数据:', response);
         
         if (Array.isArray(response)) {
-          testItems.value = response.map(item => ({
-            ...item,
-            device_id: parseInt(item.device_id),
-            point_index: parseInt(item.point_index)
-          }));
-          console.log('处理后的测试项列表:', testItems.value);
+          testItems.value = response;
+          console.log('测试项列表更新完成，数量:', testItems.value.length);
         } else {
           console.error('API返回数据格式错误:', response);
           testItems.value = [];
         }
       } catch (error) {
-        console.error('获取测试项失败:', error);
-        ElMessage.error('获取测试项失败');
+        console.error('加载测试项失败:', error);
+        ElMessage.error('加载测试项失败');
         testItems.value = [];
       } finally {
         testItemLoading.value = false;
-      }
-    };
-
-    // 显示创建测试项对话框
-    const showCreateTestItemDialog = () => {
-      testItemDialogTitle.value = '新建测试项';
-      testItemForm.test_group_id = currentTestGroup.value.id;
-      testItemForm.device_id = 1;
-      testItemForm.point_index = 1;
-      testItemForm.description = '';
-      testItemForm.input_values = 0;
-      testItemForm.expected_values = 0;
-      testItemForm.timeout = 5000;
-      testItemDialogVisible.value = true;
-    };
-
-    // 显示编辑测试项对话框
-    const handleEditTestItem = async (row) => {
-      console.log('编辑测试项，原始数据:', row);
-      if (!row || !row.id) {
-        console.error('编辑的行数据为空');
-        return;
-      }
-
-      testItemDialogTitle.value = '编辑测试项';
-      testItemLoading.value = true;
-
-      try {
-        testItemForm.id = row.id;
-        testItemForm.test_group_id = row.test_group_id;
-        testItemForm.device_id = parseInt(row.device_id) || 1;
-        testItemForm.point_index = parseInt(row.point_index) || 1;
-        testItemForm.description = row.description || '';
-        testItemForm.input_values = parseFloat(row.input_values) || 0;
-        testItemForm.expected_values = parseFloat(row.expected_values) || 0;
-        testItemForm.timeout = parseInt(row.timeout) || 5000;
-
-        console.log('表单数据设置完成:', testItemForm);
-      } catch (error) {
-        console.error('处理测试项数据失败:', error);
-        ElMessage.error('处理数据失败');
-      } finally {
-        testItemLoading.value = false;
-        testItemDialogVisible.value = true;
       }
     };
 
@@ -915,65 +1023,75 @@ export default {
     const handleTestItemSubmit = async () => {
       if (!testItemFormRef.value) return;
       
-      await testItemFormRef.value.validate(async (valid) => {
-        if (valid) {
-          try {
-            const data = {
-              test_group_id: testItemForm.test_group_id,
-              device_id: parseInt(testItemForm.device_id),
-              point_index: parseInt(testItemForm.point_index),
-              description: testItemForm.description,
-              input_values: parseFloat(testItemForm.input_values),
-              expected_values: parseFloat(testItemForm.expected_values),
-              timeout: parseInt(testItemForm.timeout)
-            };
-            
-            console.log('准备提交的表单数据:', testItemForm);
-            console.log('处理后的提交数据:', data);
-            
-            let response;
-            if (data.id) {
-              console.log('发送更新请求，ID:', data.id);
-              response = await testItemApi.update(data.id, data);
-            } else {
-              console.log('发送创建请求');
-              response = await testItemApi.create(data);
-            }
-            
-            console.log('API响应:', response);
-            
-            if (response.code === 201 || response.code === 200) {
-              ElMessage.success(response.message || '保存成功');
-              testItemDialogVisible.value = false;
-              await loadTestItems(currentTestGroup.value.id);
-            } else {
-              throw new Error(response.message || '保存失败');
-            }
-          } catch (error) {
-            console.error('保存测试项失败:', error);
-            ElMessage.error(error.message || '保存失败');
-          }
+      try {
+        await testItemFormRef.value.validate();
+        
+        const formData = {
+          test_group_id: testItemForm.test_group_id,
+          device_id: testItemForm.device_id,
+          point_index: testItemForm.point_index,
+          description: testItemForm.description,
+          input_values: testItemForm.input_values,
+          expected_values: testItemForm.expected_values,
+          timeout: testItemForm.timeout
+        };
+
+        let response;
+        if (testItemForm.id) {
+          // 编辑模式
+          response = await testItemApi.update(testItemForm.id, formData);
+          ElMessage.success('修改测试项成功');
         } else {
-          console.log('表单验证失败');
-          ElMessage.warning('请填写完整的表单信息');
+          // 新建模式
+          response = await testItemApi.create(formData);
+          ElMessage.success('创建测试项成功');
         }
-      });
+
+        testItemDialogVisible.value = false;
+        // 刷新当前测试组的测试项列表
+        if (currentTestGroup.value) {
+          handleTestGroupClick(currentTestGroup.value);
+        }
+      } catch (error) {
+        console.error('提交测试项失败:', error);
+        ElMessage.error('提交失败: ' + (error.message || '未知错误'));
+      }
     };
 
     // 处理删除测试项
     const handleDeleteTestItem = async (row) => {
+      console.log('准备删除测试项:', row);
       try {
         await ElMessageBox.confirm('确定要删除该测试项吗？', '提示', {
           type: 'warning'
         });
         
-        await testItemApi.delete(row.id);
+        console.log('发送删除请求，ID:', row.id);
+        const response = await testItemApi.delete(row.id);
+        console.log('删除响应:', response);
+        
+        // 204状态码表示删除成功
         ElMessage.success('删除成功');
-        loadTestItems(currentTestGroup.value.id);
+        
+        // 立即从本地列表中移除被删除的项
+        testItems.value = testItems.value.filter(item => item.id !== row.id);
+        console.log('本地列表更新后的测试项:', testItems.value);
+        
+        // 延迟一小段时间后重新加载列表，确保后端数据已更新
+        setTimeout(async () => {
+          if (currentTestGroup.value && currentTestGroup.value.id) {
+            console.log('重新加载测试项列表...');
+            await loadTestItems(currentTestGroup.value.id);
+            console.log('测试项列表已更新');
+          }
+        }, 100);
       } catch (error) {
         if (error !== 'cancel') {
           console.error('删除测试项失败:', error);
-          ElMessage.error('删除失败');
+          // 如果是网络错误或其他错误，才显示错误消息
+          if (error.response && error.response.status !== 204) {
+            ElMessage.error('删除失败: ' + (error.message || '未知错误'));
+          }
         }
       }
     };
@@ -1013,10 +1131,34 @@ export default {
       }
     };
 
+    const testItemRules = {
+      device_id: [
+        { required: true, message: '请选择设备', trigger: 'change' }
+      ],
+      point_index: [
+        { required: true, message: '请输入单元序号', trigger: 'blur' },
+        { type: 'number', min: 1, message: '单元序号必须大于0', trigger: 'blur' }
+      ],
+      input_values: [
+        { required: true, message: '请输入输入值', trigger: 'blur' },
+        { type: 'number', message: '输入值必须为数字', trigger: 'blur' }
+      ],
+      expected_values: [
+        { required: true, message: '请输入期望值', trigger: 'blur' },
+        { type: 'number', message: '期望值必须为数字', trigger: 'blur' }
+      ],
+      timeout: [
+        { required: true, message: '请输入超时时间', trigger: 'blur' },
+        { type: 'number', min: 1000, message: '超时时间必须大于1000ms', trigger: 'blur' }
+      ]
+    };
+
     onMounted(() => {
-      fetchTruthTables()
-      fetchAvailableDrawings()
-    })
+      console.log('组件挂载，开始初始化...');
+      fetchTruthTables();
+      fetchAvailableDrawings();
+      fetchDevices();
+    });
 
     return {
       // 数据
@@ -1077,7 +1219,12 @@ export default {
       handleDeleteTestItem,
       handleTestItemClick,
       handleTestGroupClick,
-      currentTestGroup
+      currentTestGroup,
+
+      // 设备列表相关
+      deviceList,
+      deviceListLoading,
+      sortedDeviceList,
     }
   }
 }

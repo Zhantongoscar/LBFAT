@@ -7,7 +7,15 @@ const deviceController = {
       console.log('=== 控制器开始处理请求 ===');
       console.log('查询参数:', req.query);
       
-      const devices = await Device.findAll(req.query);
+      const devices = await Device.findAll({
+        attributes: ['id', 'project_name', 'module_type', 'serial_number', 'status', 'rssi'],
+        order: [
+          ['project_name', 'ASC'],
+          ['module_type', 'ASC'],
+          ['serial_number', 'ASC']
+        ]
+      });
+
       console.log('=== 控制器收到查询结果 ===');
       console.log('devices类型:', typeof devices);
       console.log('devices是否为数组:', Array.isArray(devices));
