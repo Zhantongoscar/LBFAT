@@ -180,55 +180,86 @@
               :data="testItems" 
               style="width: 100%" 
               v-loading="testItemLoading"
-              max-height="400"
-              row-key="id"
+              :max-height="400"
             >
-              <el-table-column
-                prop="id"
-                label="ID"
-                width="80"
-              />
-              <el-table-column
-                prop="device_id"
-                label="设备"
-                width="200"
-              >
+              <el-table-column prop="id" label="ID" width="60" />
+              <el-table-column prop="device_id" label="设备" width="160">
                 <template #default="{ row }">
-                  <span v-if="row.device">
-                    {{ row.device.project_name }}-{{ row.device.module_type }}-{{ row.device.serial_number }}
-                  </span>
-                  <span v-else>{{ row.device_id }}</span>
+                  {{ row.device_id }}
                 </template>
               </el-table-column>
-              <el-table-column
-                prop="point_index"
-                label="单元序号"
-                width="100"
-              />
-              <el-table-column
-                prop="description"
-                label="描述"
-              />
-              <el-table-column
-                label="操作"
-                width="150"
-                fixed="right"
-              >
+              <el-table-column prop="point_index" label="单元序号" width="100" />
+              <el-table-column prop="description" label="描述" min-width="200" />
+              <el-table-column label="输入值" width="150">
                 <template #default="{ row }">
-                  <el-button
-                    size="small"
-                    type="primary"
-                    @click.stop="handleEditTestItem(row)"
-                  >
-                    编辑
-                  </el-button>
-                  <el-button
-                    size="small"
-                    type="danger"
-                    @click.stop="handleDeleteTestItem(row)"
-                  >
-                    删除
-                  </el-button>
+                  <div class="value-input-container">
+                    <el-input
+                      v-model="row.input_values"
+                      type="number"
+                      step="0.01"
+                      style="width: 100px"
+                    >
+                      <template #append>
+                        <el-dropdown @command="(val) => handleQuickSelect(row, 'input_values', val)">
+                          <span class="el-dropdown-link">
+                            <el-icon><arrow-down /></el-icon>
+                          </span>
+                          <template #dropdown>
+                            <el-dropdown-menu>
+                              <el-dropdown-item :command="0">0</el-dropdown-item>
+                              <el-dropdown-item :command="100">100</el-dropdown-item>
+                            </el-dropdown-menu>
+                          </template>
+                        </el-dropdown>
+                      </template>
+                    </el-input>
+                  </div>
+                </template>
+              </el-table-column>
+              <el-table-column label="预期值" width="150">
+                <template #default="{ row }">
+                  <div class="value-input-container">
+                    <el-input
+                      v-model="row.expected_values"
+                      type="number"
+                      step="0.01"
+                      style="width: 100px"
+                    >
+                      <template #append>
+                        <el-dropdown @command="(val) => handleQuickSelect(row, 'expected_values', val)">
+                          <span class="el-dropdown-link">
+                            <el-icon><arrow-down /></el-icon>
+                          </span>
+                          <template #dropdown>
+                            <el-dropdown-menu>
+                              <el-dropdown-item :command="0">0</el-dropdown-item>
+                              <el-dropdown-item :command="100">100</el-dropdown-item>
+                            </el-dropdown-menu>
+                          </template>
+                        </el-dropdown>
+                      </template>
+                    </el-input>
+                  </div>
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="120" fixed="right">
+                <template #default="{ row }">
+                  <el-button-group>
+                    <el-button 
+                      type="primary" 
+                      size="small" 
+                      @click="handleEditTestItem(row)"
+                    >
+                      编辑
+                    </el-button>
+                    <el-button 
+                      type="danger" 
+                      size="small" 
+                      @click="handleDeleteTestItem(row)"
+                    >
+                      删除
+                    </el-button>
+                  </el-button-group>
                 </template>
               </el-table-column>
             </el-table>
@@ -1152,6 +1183,12 @@ export default {
       ]
     };
 
+    // 添加快速选择处理方法
+    const handleQuickSelect = (row, field, value) => {
+      row[field] = value;
+      handleValueChange(row);
+    };
+
     onMounted(() => {
       console.log('组件挂载，开始初始化...');
       fetchTruthTables();
@@ -1224,6 +1261,9 @@ export default {
       deviceList,
       deviceListLoading,
       sortedDeviceList,
+
+      // 快速选择处理方法
+      handleQuickSelect,
     }
   }
 }
@@ -1297,5 +1337,38 @@ export default {
 .el-divider--vertical {
   margin: 0 12px;
   height: 20px;
+}
+
+.el-input-number {
+  width: 100%;
+}
+
+.el-button-group {
+  display: flex;
+  gap: 5px;
+}
+
+.el-button-group .el-button {
+  margin-left: 0;
+}
+
+.value-input-container {
+  display: flex;
+  align-items: center;
+}
+
+.el-dropdown-link {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 0 5px;
+}
+
+:deep(.el-input-group__append) {
+  padding: 0;
+}
+
+:deep(.el-input__wrapper) {
+  padding-right: 0;
 }
 </style> 
