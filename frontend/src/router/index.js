@@ -12,7 +12,10 @@ import { useUserStore } from '../stores/user'
 const routes = [
   {
     path: '/',
-    redirect: '/projects'
+    redirect: to => {
+      const userStore = useUserStore()
+      return userStore.isAdmin ? '/projects' : '/test/execution'
+    }
   },
   {
     path: '/login',
@@ -25,21 +28,30 @@ const routes = [
     path: '/projects',
     name: 'ProjectList',
     component: ProjectList,
-    meta: { requiresAuth: true }
+    meta: { 
+      requiresAuth: true,
+      requiresAdmin: true
+    }
   },
   // 设备管理
   {
     path: '/devices',
     name: 'DeviceList',
     component: DeviceList,
-    meta: { requiresAuth: true }
+    meta: { 
+      requiresAuth: true,
+      requiresAdmin: true
+    }
   },
   // 设备配置
   {
     path: '/device-config',
     name: 'DeviceConfig',
     component: DeviceConfig,
-    meta: { requiresAuth: true }
+    meta: { 
+      requiresAuth: true,
+      requiresAdmin: true
+    }
   },
   // 消息列表
   {
@@ -60,7 +72,10 @@ const routes = [
     path: '/drawings',
     name: 'DrawingManager',
     component: DrawingManager,
-    meta: { requiresAuth: true }
+    meta: { 
+      requiresAuth: true,
+      requiresAdmin: true
+    }
   },
   // 用户管理（仅管理员可访问）
   {
@@ -80,17 +95,23 @@ const routes = [
       {
         path: 'template',
         name: 'TemplateManager',
-        component: () => import('../views/test/TemplateManager.vue')
+        component: () => import('../views/test/TemplateManager.vue'),
+        meta: {
+          requiresAuth: true,
+          requiresAdmin: true
+        }
       },
       {
         path: 'execution',
         name: 'TestExecution',
-        component: () => import('../views/test/TestExecution.vue')
+        component: () => import('../views/test/TestExecution.vue'),
+        meta: { requiresAuth: true }
       },
       {
         path: 'report',
         name: 'TestReport',
-        component: () => import('../views/test/TestReport.vue')
+        component: () => import('../views/test/TestReport.vue'),
+        meta: { requiresAuth: true }
       }
     ]
   }
@@ -105,9 +126,9 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const userStore = useUserStore()
   
-  // 如果用户已登录且要去登录��，重定向到首页
+  // 如果用户已登录且要去登录页，重定向到对应的首页
   if (to.path === '/login' && userStore.isAuthenticated) {
-    next('/projects')
+    next(userStore.isAdmin ? '/projects' : '/test/execution')
     return
   }
   
@@ -127,7 +148,7 @@ router.beforeEach((to, from, next) => {
   
   // 需要管理员权限但不是管理员
   if (to.meta.requiresAdmin && !userStore.isAdmin) {
-    next('/projects')
+    next('/test/execution')  // 重定向到测试执行页面
     return
   }
   

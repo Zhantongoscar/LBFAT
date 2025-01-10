@@ -61,11 +61,11 @@
               <el-icon><Tools /></el-icon>
               <span>测试管理</span>
             </template>
-            <el-menu-item index="/test/template">
+            <el-menu-item index="/test/template" v-if="userStore.isAdmin">
               <el-icon><Document /></el-icon>
               <template #title>真值表管理</template>
             </el-menu-item>
-            <el-menu-item index="/projects" title="配置检查设备的mqtt 订阅topic">
+            <el-menu-item index="/projects" title="配置检查设备的mqtt 订阅topic" v-if="userStore.isAdmin">
               <el-icon><Document /></el-icon>
               <template #title>订阅管理</template>
             </el-menu-item>
@@ -83,11 +83,11 @@
               <el-icon><Monitor /></el-icon>
               <span>设备</span>
             </template>
-            <el-menu-item index="/device-config" title="定义测试设备的类型和子通道类型">
+            <el-menu-item index="/device-config" title="定义测试设备的类型和子通道类型" v-if="userStore.isAdmin">
               <el-icon><Setting /></el-icon>
               <template #title>设备定义</template>
             </el-menu-item>
-            <el-menu-item index="/devices" title="本测试装置使用测试设备的订阅维护">
+            <el-menu-item index="/devices" title="本测试装置使用测试设备的订阅维护" v-if="userStore.isAdmin">
               <el-icon><Monitor /></el-icon>
               <template #title>在用设备</template>
             </el-menu-item>
@@ -96,7 +96,7 @@
               <template #title>设备测试</template>
             </el-menu-item>
           </el-sub-menu>
-          <el-menu-item index="/drawings">
+          <el-menu-item index="/drawings" v-if="userStore.isAdmin">
             <el-icon><Picture /></el-icon>
             <template #title>图纸管理</template>
           </el-menu-item>
