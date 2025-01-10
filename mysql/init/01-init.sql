@@ -3,12 +3,36 @@ SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- 创建并使用数据库
+DROP DATABASE IF EXISTS lbfat;
 CREATE DATABASE IF NOT EXISTS lbfat;
 USE lbfat;
 
 -- =====================================================
 -- 表结构定义
 -- =====================================================
+
+-- 设备类型表
+CREATE TABLE IF NOT EXISTS device_types (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    type_name VARCHAR(50) NOT NULL UNIQUE,
+    point_count INT NOT NULL,
+    description TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) COMMENT '设备类型定义表';
+
+-- 设备点位表
+CREATE TABLE IF NOT EXISTS device_type_points (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    device_type_id INT NOT NULL,
+    point_index INT NOT NULL,
+    point_type ENUM('DI','DO','AI','AO') NOT NULL,
+    point_name VARCHAR(50) NOT NULL,
+    description TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (device_type_id) REFERENCES device_types(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_point (device_type_id, point_index)
+) COMMENT '设备点位配置表';
 
 -- 用户表
 CREATE TABLE IF NOT EXISTS users (
@@ -64,29 +88,6 @@ CREATE TABLE IF NOT EXISTS mqtt_subscriptions (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) COMMENT 'MQTT订阅配置表';
-
--- 设备类型表
-CREATE TABLE IF NOT EXISTS device_types (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    type_name VARCHAR(50) NOT NULL UNIQUE,
-    point_count INT NOT NULL,
-    description TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) COMMENT '设备类型定义表';
-
--- 设备点位表
-CREATE TABLE IF NOT EXISTS device_type_points (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    device_type_id INT NOT NULL,
-    point_index INT NOT NULL,
-    point_type ENUM('DI','DO','AI','AO') NOT NULL,
-    point_name VARCHAR(50) NOT NULL,
-    description TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (device_type_id) REFERENCES device_types(id) ON DELETE CASCADE,
-    UNIQUE KEY unique_point (device_type_id, point_index)
-) COMMENT '设备点位配置表';
 
 -- 图纸表
 CREATE TABLE IF NOT EXISTS drawings (
@@ -176,10 +177,26 @@ ON DUPLICATE KEY UPDATE status = 'offline';
 INSERT INTO mqtt_subscriptions (topic, qos, is_active) VALUES
 ('lb_test/+/+/status', 1, TRUE);
 
--- 插入设备类型
-INSERT INTO device_types (id, type_name, point_count, description) VALUES
-(1, 'EDB', 20, 'EDB设备：20个点位配置（7DI + 3DO + 7DI + 3DI）'),
-(2, 'EBD', 20, 'EBD设备：20个点位配置（7DO + 3DI + 10DO）');
+-- 插入设备类型数据
+INSERT INTO device_types (type_name, point_count, description) VALUES
+('EDB', 20, '增强模块 EDB：20点（7DI + 3DO + 7DI + 3DI）'),
+('EBD', 20, '增强模块 EBD：20点（7DO + 3DI + 10DO）'),
+('EA', 20, '增强模块 EA：20点（14DO + 6DI）'),
+('EC', 20, '增强模块 EC：20点（14DO + 6DI）'),
+('EF', 20, '增强模块 EF：20点（20DI）'),
+('EW', 20, '增强模块 EW：20点（6DI + 2DO + 12DI）'),
+('PDI', 16, '增强模块 PDI：16点（16DI）'),
+('PDO', 16, '增强模块 PDO：16点（16DO）'),
+('PAI', 16, '增强模块 PAI：16点（16AI）'),
+('PAO', 16, '增强模块 PAO：16点（16AO）'),
+('HI', 20, '增强模块 HI：20点（20AI）'),
+('HO', 20, '增强模块 HO：20点（20AO）'),
+('D', 6, '普通模板 D：6点（6DI）'),
+('B', 6, '普通模板 B：6点（6DO）'),
+('A', 6, '普通模板 A：6点（6DO）'),
+('C', 6, '普通模板 C：6点（6DO）'),
+('F', 6, '普通模板 F：6点（6DI）'),
+('W', 6, '普通模板 W：6点（6DI）');
 
 -- 插入EDB设备点位配置
 INSERT INTO device_type_points (device_type_id, point_index, point_type, point_name, description) VALUES
@@ -262,6 +279,60 @@ INSERT INTO test_items (test_group_id, device_id, point_index, name, description
 (3, 3, 1, '电机启动测试', '验证电机启动控制功能', 0, 1, 1, 5000),
 (3, 2, 2, '电机运行测试', '验证电机运行状态检测', 1, 1, 0, 5000),
 (4, 3, 1, '电机停止测试', '验证电机停止控制功能', 0, 0, 1, 5000);
+
+-- 插入D设备点位配置（6个DI点位）
+INSERT INTO device_type_points (device_type_id, point_index, point_type, point_name, description) VALUES
+((SELECT id FROM device_types WHERE type_name = 'D'), 0, 'DI', 'DI1', 'D数字输入点1'),
+((SELECT id FROM device_types WHERE type_name = 'D'), 1, 'DI', 'DI2', 'D数字输入点2'),
+((SELECT id FROM device_types WHERE type_name = 'D'), 2, 'DI', 'DI3', 'D数字输入点3'),
+((SELECT id FROM device_types WHERE type_name = 'D'), 3, 'DI', 'DI4', 'D数字输入点4'),
+((SELECT id FROM device_types WHERE type_name = 'D'), 4, 'DI', 'DI5', 'D数字输入点5'),
+((SELECT id FROM device_types WHERE type_name = 'D'), 5, 'DI', 'DI6', 'D数字输入点6');
+
+-- 插入B设备点位配置（6个DO点位）
+INSERT INTO device_type_points (device_type_id, point_index, point_type, point_name, description) VALUES
+((SELECT id FROM device_types WHERE type_name = 'B'), 0, 'DO', 'DO1', 'B数字输出点1'),
+((SELECT id FROM device_types WHERE type_name = 'B'), 1, 'DO', 'DO2', 'B数字输出点2'),
+((SELECT id FROM device_types WHERE type_name = 'B'), 2, 'DO', 'DO3', 'B数字输出点3'),
+((SELECT id FROM device_types WHERE type_name = 'B'), 3, 'DO', 'DO4', 'B数字输出点4'),
+((SELECT id FROM device_types WHERE type_name = 'B'), 4, 'DO', 'DO5', 'B数字输出点5'),
+((SELECT id FROM device_types WHERE type_name = 'B'), 5, 'DO', 'DO6', 'B数字输出点6');
+
+-- 插入A设备点位配置（6个DO点位）
+INSERT INTO device_type_points (device_type_id, point_index, point_type, point_name, description) VALUES
+((SELECT id FROM device_types WHERE type_name = 'A'), 0, 'DO', 'DO1', 'A数字输出点1'),
+((SELECT id FROM device_types WHERE type_name = 'A'), 1, 'DO', 'DO2', 'A数字输出点2'),
+((SELECT id FROM device_types WHERE type_name = 'A'), 2, 'DO', 'DO3', 'A数字输出点3'),
+((SELECT id FROM device_types WHERE type_name = 'A'), 3, 'DO', 'DO4', 'A数字输出点4'),
+((SELECT id FROM device_types WHERE type_name = 'A'), 4, 'DO', 'DO5', 'A数字输出点5'),
+((SELECT id FROM device_types WHERE type_name = 'A'), 5, 'DO', 'DO6', 'A数字输出点6');
+
+-- 插入C设备点位配置（6个DO点位）
+INSERT INTO device_type_points (device_type_id, point_index, point_type, point_name, description) VALUES
+((SELECT id FROM device_types WHERE type_name = 'C'), 0, 'DO', 'DO1', 'C数字输出点1'),
+((SELECT id FROM device_types WHERE type_name = 'C'), 1, 'DO', 'DO2', 'C数字输出点2'),
+((SELECT id FROM device_types WHERE type_name = 'C'), 2, 'DO', 'DO3', 'C数字输出点3'),
+((SELECT id FROM device_types WHERE type_name = 'C'), 3, 'DO', 'DO4', 'C数字输出点4'),
+((SELECT id FROM device_types WHERE type_name = 'C'), 4, 'DO', 'DO5', 'C数字输出点5'),
+((SELECT id FROM device_types WHERE type_name = 'C'), 5, 'DO', 'DO6', 'C数字输出点6');
+
+-- 插入F设备点位配置（6个DI点位）
+INSERT INTO device_type_points (device_type_id, point_index, point_type, point_name, description) VALUES
+((SELECT id FROM device_types WHERE type_name = 'F'), 0, 'DI', 'DI1', 'F数字输入点1'),
+((SELECT id FROM device_types WHERE type_name = 'F'), 1, 'DI', 'DI2', 'F数字输入点2'),
+((SELECT id FROM device_types WHERE type_name = 'F'), 2, 'DI', 'DI3', 'F数字输入点3'),
+((SELECT id FROM device_types WHERE type_name = 'F'), 3, 'DI', 'DI4', 'F数字输入点4'),
+((SELECT id FROM device_types WHERE type_name = 'F'), 4, 'DI', 'DI5', 'F数字输入点5'),
+((SELECT id FROM device_types WHERE type_name = 'F'), 5, 'DI', 'DI6', 'F数字输入点6');
+
+-- 插入W设备点位配置（6个DI点位）
+INSERT INTO device_type_points (device_type_id, point_index, point_type, point_name, description) VALUES
+((SELECT id FROM device_types WHERE type_name = 'W'), 0, 'DI', 'DI1', 'W数字输入点1'),
+((SELECT id FROM device_types WHERE type_name = 'W'), 1, 'DI', 'DI2', 'W数字输入点2'),
+((SELECT id FROM device_types WHERE type_name = 'W'), 2, 'DI', 'DI3', 'W数字输入点3'),
+((SELECT id FROM device_types WHERE type_name = 'W'), 3, 'DI', 'DI4', 'W数字输入点4'),
+((SELECT id FROM device_types WHERE type_name = 'W'), 4, 'DI', 'DI5', 'W数字输入点5'),
+((SELECT id FROM device_types WHERE type_name = 'W'), 5, 'DI', 'DI6', 'W数字输入点6');
 
 -- 开启外键检查
 SET FOREIGN_KEY_CHECKS = 1;
