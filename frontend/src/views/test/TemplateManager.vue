@@ -43,13 +43,13 @@
                   :row-class-name="tableRowClassName"
                   max-height="200"
                 >
-                  <el-table-column prop="name" label="名称" />
-                  <el-table-column label="图纸编号" width="120">
+                  <el-table-column prop="name" label="名称" width="300" />
+                  <el-table-column label="图纸编号" width="180">
                     <template #default="{ row }">
                       {{ getDrawingNumber(row.drawing_id) }}
                     </template>
                   </el-table-column>
-                  <el-table-column prop="version" label="版本" width="80" />
+                  <el-table-column prop="version" label="版本" width="120" />
                   <el-table-column label="操作" width="280" fixed="right">
                     <template #default="{ row }">
                       <el-button-group>
