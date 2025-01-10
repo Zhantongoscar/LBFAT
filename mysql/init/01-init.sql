@@ -266,19 +266,28 @@ INSERT INTO truth_tables (id, name, drawing_id, version, description) VALUES
 
 -- 插入测试组数据
 INSERT INTO test_groups (id, truth_table_id, level, description, sequence) VALUES
-(1, 1, 1, '安全开关检查组', 0),
-(2, 1, 0, '安全联锁测试组', 1),
-(3, 2, 1, '电机启动测试组', 0),
-(4, 2, 0, '电机运行测试组', 1);
+(1, 1, 1, '双DI组', 0),
+(2, 1, 1, '双DO组', 1),
+(3, 1, 1, 'DIDO组', 2),
+(4, 1, 1, 'DODI组', 3);
 
 -- 插入测试项数据
 INSERT INTO test_items (test_group_id, device_id, point_index, name, description, sequence, input_values, expected_values, timeout) VALUES
-(1, 1, 1, '安全开关合闸测试', '检查安全开关合闸状态下的', 0, 0, 1, 5000),
-(1, 1, 1, '安全开关打开测试', '检查安全开关打开状态下的', 1, 1, 0, 5000),
-(2, 2, 2, '安全锁锁闭测试', '验证安全锁锁闭功能是否正常', 0, 1, 0, 5000),
-(3, 3, 1, '电机启动测试', '验证电机启动控制功能', 0, 1, 1, 5000),
-(3, 2, 2, '电机运行测试', '验证电机运行状态检测', 1, 1, 0, 5000),
-(4, 3, 1, '电机停止测试', '验证电机停止控制功能', 0, 0, 1, 5000);
+-- 双DI组测试项
+(1, 1, 8, 'DI1测试', '测试DI1输入', 0, 1, 1, 5000),
+(1, 1, 9, 'DI2测试', '测试DI2输入', 1, 1, 1, 5000),
+
+-- 双DO组测试项
+(2, 1, 0, 'DO1测试', '测试DO1输出', 0, 1, 1, 5000),
+(2, 1, 1, 'DO2测试', '测试DO2输出', 1, 1, 1, 5000),
+
+-- DIDO组测试项
+(3, 1, 8, 'DI输入测试', '测试DI输入信号', 0, 1, 1, 5000),
+(3, 1, 0, 'DO输出测试', '测试DO输出信号', 1, 1, 1, 5000),
+
+-- DODI组测试项
+(4, 1, 0, 'DO输出测试', '测试DO输出信号', 0, 1, 1, 5000),
+(4, 1, 8, 'DI输入测试', '测试DI输入信号', 1, 1, 1, 5000);
 
 -- 插入D设备点位配置（6个DI点位）
 INSERT INTO device_type_points (device_type_id, point_index, point_type, point_name, description) VALUES
