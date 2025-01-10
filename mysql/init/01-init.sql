@@ -274,20 +274,20 @@ INSERT INTO test_groups (id, truth_table_id, level, description, sequence) VALUE
 -- 插入测试项数据
 INSERT INTO test_items (test_group_id, device_id, point_index, name, description, sequence, input_values, expected_values, timeout) VALUES
 -- 双DI组测试项
-(1, 1, 8, 'DI1测试', '测试DI1输入', 0, 1, 1, 5000),
-(1, 1, 9, 'DI2测试', '测试DI2输入', 1, 1, 1, 5000),
+(1, 1, 8, 'DI1测试', '测试DI1输入', 0, 0, 0, 5000),
+(1, 1, 9, 'DI2测试', '测试DI2输入', 1, 0, 0, 5000),
 
 -- 双DO组测试项
-(2, 1, 0, 'DO1测试', '测试DO1输出', 0, 1, 1, 5000),
-(2, 1, 1, 'DO2测试', '测试DO2输出', 1, 1, 1, 5000),
+(2, 1, 0, 'DO1测试', '测试DO1输出', 0, 0, 0, 5000),
+(2, 1, 1, 'DO2测试', '测试DO2输出', 1, 0, 0, 5000),
 
 -- DIDO组测试项
-(3, 1, 8, 'DI输入测试', '测试DI输入信号', 0, 1, 1, 5000),
-(3, 1, 0, 'DO输出测试', '测试DO输出信号', 1, 1, 1, 5000),
+(3, 1, 8, 'DI输入测试', '测试DI输入信号', 0, 0, 0, 5000),
+(3, 1, 0, 'DO输出测试', '测试DO输出信号', 1, 0, 0, 5000),
 
 -- DODI组测试项
-(4, 1, 0, 'DO输出测试', '测试DO输出信号', 0, 1, 1, 5000),
-(4, 1, 8, 'DI输入测试', '测试DI输入信号', 1, 1, 1, 5000);
+(4, 1, 0, 'DO输出测试', '测试DO输出信号', 0, 0, 0, 5000),
+(4, 1, 8, 'DI输入测试', '测试DI输入信号', 1, 0, 0, 5000);
 
 -- 插入D设备点位配置（6个DI点位）
 INSERT INTO device_type_points (device_type_id, point_index, point_type, point_name, description) VALUES
