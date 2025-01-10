@@ -1,116 +1,124 @@
 <template>
   <div class="device-test">
-    <div class="header-actions">
-      <el-select 
-        v-model="selectedDevice" 
-        placeholder="请选择设备"
-        :loading="loading"
-        @change="handleDeviceChange"
-        style="width: 300px"
-      >
-        <el-option
-          v-for="device in devices"
-          :key="`${device.project_name}-${device.module_type}-${device.serial_number}`"
-          :label="`${device.project_name}-${device.module_type}-${device.serial_number}`"
-          :value="device"
-          :disabled="device.status !== 'online'"
-        >
-          <span>{{ device.project_name }}-{{ device.module_type }}-{{ device.serial_number }}</span>
-          <el-tag size="small" :type="device.status === 'online' ? 'success' : 'danger'" style="margin-left: 8px">
-            {{ device.status === 'online' ? '在线' : '离线' }}
-          </el-tag>
-        </el-option>
-      </el-select>
-      <el-button @click="refreshDeviceList" :loading="loading">刷新设备列表</el-button>
-    </div>
+    <div class="main-content">
+      <!-- 左侧面板 -->
+      <div class="left-panel">
+        <div class="header-actions">
+          <el-select 
+            v-model="selectedDevice" 
+            placeholder="请选择设备"
+            :loading="loading"
+            @change="handleDeviceChange"
+          >
+            <el-option
+              v-for="device in devices"
+              :key="`${device.project_name}-${device.module_type}-${device.serial_number}`"
+              :label="`${device.project_name}-${device.module_type}-${device.serial_number}`"
+              :value="device"
+              :disabled="device.status !== 'online'"
+            >
+              <span>{{ device.project_name }}-{{ device.module_type }}-{{ device.serial_number }}</span>
+              <el-tag size="small" :type="device.status === 'online' ? 'success' : 'danger'" style="margin-left: 8px">
+                {{ device.status === 'online' ? '在线' : '离线' }}
+              </el-tag>
+            </el-option>
+          </el-select>
+          <el-button @click="refreshDeviceList" :loading="loading" style="width: 100%">刷新设备列表</el-button>
+        </div>
 
-    <div class="command-form" v-if="selectedDevice">
-      <div class="channel-control">
-        <span class="channel-label">通道号</span>
-        <el-input-number v-model="form.channel" :min="1" :max="20" />
-      </div>
-      
-      <div class="command-buttons">
-        <el-button type="primary" @click="handleRead" :disabled="!selectedDevice">读取</el-button>
-        <el-input v-model="form.value" placeholder="写入值" style="width: 100px" />
-        <el-button type="success" @click="handleWrite" :disabled="!selectedDevice">写入</el-button>
-      </div>
-    </div>
+        <div class="command-form" v-if="selectedDevice">
+          <div class="channel-control">
+            <span class="channel-label">通道号</span>
+            <el-input-number v-model="form.channel" :min="1" :max="20" style="width: 120px" />
+          </div>
+          
+          <div class="command-buttons">
+            <el-button type="primary" @click="handleRead" :disabled="!selectedDevice" style="width: 80px">读取</el-button>
+            <el-input v-model="form.value" placeholder="写入值" />
+            <el-button type="success" @click="handleWrite" :disabled="!selectedDevice" style="width: 80px">写入</el-button>
+          </div>
+        </div>
 
-    <div class="message-log">
-      <div class="message-header">
-        <h3>消息记录</h3>
-        <el-button @click="clearMessages">清空记录</el-button>
-      </div>
-      
-      <div v-if="messages.length === 0" class="no-data">
-        暂无消息记录
-      </div>
-      
-      <div v-else class="message-list">
-        <div v-for="(message, index) in messages" :key="index" class="message-item">
-          <div class="message-content" @click="showMessageDetail(message)">
-            <span class="time">{{ new Date(message.time).toLocaleTimeString() }}</span>
-            <span class="type">{{ message.type === 'send' ? '发送' : '接收' }}</span>
-            <span class="device" v-if="selectedDevice">{{ selectedDevice.project_name }}/{{ selectedDevice.module_type }}/{{ selectedDevice.serial_number }}</span>
-            <span class="channel">通道: {{ message.channel }}</span>
-            <span class="value">{{ getDisplayValue(message) }}</span>
+        <!-- 消息记录移到这里 -->
+        <div class="message-log">
+          <div class="message-header">
+            <h3>消息记录</h3>
+            <el-button @click="clearMessages">清空记录</el-button>
+          </div>
+          
+          <div v-if="messages.length === 0" class="no-data">
+            暂无消息记录
+          </div>
+          
+          <div v-else class="message-list">
+            <div v-for="(message, index) in messages" :key="index" class="message-item">
+              <div class="message-content" @click="showMessageDetail(message)">
+                <span class="time">{{ new Date(message.time).toLocaleTimeString() }}</span>
+                <span class="type">{{ message.type === 'send' ? '发送' : '接收' }}</span>
+                <span class="device" v-if="selectedDevice">{{ selectedDevice.project_name }}/{{ selectedDevice.module_type }}/{{ selectedDevice.serial_number }}</span>
+                <span class="channel">通道: {{ message.channel }}</span>
+                <span class="value">{{ getDisplayValue(message) }}</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Online Logs and Command Logs -->
-    <div class="logs-section">
-      <el-collapse v-model="activeCollapse">
-        <el-collapse-item name="1">
-          <template #title>
-            <div class="collapse-title">
-              <i class="el-icon-arrow-right"></i>
-              <span class="title-text">消息记录</span>
-            </div>
-          </template>
-          <div class="logs-content">
-            <div class="logs-header">
-              <h4>Online Logs</h4>
-              <el-button type="primary" size="small" @click="clearDeviceStatusMessages">
-                清除显示
-              </el-button>
-            </div>
-            <el-table :data="deviceStatusMessages" style="width: 100%" height="200" size="small">
-              <el-table-column prop="timestamp" label="时间" width="180" />
-              <el-table-column prop="deviceId" label="设备ID" width="120" />
-              <el-table-column prop="status" label="状态" width="100">
-                <template #default="scope">
-                  <el-tag size="small" :type="scope.row.status === 'online' ? 'success' : 'danger'">
-                    {{ scope.row.status === 'online' ? '上线' : '下线' }}
-                  </el-tag>
-                </template>
-              </el-table-column>
-              <el-table-column prop="message" label="消息内容" />
-            </el-table>
+      <!-- 右侧面板 -->
+      <div class="right-panel">
+        <!-- Online Logs and Command Logs -->
+        <div class="logs-section">
+          <el-collapse v-model="activeCollapse">
+            <el-collapse-item name="1">
+              <template #title>
+                <div class="collapse-title">
+                  <i class="el-icon-arrow-right"></i>
+                  <span class="title-text">消息记录</span>
+                </div>
+              </template>
+              <div class="logs-content">
+                <div class="logs-header">
+                  <h4>Online Logs</h4>
+                  <el-button type="primary" size="small" @click="clearDeviceStatusMessages">
+                    清除显示
+                  </el-button>
+                </div>
+                <el-table :data="deviceStatusMessages" style="width: 100%" height="200" size="small">
+                  <el-table-column prop="timestamp" label="时间" width="180" />
+                  <el-table-column prop="deviceId" label="设备ID" width="120" />
+                  <el-table-column prop="status" label="状态" width="100">
+                    <template #default="scope">
+                      <el-tag size="small" :type="scope.row.status === 'online' ? 'success' : 'danger'">
+                        {{ scope.row.status === 'online' ? '上线' : '下线' }}
+                      </el-tag>
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="message" label="消息内容" />
+                </el-table>
 
-            <div class="logs-header" style="margin-top: 20px;">
-              <h4>Command Logs</h4>
-              <el-button type="primary" size="small" @click="clearDeviceCommands">
-                清除显示
-              </el-button>
-            </div>
-            <el-table :data="deviceCommands" style="width: 100%" height="200" size="small">
-              <el-table-column label="报文信息">
-                <template #default="scope">
-                  <div style="white-space: pre-line;">
-                    {{ scope.row.timestamp }}
-                    Topic: {{ scope.row.rawTopic }}
-                    QoS: 0
-                    {{ scope.row.content }}
-                  </div>
-                </template>
-              </el-table-column>
-            </el-table>
-          </div>
-        </el-collapse-item>
-      </el-collapse>
+                <div class="logs-header" style="margin-top: 20px;">
+                  <h4>Command Logs</h4>
+                  <el-button type="primary" size="small" @click="clearDeviceCommands">
+                    清除显示
+                  </el-button>
+                </div>
+                <el-table :data="deviceCommands" style="width: 100%" height="200" size="small">
+                  <el-table-column label="报文信息">
+                    <template #default="scope">
+                      <div style="white-space: pre-line;">
+                        {{ scope.row.timestamp }}
+                        Topic: {{ scope.row.rawTopic }}
+                        QoS: 0
+                        {{ scope.row.content }}
+                      </div>
+                    </template>
+                  </el-table-column>
+                </el-table>
+              </div>
+            </el-collapse-item>
+          </el-collapse>
+        </div>
+      </div>
     </div>
 
     <el-dialog v-model="messageDetailVisible" title="消息详情" width="600px">
@@ -433,19 +441,50 @@ export default {
 <style scoped>
 .device-test {
   padding: 20px;
+  height: 100%;
+}
+
+.main-content {
+  display: flex;
+  gap: 20px;
+  height: calc(100vh - 100px);
+}
+
+.left-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+  max-width: 50%;
+  overflow-y: auto; /* 添加滚动条 */
+}
+
+.right-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  max-width: 50%;
+  height: 100%;
 }
 
 .header-actions {
-  margin-bottom: 20px;
   display: flex;
+  flex-direction: column;
   gap: 10px;
+  width: 100%;
+}
+
+.header-actions .el-select {
+  width: 100% !important;
 }
 
 .command-form {
-  margin-bottom: 20px;
-  padding: 20px;
+  padding: 15px;
   background-color: #f5f7fa;
   border-radius: 4px;
+  width: 100%;
 }
 
 .channel-control {
@@ -453,6 +492,7 @@ export default {
   display: flex;
   align-items: center;
   gap: 10px;
+  width: 100%;
 }
 
 .channel-label {
@@ -463,17 +503,30 @@ export default {
   display: flex;
   gap: 10px;
   align-items: center;
+  width: 100%;
+}
+
+.command-buttons .el-input {
+  flex: 1;
+  min-width: 0;
 }
 
 .message-log {
-  margin-bottom: 20px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: #fff;
+  border-radius: 4px;
+  border: 1px solid #e4e7ed;
+  min-height: 300px; /* 设置最小高度 */
 }
 
 .message-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
+  padding: 10px;
+  border-bottom: 1px solid #e4e7ed;
 }
 
 .message-header h3 {
@@ -481,10 +534,9 @@ export default {
 }
 
 .message-list {
-  border: 1px solid #e4e7ed;
-  border-radius: 4px;
-  max-height: 300px;
+  flex: 1;
   overflow-y: auto;
+  padding: 10px;
 }
 
 .message-item {
@@ -530,24 +582,17 @@ export default {
   color: #909399;
 }
 
-.section-card {
-  margin-bottom: 20px;
-}
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.logs-section {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
-/* 添加折叠面板样式 */
-:deep(.el-collapse-item__header) {
-  padding: 0 20px;
-  background-color: #f5f7fa;
-}
-
-:deep(.el-collapse-item__content) {
+.logs-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
   padding: 20px;
 }
 
@@ -561,10 +606,14 @@ export default {
   font-weight: bold;
 }
 
-.logs-section {
-  margin-top: 30px;
-  border-top: 1px solid #ebeef5;
-  padding-top: 20px;
+/* 折叠面板样式 */
+:deep(.el-collapse-item__header) {
+  padding: 0 20px;
+  background-color: #f5f7fa;
+}
+
+:deep(.el-collapse-item__content) {
+  padding: 20px;
 }
 
 .collapse-title {
@@ -589,10 +638,6 @@ export default {
   font-weight: 500;
 }
 
-.logs-content {
-  padding: 16px;
-}
-
 .logs-header {
   display: flex;
   justify-content: space-between;
@@ -609,21 +654,44 @@ export default {
 
 :deep(.el-collapse) {
   border: none;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
-:deep(.el-collapse-item__header) {
-  border: none;
-  padding: 8px 16px;
-  background-color: transparent;
-  font-size: 14px;
+:deep(.el-collapse-item) {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+:deep(.el-collapse-item__wrap) {
+  flex: 1;
+  height: auto;
 }
 
 :deep(.el-collapse-item__content) {
+  height: 100%;
   padding: 0;
+  display: flex;
+  flex-direction: column;
 }
 
+.logs-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+}
+
+/* 调整表格高度 */
 :deep(.el-table) {
-  --el-table-border-color: #ebeef5;
-  --el-table-header-background-color: #f5f7fa;
+  flex: 1;
+  height: calc(50% - 40px) !important;
+}
+
+/* 调整表格容器样式 */
+.el-table__body-wrapper {
+  height: calc(100% - 40px) !important;
 }
 </style> 
