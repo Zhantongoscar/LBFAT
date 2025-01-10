@@ -179,24 +179,24 @@ INSERT INTO mqtt_subscriptions (topic, qos, is_active) VALUES
 
 -- 插入设备类型数据
 INSERT INTO device_types (type_name, point_count, description) VALUES
-('EDB', 20, '增强模块 EDB：20点（7DI + 3DO + 7DI + 3DI）'),
-('EBD', 20, '增强模块 EBD：20点（7DO + 3DI + 10DO）'),
+('EDB', 20, '增强模块 EDB：20点（7DI + 3DO + 10DI）'),
+('EBD', 20, '增强模块 EBD：20点（8DO + 4DI + 8DO）'),
 ('EA', 20, '增强模块 EA：20点（14DO + 6DI）'),
 ('EC', 20, '增强模块 EC：20点（14DO + 6DI）'),
 ('EF', 20, '增强模块 EF：20点（20DI）'),
 ('EW', 20, '增强模块 EW：20点（6DI + 2DO + 12DI）'),
-('PDI', 16, '增强模块 PDI：16点（16DI）'),
-('PDO', 16, '增强模块 PDO：16点（16DO）'),
-('PAI', 16, '增强模块 PAI：16点（16AI）'),
-('PAO', 16, '增强模块 PAO：16点（16AO）'),
-('HI', 20, '增强模块 HI：20点（20AI）'),
-('HO', 20, '增强模块 HO：20点（20AO）'),
-('D', 6, '普通模板 D：6点（6DI）'),
-('B', 6, '普通模板 B：6点（6DO）'),
-('A', 6, '普通模板 A：6点（6DO）'),
-('C', 6, '普通模板 C：6点（6DO）'),
-('F', 6, '普通模板 F：6点（6DI）'),
-('W', 6, '普通模板 W：6点（6DI）');
+('PDI', 16, 'PLC模块 PDI：16点（16DI）'),
+('PDO', 16, 'PLC模块 PDO：16点（16DO）'),
+('PAI', 16, 'PLC模块 PAI：16点（16AI）'),
+('PAO', 16, 'PLC模块 PAO：16点（16AO）'),
+('HI', 20, '人工模块 HI：20点（20AI）'),
+('HO', 20, '人工模块 HO：20点（20AO）'),
+('D', 6, '普通模块 D：6点（6DI）'),
+('B', 6, '普通模块 B：6点（6DO）'),
+('A', 6, '普通模块 A：6点（6DO）'),
+('C', 6, '普通模块 C：6点（6DO）'),
+('F', 6, '普通模块 F：6点（6DI）'),
+('W', 6, '普通模块 W：6点（6DI）');
 
 -- 插入EDB设备点位配置
 INSERT INTO device_type_points (device_type_id, point_index, point_type, point_name, description) VALUES
