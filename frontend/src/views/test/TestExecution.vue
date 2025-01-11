@@ -482,11 +482,14 @@ export default {
         loading.value = true
         const response = await axios.get('/api/devices')
         if (response?.data?.code === 200) {
-          devices.value = response.data.data
+          devices.value = response.data.data || []
+        } else {
+          devices.value = []
         }
       } catch (error) {
         console.error('加载设备列表失败:', error)
         ElMessage.error('加载设备列表失败')
+        devices.value = []
       } finally {
         loading.value = false
       }
@@ -507,11 +510,15 @@ export default {
       }
     }
 
-    // 组件挂载时加载设备列表
-    onMounted(() => {
-      loadDevices()
-      fetchTestInstances()
-      fetchTruthTables()
+    // 组件挂载时加载数据
+    onMounted(async () => {
+      try {
+        await loadDevices()
+        await fetchTestInstances()
+        await fetchTruthTables()
+      } catch (error) {
+        console.error('初始化数据加载失败:', error)
+      }
     })
 
     // 设备详情对话框
@@ -620,9 +627,18 @@ export default {
     const fetchTestInstances = async () => {
       try {
         const response = await getTestInstances()
-        testInstances.value = response.data
+        console.log('获取测试实例列表响应:', response)
+        if (response?.data) {
+          testInstances.value = response.data
+          console.log('更新后的测试实例列表:', testInstances.value)
+        } else {
+          console.warn('获取测试实例列表响应为空')
+          testInstances.value = []
+        }
       } catch (error) {
-        ElMessage.error('获取测试实例列表失败')
+        console.error('获取测试实例列表失败:', error)
+        ElMessage.error('获取测试实例列表失败: ' + (error.response?.data?.message || error.message))
+        testInstances.value = []
       }
     }
 
@@ -803,17 +819,20 @@ export default {
       await createFormRef.value.validate(async (valid) => {
         if (valid) {
           try {
-            await createTestInstance({
-              truth_table_id: createForm.value.truth_table_id,
-              product_sn: createForm.value.product_sn,
-              operator: createForm.value.operator
-            })
-            ElMessage.success('创建测试实例成功')
+            await createTestInstance(createForm.value)
+            ElMessage.success('创建成功')
             createDialogVisible.value = false
+            // 重置表单
+            createForm.value = {
+              truth_table_id: '',
+              product_sn: '',
+              operator: 'root'
+            }
+            // 刷新测试实例列表
             await fetchTestInstances()
           } catch (error) {
             console.error('创建测试实例失败:', error)
-            ElMessage.error('创建测试实例失败')
+            ElMessage.error('创建失败: ' + (error.response?.data?.message || error.message))
           }
         }
       })
@@ -913,8 +932,33 @@ export default {
     }
 
     // 处理表格行点击
-    const handleRowClick = (row) => {
-      selectedInstance.value = row
+    const handleRowClick = async (row) => {
+      try {
+        selectedInstance.value = row
+        // 如果实例状态是 pending，不需要立即加载测试项
+        if (row.status === TestStatus.PENDING) {
+          console.log('新建实例，无需加载测试项')
+          return
+        }
+        
+        // 加载测试项
+        loadingTestItems.value = true
+        const response = await getOrCreateTestItems(row.id)
+        if (response?.data?.data?.items) {
+          // 更新选中实例的测试项
+          selectedInstance.value.items = response.data.data.items
+          // 同时更新testInstances中对应实例的测试项
+          const index = testInstances.value.findIndex(instance => instance.id === row.id)
+          if (index !== -1) {
+            testInstances.value[index].items = response.data.data.items
+          }
+        }
+      } catch (error) {
+        console.error('加载测试项失败:', error)
+        ElMessage.error('加载测试项失败，请先创建测试项')
+      } finally {
+        loadingTestItems.value = false
+      }
     }
 
     // 测试项详情对话框
@@ -990,11 +1034,7 @@ export default {
           ElMessage.info('测试项已存在')
         }
         // 获取最新的测试项列表
-        const itemsResponse = await getOrCreateTestItems(selectedInstance.value.id)
-        console.log('获取到的测试项数据:', itemsResponse.data)
-        if (itemsResponse.data && itemsResponse.data.data) {
-          selectedInstance.value.items = itemsResponse.data.data.items
-        }
+        await refreshTestItems()
       } catch (error) {
         console.error('创建测试项失败:', error)
         ElMessage.error('创建测试项失败')
@@ -1013,13 +1053,18 @@ export default {
       loadingTestItems.value = true
       try {
         const response = await getOrCreateTestItems(selectedInstance.value.id)
-        console.log('刷新获取到的测试项数据:', response.data)
-        if (response.data && response.data.data) {
-          selectedInstance.value.items = response.data.data.items || []
+        if (response.data?.data?.items) {
+          // 更新选中实例的测试项
+          selectedInstance.value.items = response.data.data.items
+          // 同时更新testInstances中对应实例的测试项
+          const index = testInstances.value.findIndex(instance => instance.id === selectedInstance.value.id)
+          if (index !== -1) {
+            testInstances.value[index].items = response.data.data.items
+          }
         }
       } catch (error) {
         console.error('刷新测试项失败:', error)
-        ElMessage.error('刷新失败')
+        ElMessage.error('刷新失败: ' + (error.response?.data?.message || error.message))
       } finally {
         loadingTestItems.value = false
       }
