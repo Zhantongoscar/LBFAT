@@ -69,14 +69,13 @@ const handleLogin = async () => {
     const { token, user } = response.data.data
     
     // 存储令牌和用户信息
-    localStorage.setItem('token', token)
-    userStore.setUser(user)
     userStore.setToken(token)
+    userStore.setUser(user)
     
     ElMessage.success('登录成功')
     
-    // 获取重定向路径或默认跳转到项目列表
-    const redirectPath = userStore.redirectPath || '/projects'
+    // 根据用户角色重定向到不同页面
+    const redirectPath = userStore.redirectPath || (user.role === 'admin' ? '/projects' : '/test/execution')
     userStore.setRedirectPath('')
     router.push(redirectPath)
   } catch (error) {
@@ -87,10 +86,16 @@ const handleLogin = async () => {
   }
 }
 
-// 如果已登录，直接跳转
+// 初始化检查
 onMounted(() => {
-  if (userStore.isAuthenticated) {
-    router.push('/projects')
+  // 清除可能存在的过期状态
+  if (!localStorage.getItem('token')) {
+    userStore.logout()
+  }
+  
+  // 如果已经登录，根据角色重定向
+  if (userStore.isAuthenticated && userStore.user) {
+    router.push(userStore.isAdmin ? '/projects' : '/test/execution')
   }
 })
 </script>

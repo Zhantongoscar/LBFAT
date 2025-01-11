@@ -12,10 +12,7 @@ import { useUserStore } from '../stores/user'
 const routes = [
   {
     path: '/',
-    redirect: to => {
-      const userStore = useUserStore()
-      return userStore.isAdmin ? '/projects' : '/test/execution'
-    }
+    redirect: '/login'
   },
   {
     path: '/login',
@@ -126,9 +123,25 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const userStore = useUserStore()
   
-  // 如果用户已登录且要去登录页，重定向到对应的首页
-  if (to.path === '/login' && userStore.isAuthenticated) {
-    next(userStore.isAdmin ? '/projects' : '/test/execution')
+  // 根路径的处理
+  if (to.path === '/') {
+    if (userStore.isAuthenticated) {
+      next(userStore.isAdmin ? '/projects' : '/test/execution')
+    } else {
+      next('/login')
+    }
+    return
+  }
+  
+  // 访问登录页时的处理
+  if (to.path === '/login') {
+    if (userStore.isAuthenticated) {
+      // 已登录用户重定向到对应的首页
+      next(userStore.isAdmin ? '/projects' : '/test/execution')
+    } else {
+      // 未登录用户允许访问登录页
+      next()
+    }
     return
   }
   
@@ -138,9 +151,9 @@ router.beforeEach((to, from, next) => {
     return
   }
   
-  // 未登录跳转到登录页
+  // 未登录用户处理
   if (!userStore.isAuthenticated) {
-    userStore.logout()  // 清除用户状态
+    // 保存目标路径并重定向到登录页
     userStore.setRedirectPath(to.fullPath)
     next('/login')
     return
@@ -148,10 +161,11 @@ router.beforeEach((to, from, next) => {
   
   // 需要管理员权限但不是管理员
   if (to.meta.requiresAdmin && !userStore.isAdmin) {
-    next('/test/execution')  // 重定向到测试执行页面
+    next('/test/execution')
     return
   }
   
+  // 其他情况放行
   next()
 })
 

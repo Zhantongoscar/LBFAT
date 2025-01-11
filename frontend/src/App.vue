@@ -1,5 +1,6 @@
 <template>
-  <el-container>
+  <router-view v-if="$route.path === '/login'"></router-view>
+  <el-container v-else-if="userStore.isAuthenticated">
     <el-header>
       <div class="header-content">
         <div class="logo-title">
@@ -111,80 +112,71 @@
       </el-main>
     </el-container>
   </el-container>
+  <div v-else class="redirect-container">
+    <el-card class="redirect-card">
+      <template #header>
+        <div class="card-header">
+          <h3>正在检查登录状态...</h3>
+        </div>
+      </template>
+      <div class="redirect-content">
+        <el-icon class="is-loading"><Loading /></el-icon>
+        <p>请稍候...</p>
+      </div>
+    </el-card>
+  </div>
 </template>
 
-<script>
-import { ref } from 'vue'
+<script setup>
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useUserStore } from './stores/user'
-import { buhlerLogoBase64 } from './assets/buhler-logo.js'
-import { 
-  Monitor, 
-  Message, 
-  Operation, 
-  Tools, 
-  Document,
-  Setting,
-  VideoPlay,
-  DataAnalysis,
-  Expand,
-  Fold,
-  User,
-  ArrowDown,
-  SwitchButton,
-  Picture
-} from '@element-plus/icons-vue'
+import { useUserStore } from '@/stores/user'
+import { Loading, Monitor, Message, Operation, Tools, Document, Setting, VideoPlay, DataAnalysis, Expand, Fold, User, ArrowDown, SwitchButton, Picture } from '@element-plus/icons-vue'
 import { ElMessageBox } from 'element-plus'
+import { buhlerLogoBase64 } from '@/assets/buhler-logo.js'
 
-export default {
-  components: {
-    Monitor,
-    Message,
-    Operation,
-    Tools,
-    Document,
-    Setting,
-    VideoPlay,
-    DataAnalysis,
-    Expand,
-    Fold,
-    User,
-    ArrowDown,
-    SwitchButton,
-    Picture
-  },
-  setup() {
-    const router = useRouter()
-    const userStore = useUserStore()
-    const isCollapse = ref(false)
-    
-    const toggleCollapse = () => {
-      isCollapse.value = !isCollapse.value
-    }
+const router = useRouter()
+const userStore = useUserStore()
+const isCollapse = ref(false)
 
-    const handleLogout = () => {
-      ElMessageBox.confirm(
-        '确定要退出登录吗？',
-        '提示',
-        {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
-          type: 'warning',
-        }
-      ).then(() => {
-        userStore.logout()
-        router.push('/login')
-      })
-    }
-    
-    return {
-      isCollapse,
-      toggleCollapse,
-      userStore,
-      handleLogout,
-      buhlerLogoBase64
-    }
+onMounted(() => {
+  const token = localStorage.getItem('token')
+  const userStr = localStorage.getItem('user')
+  
+  if (!token || !userStr) {
+    userStore.logout()
+    router.push('/login')
+    return
   }
+
+  try {
+    const user = JSON.parse(userStr)
+    userStore.setToken(token)
+    userStore.setUser(user)
+  } catch (error) {
+    console.error('Failed to parse user data:', error)
+    userStore.logout()
+    router.push('/login')
+  }
+})
+
+const toggleCollapse = () => {
+  isCollapse.value = !isCollapse.value
+}
+
+const handleLogout = () => {
+  ElMessageBox.confirm(
+    '确定要退出登录吗？',
+    '提示',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning',
+    }
+  ).then(() => {
+    userStore.logout()
+    router.push('/login')
+  })
 }
 </script>
 
@@ -366,5 +358,31 @@ export default {
   font-size: 12px;
   color: #909399;
   margin-top: 4px;
+}
+
+.redirect-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #f5f7fa;
+}
+
+.redirect-card {
+  width: 300px;
+  text-align: center;
+}
+
+.redirect-content {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.redirect-content .el-icon {
+  font-size: 24px;
+  color: #409EFF;
 }
 </style>
