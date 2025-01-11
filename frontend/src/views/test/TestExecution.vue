@@ -4,7 +4,6 @@
     <div class="device-status-section">
       <div class="section-header">
         <h3>测试设备状态 <span class="device-count">{{ onlineCount }}/{{ devices.length }}</span></h3>
-        <el-button type="primary" size="small" @click="refreshDevices">收起</el-button>
       </div>
 
       <div class="device-groups">
@@ -76,7 +75,7 @@
       >
         <el-table-column
           prop="product_sn"
-          label="产品序列号"
+          label="测试实例名称"
           min-width="180"
         />
         <el-table-column
@@ -141,12 +140,12 @@
       </el-table>
     </el-card>
 
-    <!-- 测试实例详情面板 -->
+    <!-- 测试状态面板 -->
     <el-card class="box-card mb-20" v-if="selectedInstance">
       <template #header>
         <div class="card-header">
           <div class="header-left">
-            <span>测试实例详情</span>
+            <span>测试状态</span>
             <el-tag type="info" class="ml-10">{{ selectedInstance.product_sn }}</el-tag>
             <el-tag 
               :type="getInstanceStatusType(selectedInstance.status)" 
