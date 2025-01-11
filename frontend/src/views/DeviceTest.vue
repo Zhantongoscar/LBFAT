@@ -29,12 +29,41 @@
         <div class="command-form" v-if="selectedDevice">
           <div class="channel-control">
             <span class="channel-label">通道号</span>
-            <el-input-number v-model="form.channel" :min="1" :max="20" style="width: 120px" />
+            <el-input
+              v-model.number="form.channel"
+              type="number"
+              placeholder="请输入通道号"
+              style="width: 120px"
+              :min="0"
+              :max="19"
+              @change="handleChannelChange"
+            />
+          </div>
+          
+          <!-- 通道快速选择按钮组 -->
+          <div class="channel-quick-select">
+            <el-button-group>
+              <el-button
+                v-for="i in 20"
+                :key="i-1"
+                size="small"
+                :type="form.channel === i-1 ? 'primary' : ''"
+                @click="form.channel = i-1"
+              >
+                {{ i-1 }}
+              </el-button>
+            </el-button-group>
           </div>
           
           <div class="command-buttons">
             <el-button type="primary" @click="handleRead" :disabled="!selectedDevice" style="width: 80px">读取</el-button>
-            <el-input v-model="form.value" placeholder="写入值" />
+            <div class="value-input-group">
+              <el-input v-model="form.value" placeholder="写入值" />
+              <div class="quick-value-buttons">
+                <el-button size="small" @click="form.value = '0'">0</el-button>
+                <el-button size="small" @click="form.value = '100'">100</el-button>
+              </div>
+            </div>
             <el-button type="success" @click="handleWrite" :disabled="!selectedDevice" style="width: 80px">写入</el-button>
           </div>
         </div>
@@ -143,7 +172,7 @@ export default {
     const deviceCommands = ref([])
     const form = ref({
       deviceId: '',
-      channel: 1,
+      channel: 0,
       value: ''
     })
     const messageDetailVisible = ref(false)
@@ -235,6 +264,11 @@ export default {
         return;
       }
 
+      if (form.value.channel < 0 || form.value.channel > 19) {
+        ElMessage.warning('通道号必须在0-19之间');
+        return;
+      }
+
       try {
         const deviceId = `${selectedDevice.value.project_name}/${selectedDevice.value.module_type}/${selectedDevice.value.serial_number}`;
         const topic = `${deviceId}/${form.value.channel}/command`;
@@ -248,6 +282,8 @@ export default {
             topic: topic,
             payload: message
           }));
+
+          // 添加发送消息记录
           addMessage('send', topic, message, form.value.channel);
         } else {
           ElMessage.error('WebSocket连接已断开');
@@ -265,6 +301,11 @@ export default {
         return;
       }
 
+      if (form.value.channel < 0 || form.value.channel > 19) {
+        ElMessage.warning('通道号必须在0-19之间');
+        return;
+      }
+
       if (!form.value.value) {
         ElMessage.warning('请输入写入值');
         return;
@@ -275,7 +316,7 @@ export default {
         const topic = `${deviceId}/${form.value.channel}/command`;
         const message = {
           command: 'write',
-          value: parseFloat(form.value.value)
+          value: parseInt(form.value.value)
         };
 
         if (ws.value && ws.value.readyState === WebSocket.OPEN) {
@@ -284,6 +325,8 @@ export default {
             topic: topic,
             payload: message
           }));
+
+          // 添加发送消息记录
           addMessage('send', topic, message, form.value.channel);
         } else {
           ElMessage.error('WebSocket连接已断开');
@@ -392,6 +435,21 @@ export default {
       }
     }
 
+    // 在 setup() 中添加 handleChannelChange 函数
+    const handleChannelChange = (value) => {
+      // 确保输入值在0-19之间
+      const numValue = parseInt(value)
+      if (isNaN(numValue)) {
+        form.value.channel = 0
+      } else if (numValue < 0) {
+        form.value.channel = 0
+      } else if (numValue > 19) {
+        form.value.channel = 19
+      } else {
+        form.value.channel = numValue
+      }
+    }
+
     // 组件挂载时添加WebSocket监听
     onMounted(() => {
       loadDevices()
@@ -433,6 +491,7 @@ export default {
       clearDeviceCommands,
       getDisplayValue,
       activeCollapse,
+      handleChannelChange,
     }
   }
 }
@@ -693,5 +752,39 @@ export default {
 /* 调整表格容器样式 */
 .el-table__body-wrapper {
   height: calc(100% - 40px) !important;
+}
+
+.channel-quick-select {
+  margin: 10px 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.channel-quick-select .el-button {
+  padding: 4px 8px;
+  min-width: 36px;
+}
+
+.value-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.quick-value-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.quick-value-buttons .el-button {
+  flex: 1;
+}
+
+.command-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
 }
 </style> 
