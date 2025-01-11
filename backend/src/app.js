@@ -12,6 +12,7 @@ const testInstanceRoutes = require('./routes/test-instance-routes');
 const mqttService = require('./services/mqtt-service');
 const WebSocketService = require('./services/websocket-service');
 const db = require('./utils/db');
+const testRoutes = require('./routes/test');
 
 const app = express();
 const server = http.createServer(app);
@@ -60,6 +61,7 @@ app.use('/api/drawings', drawingRoutes);
 app.use('/api/truth-tables', truthTableRoutes);
 app.use('/api/test-items', testItemRoutes);
 app.use('/api/test-instances', testInstanceRoutes);
+app.use('/api/test', testRoutes);
 
 console.log('=== 路由注册完成 ===');
 

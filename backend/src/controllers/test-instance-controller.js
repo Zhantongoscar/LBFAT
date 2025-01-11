@@ -1,6 +1,8 @@
 const { TestInstance, TestItemInstance, TestItem, TestGroup, TruthTable } = require('../models');
 const { TestStatus, TestResult } = require('../constants/test-status');
 const sequelize = require('../config/database');
+const testMqttService = require('../services/test-mqtt-service');
+const logger = require('../utils/logger');
 
 // 获取或创建测试项
 async function getOrCreateTestItems(instanceId) {
@@ -431,5 +433,107 @@ module.exports = {
         });
     }
     console.log('\n========== 创建测试项实例结束 ==========\n');
+  },
+
+  // 执行测试项
+  executeTestItem: async (req, res) => {
+    const transaction = await sequelize.transaction();
+    try {
+      const { instanceId, itemId } = req.params;
+      logger.info('开始执行测试项:', { instanceId, itemId });
+
+      // 1. 获取测试项实例
+      const testItem = await TestItemInstance.findOne({
+        where: {
+          instance_id: instanceId,
+          id: itemId
+        },
+        include: [{
+          model: TestItem,
+          include: [{
+            model: TestGroup
+          }]
+        }],
+        transaction
+      });
+
+      if (!testItem) {
+        await transaction.rollback();
+        return res.status(404).json({ 
+          code: 404,
+          message: '测试项不存在' 
+        });
+      }
+
+      // 2. 检查测试项状态
+      if (testItem.execution_status !== 'pending') {
+        await transaction.rollback();
+        return res.status(400).json({
+          code: 400,
+          message: '只有待执行的测试项可以执行'
+        });
+      }
+
+      // 3. 更新状态为执行中
+      await testItem.update({
+        execution_status: 'running',
+        start_time: new Date()
+      }, { transaction });
+
+      // 4. 执行测试
+      const { project_name, module_type, serial_number, channel } = testItem.TestItem;
+      let response;
+      
+      if (testItem.TestItem.type === 'DI' || testItem.TestItem.type === 'AI') {
+        // 输入类型测试
+        response = await testMqttService.sendReadCommand(
+          project_name,
+          module_type,
+          serial_number,
+          channel
+        );
+      } else {
+        // 输出类型测试
+        response = await testMqttService.sendWriteCommand(
+          project_name,
+          module_type,
+          serial_number,
+          channel,
+          testItem.TestItem.expected_value
+        );
+      }
+
+      // 5. 更新测试结果
+      const passed = Math.abs(response.value - testItem.TestItem.expected_value) <= testItem.TestItem.tolerance;
+      await testItem.update({
+        execution_status: 'completed',
+        result_status: passed ? 'passed' : 'failed',
+        actual_value: response.value,
+        end_time: new Date()
+      }, { transaction });
+
+      await transaction.commit();
+      
+      res.json({
+        code: 200,
+        message: '测试项执行成功',
+        data: {
+          id: testItem.id,
+          execution_status: 'completed',
+          result_status: passed ? 'passed' : 'failed',
+          actual_value: response.value,
+          expected_value: testItem.TestItem.expected_value
+        }
+      });
+
+    } catch (error) {
+      await transaction.rollback();
+      logger.error('执行测试项失败:', error);
+      res.status(500).json({
+        code: 500,
+        message: '执行测试项失败',
+        error: error.message
+      });
+    }
   }
 }; 

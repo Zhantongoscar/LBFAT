@@ -29,4 +29,7 @@ router.delete('/:id', testInstanceController.deleteTestInstance);
 // 创建测试项实例
 router.post('/:id/items/create', testInstanceController.createTestItemInstances);
 
+// 执行测试项
+router.post('/:instanceId/items/:itemId/execute', testInstanceController.executeTestItem);
+
 module.exports = router; 
