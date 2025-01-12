@@ -226,116 +226,76 @@
         </div>
       </template>
 
-      <el-table
-        :data="filteredTestItems"
-        row-key="id"
-        border
-        v-loading="loadingTestItems"
-        :tree-props="{
-          children: 'items',
-          hasChildren: 'hasChildren'
-        }"
-      >
-        <el-table-column prop="id" label="ID" width="80">
-          <template #default="{ row }">
-            <span>{{ row.id }}</span>
-          </template>
-        </el-table-column>
-        
-        <el-table-column prop="test_item_id" label="测试项ID" width="100">
-          <template #default="{ row }">
-            <span>{{ row.test_item_id || '-' }}</span>
-          </template>
-        </el-table-column>
+      <div v-loading="loadingTestItems">
+        <div v-for="group in filteredTestItems" :key="group.id" class="test-group">
+          <div class="group-header">
+            <div class="group-title">
+              {{ group.description }}
+              <el-tag size="small" type="info" class="ml-10">
+                {{ group.items.length }} 项
+              </el-tag>
+            </div>
+            <div class="group-level">
+              <el-tag size="small" type="success">
+                Level {{ group.level }}
+              </el-tag>
+            </div>
+          </div>
 
-        <el-table-column prop="test_group_id" label="测试组ID" width="100">
-          <template #default="{ row }">
-            <span>{{ row.test_group_id || '-' }}</span>
-          </template>
-        </el-table-column>
-
-        <el-table-column prop="group_name" label="测试组名称" min-width="120">
-          <template #default="{ row }">
-            <span>{{ row.group_name || '-' }}</span>
-          </template>
-        </el-table-column>
-
-        <el-table-column prop="device_id" label="设备ID" width="100">
-          <template #default="{ row }">
-            <span>{{ row.device_id || '-' }}</span>
-          </template>
-        </el-table-column>
-
-        <el-table-column prop="point_index" label="点位序号" width="100">
-          <template #default="{ row }">
-            <span>{{ row.point_index || '-' }}</span>
-          </template>
-        </el-table-column>
-
-        <el-table-column prop="name" label="名称" min-width="120">
-          <template #default="{ row }">
-            <span>{{ row.name || '-' }}</span>
-          </template>
-        </el-table-column>
-        
-        <el-table-column prop="execution_status" label="状态" width="100">
-          <template #default="{ row }">
-            <el-tag :type="getItemStatusType(row.execution_status)">
-              {{ getItemStatusText(row.execution_status) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        
-        <el-table-column prop="result_status" label="结果" width="100">
-          <template #default="{ row }">
-            <el-tag :type="getResultType(row.result_status)">
-              {{ getResultText(row.result_status) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        
-        <el-table-column label="测试值" width="150">
-          <template #default="{ row }">
-            <div>实际值：{{ row.actual_value || '-' }}</div>
-            <div>预期值：{{ row.expected_values || '-' }}</div>
-          </template>
-        </el-table-column>
-        
-        <el-table-column label="时间" width="340">
-          <template #default="{ row }">
-            <div>开始：{{ formatDateTime(row.start_time) || '-' }}</div>
-            <div>结束：{{ formatDateTime(row.end_time) || '-' }}</div>
-          </template>
-        </el-table-column>
-        
-        <el-table-column label="操作" width="200" fixed="right">
-          <template #default="{ row }">
-            <el-button
-              v-if="canExecuteItem(row)"
-              type="primary"
-              link
-              @click="handleExecuteItem(row)"
-            >
-              执行
-            </el-button>
-            <el-button
-              v-if="canSkipItem(row)"
-              type="warning"
-              link
-              @click="handleSkipItem(row)"
-            >
-              跳过
-            </el-button>
-            <el-button
-              type="info"
-              link
-              @click="showItemDetails(row)"
-            >
-              详情
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+          <el-table :data="group.items" border>
+            <el-table-column prop="name" label="测试项" min-width="120" />
+            <el-table-column prop="device_id" label="设备ID" width="100" />
+            <el-table-column prop="point_index" label="通道" width="80" />
+            <el-table-column label="测试值" width="150">
+              <template #default="{ row }">
+                <div>实际值：{{ row.actual_value || '-' }}</div>
+                <div>预期值：{{ row.expected_values || '-' }}</div>
+              </template>
+            </el-table-column>
+            <el-table-column prop="execution_status" label="状态" width="100">
+              <template #default="{ row }">
+                <el-tag :type="getItemStatusType(row.execution_status)">
+                  {{ getItemStatusText(row.execution_status) }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="result_status" label="结果" width="100">
+              <template #default="{ row }">
+                <el-tag :type="getResultType(row.result_status)">
+                  {{ getResultText(row.result_status) }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="200" fixed="right">
+              <template #default="{ row }">
+                <el-button
+                  v-if="canExecuteItem(row)"
+                  type="primary"
+                  link
+                  @click="handleExecuteItem(row)"
+                >
+                  执行
+                </el-button>
+                <el-button
+                  v-if="canSkipItem(row)"
+                  type="warning"
+                  link
+                  @click="handleSkipItem(row)"
+                >
+                  跳过
+                </el-button>
+                <el-button
+                  type="info"
+                  link
+                  @click="showItemDetails(row)"
+                >
+                  详情
+                </el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+      </div>
     </el-card>
 
     <!-- 设备详情对话框 -->
@@ -447,7 +407,7 @@
 
 <script>
 import { ref, computed, onMounted } from 'vue'
-import { Monitor, Cpu, Connection, ArrowDown, ArrowRight } from '@element-plus/icons-vue'
+import { Monitor } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { 
   getTestInstances, 
@@ -463,20 +423,15 @@ import {
   createInstanceItems
 } from '@/api/testInstance'
 import { getTruthTables } from '@/api/truthTable'
-import axios from 'axios'
 
 export default {
   name: 'TestExecution',
   components: {
-    Monitor,
-    Cpu,
-    Connection,
-    ArrowDown,
-    ArrowRight
+    Monitor
   },
   setup() {
     // 设备面板收纳状态
-    const isDevicesPanelCollapsed = ref(true)
+    const activeCollapse = ref([])
 
     // 设备数据
     const devices = ref([])
@@ -495,15 +450,15 @@ export default {
 
     // 在线设备数量
     const onlineCount = computed(() => onlineDevices.value.length)
-    const totalCount = computed(() => devices.value.length)
 
     // 加载设备列表
     const loadDevices = async () => {
       try {
         loading.value = true
-        const response = await axios.get('/api/devices')
-        if (response?.data?.code === 200) {
-          devices.value = response.data.data || []
+        const response = await fetch('/api/devices')
+        if (response.ok) {
+          const data = await response.json()
+          devices.value = data.data || []
         } else {
           devices.value = []
         }
@@ -516,133 +471,10 @@ export default {
       }
     }
 
-    // 刷新设备列表
-    const refreshDevices = () => {
-      loadDevices()
-    }
-
-    // 切换设备选择状态
-    const toggleDeviceSelection = (device) => {
-      const index = selectedDevices.value.indexOf(device.id)
-      if (index === -1) {
-        selectedDevices.value.push(device.id)
-      } else {
-        selectedDevices.value.splice(index, 1)
-      }
-    }
-
-    // 组件挂载时加载数据
-    onMounted(async () => {
-      try {
-        await loadDevices()
-        await fetchTestInstances()
-        await fetchTruthTables()
-      } catch (error) {
-        console.error('初始化数据加载失败:', error)
-      }
-    })
-
-    // 设备详情对话框
-    const deviceDetailsVisible = ref(false)
-    const selectedDevice = ref(null)
-
-    // 方法：切换设备面板显示状态
-    const toggleDevicesPanel = () => {
-      isDevicesPanelCollapsed.value = !isDevicesPanelCollapsed.value
-    }
-
-    // 方法：显示设备详情
-    const showDeviceDetails = (device) => {
-      selectedDevice.value = device
-      deviceDetailsVisible.value = true
-    }
-
-    // 方法：获取信号强度等级
-    const getSignalLevel = (rssi) => {
-      if (rssi >= -65) return 'signal-excellent'
-      if (rssi >= -75) return 'signal-good'
-      if (rssi >= -85) return 'signal-fair'
-      return 'signal-poor'
-    }
-
-    // 方法：获取信号强度文本
-    const getSignalLevelText = (rssi) => {
-      if (rssi >= -65) return '优秀'
-      if (rssi >= -75) return '良好'
-      if (rssi >= -85) return '一般'
-      return '较差'
-    }
-
-    // 方法：获取信号强度标签类型
-    const getSignalLevelType = (rssi) => {
-      if (rssi >= -65) return 'success'
-      if (rssi >= -75) return ''
-      if (rssi >= -85) return 'warning'
-      return 'danger'
-    }
-
-    // 方法：格式化日期时间
-    const formatDateTime = (date) => {
-      if (!date) return ''
-      return new Date(date).toLocaleString()
-    }
-
-    // 分页和筛选相关
-    const pageSize = ref(50) // 每页显示50个设备
-    const onlineCurrentPage = ref(1)
-    const offlineCurrentPage = ref(1)
-    const onlineDeviceType = ref('')
-    const offlineDeviceType = ref('')
-
-    // 设备类型列表
-    const deviceTypes = computed(() => {
-      const types = new Set(devices.value.map(d => d.type))
-      return Array.from(types)
-    })
-
-    // 过滤后的设备列表
-    const filteredOnlineDevices = computed(() => {
-      let filtered = onlineDevices.value
-      if (onlineDeviceType.value) {
-        filtered = filtered.filter(d => d.type === onlineDeviceType.value)
-      }
-      return filtered
-    })
-
-    const filteredOfflineDevices = computed(() => {
-      let filtered = offlineDevices.value
-      if (offlineDeviceType.value) {
-        filtered = filtered.filter(d => d.type === offlineDeviceType.value)
-      }
-      return filtered
-    })
-
-    // 分页后的设备列表
-    const paginatedOnlineDevices = computed(() => {
-      const start = (onlineCurrentPage.value - 1) * pageSize.value
-      const end = start + pageSize.value
-      return filteredOnlineDevices.value.slice(start, end)
-    })
-
-    const paginatedOfflineDevices = computed(() => {
-      const start = (offlineCurrentPage.value - 1) * pageSize.value
-      const end = start + pageSize.value
-      return filteredOfflineDevices.value.slice(start, end)
-    })
-
-    // 分页处理方法
-    const handleOnlinePageChange = (page) => {
-      onlineCurrentPage.value = page
-    }
-
-    const handleOfflinePageChange = (page) => {
-      offlineCurrentPage.value = page
-    }
-
     // 测试实例相关
     const testInstances = ref([])
-    const instanceDetailsVisible = ref(false)
     const selectedInstance = ref(null)
+    const loadingTestItems = ref(false)
 
     // 获取测试实例列表
     const fetchTestInstances = async () => {
@@ -700,12 +532,6 @@ export default {
           ElMessage.error('中止测试失败')
         }
       }
-    }
-
-    // 显示实例详情
-    const showInstanceDetails = (instance) => {
-      selectedInstance.value = instance
-      instanceDetailsVisible.value = true
     }
 
     // 状态相关方法
@@ -798,12 +624,7 @@ export default {
       return instance.status === TestStatus.RUNNING
     }
 
-    // 页面加载时获取测试实例列表
-    onMounted(() => {
-      fetchTestInstances()
-      fetchTruthTables()
-    })
-
+    // 创建测试实例相关
     const createDialogVisible = ref(false)
     const createForm = ref({
       truth_table_id: '',
@@ -840,7 +661,7 @@ export default {
       await createFormRef.value.validate(async (valid) => {
         if (valid) {
           try {
-            loadingTestItems.value = true  // 设置加载状态
+            loadingTestItems.value = true
             
             // 1. 创建测试实例
             console.log('开始创建测试实例:', createForm.value)
@@ -883,79 +704,10 @@ export default {
             console.error('操作失败:', error)
             ElMessage.error('操作失败: ' + (error.response?.data?.message || error.message))
           } finally {
-            loadingTestItems.value = false  // 清除加载状态
+            loadingTestItems.value = false
           }
         }
       })
-    }
-
-    const isInstancesPanelCollapsed = ref(false)
-    
-    // 当前测试实例（优先显示正在执行的实例，如果没有则显示第一个）
-    const currentInstance = computed(() => {
-      return testInstances.value.find(instance => instance.status === TestStatus.RUNNING) || 
-             testInstances.value[0]
-    })
-
-    // 编辑相关
-    const editDialogVisible = ref(false)
-    const editForm = ref({
-      id: '',
-      truth_table_id: '',
-      product_sn: '',
-      operator: 'root'
-    })
-    const editFormRef = ref()
-
-    // 判断是否可以编辑
-    const canEdit = (instance) => {
-      return instance.status === TestStatus.PENDING
-    }
-
-    // 处理编辑
-    const handleEdit = (instance) => {
-      editDialogVisible.value = true
-      editForm.value = {
-        id: instance.id,
-        truth_table_id: instance.truth_table_id,
-        product_sn: instance.product_sn,
-        operator: instance.operator
-      }
-    }
-
-    // 提交编辑
-    const submitEdit = async () => {
-      if (!editFormRef.value) return
-      
-      await editFormRef.value.validate(async (valid) => {
-        if (valid) {
-          try {
-            await updateTestInstance(editForm.value.id, {
-              truth_table_id: editForm.value.truth_table_id,
-              product_sn: editForm.value.product_sn,
-              operator: editForm.value.operator
-            })
-            ElMessage.success('更新测试实例成功')
-            editDialogVisible.value = false
-            await fetchTestInstances()
-          } catch (error) {
-            console.error('更新测试实例失败:', error)
-            ElMessage.error('更新测试实例失败')
-          }
-        }
-      })
-    }
-
-    const editRules = {
-      truth_table_id: [
-        { required: true, message: '请选择真值表', trigger: 'change' }
-      ],
-      product_sn: [
-        { required: true, message: '请输入产品序列号', trigger: 'blur' }
-      ],
-      operator: [
-        { required: true, message: '请输入操作员', trigger: 'blur' }
-      ]
     }
 
     // 判断是否可以删除
@@ -1017,7 +769,7 @@ export default {
     const itemDetailsVisible = ref(false)
     const selectedItem = ref(null)
 
-    // 处理表格行点击
+    // 显示测试项详情
     const showItemDetails = (item) => {
       selectedItem.value = item
       itemDetailsVisible.value = true
@@ -1027,33 +779,32 @@ export default {
     const filteredTestItems = computed(() => {
       if (!selectedInstance.value || !selectedInstance.value.items) return []
       console.log('当前测试项列表:', selectedInstance.value.items)
+      
+      // 按测试组分组
+      const groupedItems = {}
       const items = selectedInstance.value.items || []
-      if (itemStatusFilter.value) {
-        return items.filter(item => item.execution_status === itemStatusFilter.value)
-      }
-      return items
+      
+      items.forEach(item => {
+        const groupId = item.test_group_id
+        if (!groupedItems[groupId]) {
+          groupedItems[groupId] = {
+            id: groupId,
+            description: item.group?.description || '未知测试组',
+            level: item.group?.level || 1,
+            sequence: item.group?.sequence || 0,
+            items: []
+          }
+        }
+        groupedItems[groupId].items.push(item)
+      })
+      
+      // 转换为数组并排序
+      return Object.values(groupedItems).sort((a, b) => a.sequence - b.sequence)
     })
-
-    // 状态筛选选项
-    const itemStatusOptions = [
-      { value: ExecutionStatus.PENDING, label: '待执行' },
-      { value: ExecutionStatus.RUNNING, label: '执行中' },
-      { value: ExecutionStatus.COMPLETED, label: '已完成' },
-      { value: ExecutionStatus.SKIPPED, label: '已跳过' },
-      { value: ExecutionStatus.TIMEOUT, label: '超时' }
-    ]
-
-    // 状态筛选
-    const itemStatusFilter = ref('')
 
     // 判断是否可以执行测试项
     const canExecuteItem = (item) => {
       return item.execution_status === ExecutionStatus.PENDING
-    }
-
-    // 处理执行测试项
-    const handleExecuteItem = (item) => {
-      // 处理逻辑
     }
 
     // 判断是否可以跳过测试项
@@ -1061,104 +812,45 @@ export default {
       return item.execution_status === ExecutionStatus.PENDING
     }
 
-    // 处理跳过测试项
-    const handleSkipItem = (item) => {
-      // 处理逻辑
-    }
-
-    // 加载测试项相关
-    const loadingTestItems = ref(false)
-
-    // 创建测试项
-    const handleCreateInstanceItems = async () => {
-      if (!selectedInstance.value) {
-        ElMessage.warning('请先选择一个测试实例')
-        return
-      }
-      
-      loadingTestItems.value = true
+    // 组件挂载时加载数据
+    onMounted(async () => {
       try {
-        const response = await createInstanceItems(selectedInstance.value.id)
-        // 根据返回的状态码判断是创建成功还是已存在
-        if (response.data.code === 201) {
-          ElMessage.success('测试项创建成功')
-        } else if (response.data.code === 200) {
-          ElMessage.info('测试项已存在')
-        }
-        // 获取最新的测试项列表
-        await refreshTestItems()
+        await loadDevices()
+        await fetchTestInstances()
+        await fetchTruthTables()
       } catch (error) {
-        console.error('创建测试项失败:', error)
-        ElMessage.error('创建测试项失败')
-      } finally {
-        loadingTestItems.value = false
+        console.error('初始化数据加载失败:', error)
       }
-    }
-
-    // 刷新实例操作项列表
-    const refreshTestItems = async () => {
-      if (!selectedInstance.value) {
-        ElMessage.warning('请先选择一个测试实例')
-        return
-      }
-      
-      loadingTestItems.value = true
-      try {
-        const response = await getOrCreateTestItems(selectedInstance.value.id)
-        if (response.data?.data?.items) {
-          // 更新选中实例的测试项
-          selectedInstance.value.items = response.data.data.items
-          // 同时更新testInstances中对应实例的测试项
-          const index = testInstances.value.findIndex(instance => instance.id === selectedInstance.value.id)
-          if (index !== -1) {
-            testInstances.value[index].items = response.data.data.items
-          }
-        }
-      } catch (error) {
-        console.error('刷新测试项失败:', error)
-        ElMessage.error('刷新失败: ' + (error.response?.data?.message || error.message))
-      } finally {
-        loadingTestItems.value = false
-      }
-    }
-
-    // 折叠面板激活的面板名称数组，设为空数组表示默认折叠
-    const activeCollapse = ref([])
+    })
 
     return {
-      isDevicesPanelCollapsed,
+      // 设备相关
       devices,
       onlineDevices,
       offlineDevices,
       onlineCount,
-      totalCount,
-      deviceDetailsVisible,
-      selectedDevice,
-      toggleDevicesPanel,
-      showDeviceDetails,
-      getSignalLevel,
-      getSignalLevelText,
-      getSignalLevelType,
-      formatDateTime,
-      pageSize,
-      onlineCurrentPage,
-      offlineCurrentPage,
-      onlineDeviceType,
-      offlineDeviceType,
-      deviceTypes,
-      filteredOnlineDevices,
-      filteredOfflineDevices,
-      paginatedOnlineDevices,
-      paginatedOfflineDevices,
-      handleOnlinePageChange,
-      handleOfflinePageChange,
+      loading,
+      loadDevices,
+      selectedDevices,
+      activeCollapse,
+
       // 测试实例相关
       testInstances,
-      instanceDetailsVisible,
       selectedInstance,
+      truthTables,
+      createDialogVisible,
+      createForm,
+      createRules,
+      createFormRef,
+      handleCreate,
+      submitCreate,
       startInstance,
       abortInstance,
-      showInstanceDetails,
+      canStart,
+      canAbort,
+      canDelete,
+      handleDelete,
+      handleRowClick,
       getInstanceStatusType,
       getInstanceStatusText,
       getItemStatusType,
@@ -1167,46 +859,21 @@ export default {
       getResultText,
       getTestProgress,
       getProgressStatus,
-      canStart,
-      canAbort,
-      canEdit,
-      handleEdit,
-      editDialogVisible,
-      editForm,
-      editFormRef,
-      editRules,
-      submitEdit,
-      truthTables,
-      createDialogVisible,
-      createForm,
-      createRules,
-      createFormRef,
-      handleCreate,
-      submitCreate,
-      isInstancesPanelCollapsed,
-      currentInstance,
-      canDelete,
-      handleDelete,
-      handleRowClick,
+
+      // 测试项相关
+      loadingTestItems,
+      filteredTestItems,
       itemDetailsVisible,
       selectedItem,
       showItemDetails,
-      filteredTestItems,
-      itemStatusOptions,
-      itemStatusFilter,
       canExecuteItem,
-      handleExecuteItem,
       canSkipItem,
-      handleSkipItem,
-      loadingTestItems,
-      handleCreateInstanceItems,
-      refreshTestItems,
-      selectedDevices,
-      loading,
-      loadDevices,
-      refreshDevices,
-      toggleDeviceSelection,
-      activeCollapse
+
+      // 格式化方法
+      formatDateTime: (date) => {
+        if (!date) return ''
+        return new Date(date).toLocaleString()
+      }
     }
   }
 }
@@ -1394,5 +1061,49 @@ export default {
       }
     }
   }
+}
+
+.test-group {
+  margin-bottom: 20px;
+  background-color: #fff;
+  border-radius: 4px;
+  box-shadow: 0 2px 12px 0 rgba(0,0,0,0.1);
+}
+
+.group-header {
+  padding: 12px 20px;
+  background-color: #f5f7fa;
+  border-bottom: 1px solid #e4e7ed;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.group-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #303133;
+}
+
+.group-level {
+  font-size: 12px;
+  color: #909399;
+}
+
+/* 状态标签样式 */
+:deep(.el-tag) {
+  text-align: center;
+  min-width: 60px;
+}
+
+/* 表格内容居中 */
+:deep(.el-table td) {
+  text-align: center;
+}
+
+/* 表格头部居中 */
+:deep(.el-table th) {
+  text-align: center;
+  background-color: #f5f7fa;
 }
 </style> 

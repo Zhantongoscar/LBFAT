@@ -17,7 +17,7 @@ async function getOrCreateTestItems(instanceId) {
         include: [{
           model: TestGroup,
           required: false,  // LEFT JOIN
-          attributes: ['id', 'name']
+          attributes: ['id', 'description', 'level', 'sequence']
         }]
       }],
       order: [['id', 'ASC']]
@@ -28,13 +28,19 @@ async function getOrCreateTestItems(instanceId) {
       // 处理数据，添加所有必要字段
       const processedItems = existingItems.map(item => {
         const testItem = item.TestItem || {};
+        const group = testItem.TestGroup || {};
         return {
           ...item.toJSON(),
           device_id: testItem.device_id,
           point_index: testItem.point_index,
           name: testItem.name,
           test_group_id: testItem.test_group_id,
-          group_name: testItem.TestGroup?.name
+          group: {
+            id: group.id,
+            description: group.description,
+            level: group.level,
+            sequence: group.sequence
+          }
         };
       });
       
