@@ -243,6 +243,8 @@
           </div>
 
           <el-table :data="group.items" border>
+            <el-table-column prop="id" label="ID" width="80" />
+            <el-table-column prop="test_item_id" label="测试项ID" width="80" />
             <el-table-column prop="name" label="测试项" min-width="120" />
             <el-table-column prop="device_id" label="设备ID" width="100" />
             <el-table-column prop="point_index" label="通道" width="80" />
