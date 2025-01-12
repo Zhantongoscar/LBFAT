@@ -18,7 +18,7 @@ async function getOrCreateTestItems(instanceId) {
         model: TestItem,
         as: 'testItem',
         required: false,  // LEFT JOIN
-        attributes: ['id', 'device_id', 'point_index', 'name', 'test_group_id'],
+        attributes: ['id', 'device_id', 'point_index', 'name', 'test_group_id', 'input_values', 'expected_values'],
         include: [{
           model: TestGroup,
           as: 'group',
@@ -126,7 +126,7 @@ module.exports = {
           include: [{
             model: TestItem,
             as: 'testItem',
-            attributes: ['id', 'device_id', 'point_index', 'name', 'test_group_id'],
+            attributes: ['id', 'device_id', 'point_index', 'name', 'test_group_id', 'input_values', 'expected_values'],
             include: [{
               model: TestGroup,
               as: 'group',

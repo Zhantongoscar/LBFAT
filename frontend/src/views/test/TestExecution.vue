@@ -249,6 +249,8 @@
             <el-table-column prop="testItem.device_id" label="设备ID" width="80" />
             <el-table-column prop="testItem.point_index" label="通道" width="80" />
             <el-table-column prop="testItem.name" label="测试项名称" min-width="120" />
+            <el-table-column prop="testItem.input_values" label="输入值" width="80" />
+            <el-table-column prop="testItem.expected_values" label="期望值" width="80" />
             <el-table-column label="测试值" width="150">
               <template #default="{ row }">
                 <div>实际值：{{ row.actual_value || '-' }}</div>
