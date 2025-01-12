@@ -27,17 +27,25 @@
         </div>
 
         <div class="command-form" v-if="selectedDevice">
-          <div class="channel-control">
-            <span class="channel-label">通道号</span>
-            <el-input
-              v-model.number="form.channel"
-              type="number"
-              placeholder="请输入通道号"
-              style="width: 120px"
-              :min="0"
-              :max="19"
-              @change="handleChannelChange"
-            />
+          <!-- 当前设备信息和通道控制 -->
+          <div class="device-channel-control">
+            <div class="current-device-info">
+              <el-tag type="success" effect="plain">
+                当前设备: {{ selectedDevice.module_type }}-{{ selectedDevice.serial_number }}
+              </el-tag>
+            </div>
+            <div class="channel-control">
+              <span class="channel-label">通道号</span>
+              <el-input
+                v-model.number="form.channel"
+                type="number"
+                placeholder="请输入通道号"
+                style="width: 120px"
+                :min="0"
+                :max="19"
+                @change="handleChannelChange"
+              />
+            </div>
           </div>
           
           <!-- 通道快速选择按钮组 -->
@@ -56,15 +64,38 @@
           </div>
           
           <div class="command-buttons">
-            <el-button type="primary" @click="handleRead" :disabled="!selectedDevice" style="width: 80px">读取</el-button>
-            <div class="value-input-group">
-              <el-input v-model="form.value" placeholder="写入值" />
-              <div class="quick-value-buttons">
-                <el-button size="small" @click="form.value = '0'">0</el-button>
-                <el-button size="small" @click="form.value = '100'">100</el-button>
+            <!-- 读取按钮 -->
+            <el-button 
+              type="primary" 
+              @click="handleRead" 
+              :disabled="!selectedDevice"
+            >读取</el-button>
+
+            <!-- 写入区域 -->
+            <div class="write-section">
+              <div class="write-input">
+                <el-input 
+                  v-model="form.value" 
+                  placeholder="写入值" 
+                  class="value-input"
+                />
+                <el-button 
+                  type="success" 
+                  @click="handleWrite" 
+                  :disabled="!selectedDevice"
+                >写入</el-button>
+                <el-button 
+                  type="success" 
+                  @click="quickWrite(0)" 
+                  :disabled="!selectedDevice"
+                >写入 0</el-button>
+                <el-button 
+                  type="success" 
+                  @click="quickWrite(100)" 
+                  :disabled="!selectedDevice"
+                >写入 100</el-button>
               </div>
             </div>
-            <el-button type="success" @click="handleWrite" :disabled="!selectedDevice" style="width: 80px">写入</el-button>
           </div>
         </div>
 
@@ -297,45 +328,46 @@ export default {
     // 处理写入命令
     const handleWrite = async () => {
       if (!selectedDevice.value) {
-        ElMessage.warning('请先选择设备');
-        return;
+        ElMessage.warning('请先选择设备')
+        return
       }
 
-      if (form.value.channel < 0 || form.value.channel > 19) {
-        ElMessage.warning('通道号必须在0-19之间');
-        return;
+      if (form.value.channel === undefined || form.value.channel === null) {
+        ElMessage.warning('请选择通道号')
+        return
       }
 
       if (!form.value.value) {
-        ElMessage.warning('请输入写入值');
-        return;
+        ElMessage.warning('请输入写入值')
+        return
       }
 
       try {
-        const deviceId = `${selectedDevice.value.project_name}/${selectedDevice.value.module_type}/${selectedDevice.value.serial_number}`;
-        const topic = `${deviceId}/${form.value.channel}/command`;
-        const message = {
+        const deviceId = `${selectedDevice.value.project_name}/${selectedDevice.value.module_type}/${selectedDevice.value.serial_number}`
+        const topic = `${deviceId}/${form.value.channel}/command`
+        const payload = {
           command: 'write',
-          value: parseInt(form.value.value)
-        };
+          value: form.value.value
+        }
 
         if (ws.value && ws.value.readyState === WebSocket.OPEN) {
+          // 发送消息
           ws.value.send(JSON.stringify({
             type: 'mqtt_publish',
             topic: topic,
-            payload: message
-          }));
+            payload: payload
+          }))
 
-          // 添加发送消息记录
-          addMessage('send', topic, message, form.value.channel);
+          // 记录发送的消息
+          addMessage('send', topic, payload, form.value.channel)
         } else {
-          ElMessage.error('WebSocket连接已断开');
+          ElMessage.error('WebSocket连接已断开')
         }
       } catch (error) {
-        console.error('发送写入命令失败:', error);
-        ElMessage.error('发送写入命令失败');
+        console.error('写入失败:', error)
+        ElMessage.error('写入失败')
       }
-    };
+    }
 
     // 处理WebSocket消息
     const handleMessage = (message) => {
@@ -450,6 +482,13 @@ export default {
       }
     }
 
+    // 添加快捷写入方法
+    const quickWrite = async (value) => {
+      // 直接使用当前值进行写入
+      form.value.value = value.toString()
+      handleWrite()
+    }
+
     // 组件挂载时添加WebSocket监听
     onMounted(() => {
       loadDevices()
@@ -492,6 +531,7 @@ export default {
       getDisplayValue,
       activeCollapse,
       handleChannelChange,
+      quickWrite,
     }
   }
 }
@@ -546,28 +586,96 @@ export default {
   width: 100%;
 }
 
-.channel-control {
-  margin-bottom: 15px;
+.device-channel-control {
   display: flex;
   align-items: center;
-  gap: 10px;
-  width: 100%;
+  justify-content: space-between;
+  margin-bottom: 15px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--el-border-color-light);
+  
+  .current-device-info {
+    .el-tag {
+      font-size: 14px;
+    }
+  }
+  
+  .channel-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    
+    .channel-label {
+      white-space: nowrap;
+      color: var(--el-text-color-regular);
+    }
+  }
 }
 
-.channel-label {
-  min-width: 60px;
+.channel-quick-select {
+  margin: 10px 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.channel-quick-select .el-button {
+  padding: 4px 8px;
+  min-width: 36px;
+}
+
+.value-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.quick-value-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.quick-value-buttons .el-button {
+  flex: 1;
 }
 
 .command-buttons {
   display: flex;
-  gap: 10px;
-  align-items: center;
-  width: 100%;
+  gap: 20px;
+  align-items: flex-start;
 }
 
-.command-buttons .el-input {
+.write-section {
   flex: 1;
-  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.write-input {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+
+  .value-input {
+    flex: 1;
+    max-width: 200px;
+  }
+
+  .el-button {
+    min-width: 90px;
+  }
+}
+
+.quick-write-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+
+  .el-button {
+    min-width: 80px;
+  }
 }
 
 .message-log {
@@ -752,39 +860,5 @@ export default {
 /* 调整表格容器样式 */
 .el-table__body-wrapper {
   height: calc(100% - 40px) !important;
-}
-
-.channel-quick-select {
-  margin: 10px 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
-.channel-quick-select .el-button {
-  padding: 4px 8px;
-  min-width: 36px;
-}
-
-.value-input-group {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  flex: 1;
-}
-
-.quick-value-buttons {
-  display: flex;
-  gap: 4px;
-}
-
-.quick-value-buttons .el-button {
-  flex: 1;
-}
-
-.command-buttons {
-  display: flex;
-  gap: 8px;
-  align-items: flex-start;
 }
 </style> 
