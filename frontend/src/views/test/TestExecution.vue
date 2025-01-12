@@ -855,6 +855,8 @@ export default {
       await createFormRef.value.validate(async (valid) => {
         if (valid) {
           try {
+            loadingTestItems.value = true  // 设置加载状态
+            
             // 1. 创建测试实例
             console.log('开始创建测试实例:', createForm.value)
             const createResponse = await createTestInstance(createForm.value)
@@ -867,14 +869,24 @@ export default {
             console.log('刷新测试实例列表...')
             await fetchTestInstances()
             
-            // 3. 获取新创建的实例ID
-            const newInstanceId = testInstances.value[0].id
-            console.log('获取到新创建的实例ID:', newInstanceId)
+            // 3. 获取新创建的实例
+            const newInstance = testInstances.value[0]
+            console.log('获取到新创建的实例:', newInstance)
             
-            // 4. 创建测试项
+            // 4. 创建测试项并等待完成
             console.log('开始为实例创建测试项...')
-            const itemsResponse = await createInstanceItems(newInstanceId)
-            console.log('测试项创建响应:', itemsResponse)
+            await createInstanceItems(newInstance.id)
+            console.log('测试项创建完成')
+
+            // 5. 再次获取实例列表
+            console.log('再次刷新测试实例列表...')
+            await fetchTestInstances()
+            
+            // 6. 设置选中实例
+            const updatedInstance = testInstances.value.find(instance => instance.id === newInstance.id)
+            if (updatedInstance) {
+              selectedInstance.value = updatedInstance
+            }
             
             // 重置表单
             createForm.value = {
@@ -885,6 +897,8 @@ export default {
           } catch (error) {
             console.error('操作失败:', error)
             ElMessage.error('操作失败: ' + (error.response?.data?.message || error.message))
+          } finally {
+            loadingTestItems.value = false  // 清除加载状态
           }
         }
       })
@@ -985,16 +999,17 @@ export default {
 
     // 处理表格行点击
     const handleRowClick = async (row) => {
+      // 如果正在加载，不重复请求
+      if (loadingTestItems.value) {
+        console.log('正在加载中，跳过重复请求')
+        return
+      }
+      
       try {
         selectedInstance.value = row
-        // 如果实例状态是 pending，不需要立即加载测试项
-        if (row.status === TestStatus.PENDING) {
-          console.log('新建实例，无需加载测试项')
-          return
-        }
+        loadingTestItems.value = true
         
         // 加载测试项
-        loadingTestItems.value = true
         const response = await getOrCreateTestItems(row.id)
         if (response?.data?.data?.items) {
           // 更新选中实例的测试项
@@ -1007,7 +1022,7 @@ export default {
         }
       } catch (error) {
         console.error('加载测试项失败:', error)
-        ElMessage.error('加载测试项失败，请先创建测试项')
+        // 不显示错误提示，因为可能是创建过程中的正常现象
       } finally {
         loadingTestItems.value = false
       }

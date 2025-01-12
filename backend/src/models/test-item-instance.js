@@ -11,7 +11,7 @@ TestItemInstance.init({
   },
   instance_id: {
     type: DataTypes.INTEGER,
-    allowNull: true,
+    allowNull: false,
     references: {
       model: 'test_instances',
       key: 'id'
