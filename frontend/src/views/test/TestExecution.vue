@@ -245,9 +245,10 @@
           <el-table :data="group.items" border>
             <el-table-column prop="id" label="ID" width="80" />
             <el-table-column prop="test_item_id" label="测试项ID" width="80" />
-            <el-table-column prop="name" label="测试项" min-width="120" />
-            <el-table-column prop="device_id" label="设备ID" width="100" />
-            <el-table-column prop="point_index" label="通道" width="80" />
+            <el-table-column prop="testItem.test_group_id" label="测试组ID" width="80" />
+            <el-table-column prop="testItem.device_id" label="设备ID" width="80" />
+            <el-table-column prop="testItem.point_index" label="通道" width="80" />
+            <el-table-column prop="testItem.name" label="测试项名称" min-width="120" />
             <el-table-column label="测试值" width="150">
               <template #default="{ row }">
                 <div>实际值：{{ row.actual_value || '-' }}</div>
@@ -745,23 +746,26 @@ export default {
       }
       
       try {
+        console.log('点击测试实例:', row)
         selectedInstance.value = row
         loadingTestItems.value = true
         
-        // 加载测试项
-        const response = await getOrCreateTestItems(row.id)
-        if (response?.data?.data?.items) {
-          // 更新选中实例的测试项
-          selectedInstance.value.items = response.data.data.items
-          // 同时更新testInstances中对应实例的测试项
-          const index = testInstances.value.findIndex(instance => instance.id === row.id)
-          if (index !== -1) {
-            testInstances.value[index].items = response.data.data.items
-          }
+        // 使用与创建时相同的加载方式
+        console.log('开始获取测试项...')
+        await createInstanceItems(row.id)
+        await fetchTestInstances()
+        
+        // 更新选中的实例
+        const updatedInstance = testInstances.value.find(instance => instance.id === row.id)
+        if (updatedInstance) {
+          selectedInstance.value = updatedInstance
+          console.log('更新后的选中实例:', selectedInstance.value)
+        } else {
+          console.warn('未找到更新后的实例')
         }
       } catch (error) {
         console.error('加载测试项失败:', error)
-        // 不显示错误提示，因为可能是创建过程中的正常现象
+        ElMessage.error('加载测试项失败: ' + (error.response?.data?.message || error.message))
       } finally {
         loadingTestItems.value = false
       }
@@ -779,7 +783,10 @@ export default {
 
     // 实例操作项列表
     const filteredTestItems = computed(() => {
-      if (!selectedInstance.value || !selectedInstance.value.items) return []
+      if (!selectedInstance.value || !selectedInstance.value.items) {
+        console.log('没有选中实例或测试项')
+        return []
+      }
       console.log('当前测试项列表:', selectedInstance.value.items)
       
       // 按测试组分组
@@ -787,6 +794,7 @@ export default {
       const items = selectedInstance.value.items || []
       
       items.forEach(item => {
+        console.log('处理测试项:', item)
         const groupId = item.test_group_id
         if (!groupedItems[groupId]) {
           groupedItems[groupId] = {
@@ -800,6 +808,7 @@ export default {
         groupedItems[groupId].items.push(item)
       })
       
+      console.log('分组后的测试项:', groupedItems)
       // 转换为数组并排序
       return Object.values(groupedItems).sort((a, b) => a.sequence - b.sequence)
     })

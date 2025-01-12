@@ -7,15 +7,21 @@ const logger = require('../utils/logger');
 // 获取或创建测试项
 async function getOrCreateTestItems(instanceId) {
   try {
+    console.log('\n========== 开始获取测试项 ==========');
+    console.log('实例ID:', instanceId);
+
     // 1. 先查询该实例是否有测试项
+    console.log('\n----- 步骤1: 查询测试项 -----');
     const existingItems = await TestItemInstance.findAll({
       where: { instance_id: instanceId },
       include: [{
         model: TestItem,
+        as: 'testItem',
         required: false,  // LEFT JOIN
         attributes: ['id', 'device_id', 'point_index', 'name', 'test_group_id'],
         include: [{
           model: TestGroup,
+          as: 'group',
           required: false,  // LEFT JOIN
           attributes: ['id', 'description', 'level', 'sequence']
         }]
@@ -23,13 +29,17 @@ async function getOrCreateTestItems(instanceId) {
       order: [['id', 'ASC']]
     });
 
+    console.log('查询到的测试项数量:', existingItems.length);
+    console.log('第一个测试项数据:', JSON.stringify(existingItems[0], null, 2));
+
     // 2. 如果已有测试项，直接返回成功
     if (existingItems && existingItems.length > 0) {
+      console.log('\n----- 步骤2: 处理已存在的测试项 -----');
       // 处理数据，添加所有必要字段
       const processedItems = existingItems.map(item => {
-        const testItem = item.TestItem || {};
-        const group = testItem.TestGroup || {};
-        return {
+        const testItem = item.testItem || {};
+        const group = testItem.group || {};
+        const processed = {
           ...item.toJSON(),
           device_id: testItem.device_id,
           point_index: testItem.point_index,
@@ -42,9 +52,11 @@ async function getOrCreateTestItems(instanceId) {
             sequence: group.sequence
           }
         };
+        console.log('处理后的测试项:', JSON.stringify(processed, null, 2));
+        return processed;
       });
       
-      return {
+      const response = {
         code: 200,
         message: "测试项已存在",
         data: {
@@ -52,6 +64,10 @@ async function getOrCreateTestItems(instanceId) {
           items: processedItems
         }
       };
+      
+      console.log('\n响应数据:', JSON.stringify(response, null, 2));
+      console.log('\n========== 获取测试项完成 ==========\n');
+      return response;
     }
 
     // 3. 如果没有测试项，则需要创建
@@ -102,16 +118,32 @@ module.exports = {
   // 获取测试实例列表
   getTestInstances: async (req, res) => {
     try {
+      console.log('\n========== 获取测试实例列表开始 ==========');
       const instances = await TestInstance.findAll({
         include: [{
           model: TestItemInstance,
-          as: 'items'
+          as: 'items',
+          include: [{
+            model: TestItem,
+            as: 'testItem',
+            attributes: ['id', 'device_id', 'point_index', 'name', 'test_group_id'],
+            include: [{
+              model: TestGroup,
+              as: 'group',
+              attributes: ['id', 'description', 'level', 'sequence']
+            }]
+          }]
         }],
         order: [['created_at', 'DESC']]
       });
+      
+      console.log('查询到的实例数量:', instances.length);
+      console.log('第一个实例的数据:', JSON.stringify(instances[0], null, 2));
+      
       res.json(instances);
+      console.log('\n========== 获取测试实例列表完成 ==========\n');
     } catch (error) {
-      console.error('Error getting test instances:', error);
+      console.error('获取测试实例列表失败:', error);
       res.status(500).json({ message: '获取测试实例列表失败' });
     }
   },
