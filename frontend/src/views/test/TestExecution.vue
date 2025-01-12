@@ -1,53 +1,47 @@
 <template>
   <div class="test-execution">
     <!-- 测试设备状态 -->
-    <div class="device-status-section">
-      <div class="section-header">
-        <h3>测试设备状态 <span class="device-count">{{ onlineCount }}/{{ devices.length }}</span></h3>
-      </div>
-
-      <div class="device-groups">
-        <!-- 在线设备 -->
-        <div class="device-group">
-          <div class="group-title">在线设备</div>
-          <div class="device-list">
-            <div v-for="device in onlineDevices" 
-                :key="`${device.project_name}-${device.module_type}-${device.serial_number}`"
-                class="device-card"
-                :class="{ 'selected': selectedDevices.includes(device.id) }"
-                @click="toggleDeviceSelection(device)"
-            >
-              <div class="device-icon">
-                <el-icon><Monitor /></el-icon>
+    <el-collapse v-model="activeCollapse">
+      <el-collapse-item name="deviceStatus">
+        <template #title>
+          <div class="collapse-title">
+            <span>测试设备状态</span>
+            <span class="device-count">{{ onlineCount }}/{{ devices.length }}</span>
+          </div>
+        </template>
+        <div class="device-status">
+          <div class="status-content">
+            <!-- 在线设备 -->
+            <div class="status-section">
+              <h4>在线设备</h4>
+              <div class="online-devices">
+                <el-tooltip
+                  v-for="device in onlineDevices"
+                  :key="device.id"
+                  :content="`${device.module_type}-${device.serial_number}`"
+                  placement="top"
+                >
+                  <div class="device-icon online">
+                    <el-icon><Monitor /></el-icon>
+                  </div>
+                </el-tooltip>
               </div>
-              <div class="device-info">
-                <div class="device-name">{{ device.module_type }}-{{ device.serial_number }}</div>
-                <el-tag size="small" type="success">在线</el-tag>
+            </div>
+            
+            <!-- 离线设备 -->
+            <div class="status-section">
+              <h4>离线设备</h4>
+              <div class="offline-devices">
+                <div v-for="device in offlineDevices" :key="device.id" class="device-item offline">
+                  <el-icon><Monitor /></el-icon>
+                  <span class="device-name">{{ device.module_type }}-{{ device.serial_number }}</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
-
-        <!-- 离线设备 -->
-        <div class="device-group">
-          <div class="group-title">离线设备</div>
-          <div class="device-list">
-            <div v-for="device in offlineDevices" 
-                :key="`${device.project_name}-${device.module_type}-${device.serial_number}`"
-                class="device-card offline"
-            >
-              <div class="device-icon">
-                <el-icon><Monitor /></el-icon>
-              </div>
-              <div class="device-info">
-                <div class="device-name">{{ device.module_type }}-{{ device.serial_number }}</div>
-                <el-tag size="small" type="danger">离线</el-tag>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+      </el-collapse-item>
+    </el-collapse>
 
     <!-- 测试实例列表面板 -->
     <el-card class="box-card mb-20">
@@ -219,24 +213,6 @@
           <div class="header-left">
             <span>实例操作项列表</span>
             <el-tag type="info" class="ml-10">{{ selectedInstance.product_sn }}</el-tag>
-          </div>
-          <div class="header-right">
-            <el-button-group>
-              <el-button
-                type="success"
-                size="small"
-                @click="handleCreateInstanceItems"
-              >
-                创建项
-              </el-button>
-              <el-button
-                type="info"
-                size="small"
-                @click="refreshTestItems"
-              >
-                刷新
-              </el-button>
-            </el-button-group>
           </div>
         </div>
       </template>
@@ -1137,6 +1113,9 @@ export default {
       }
     }
 
+    // 折叠面板激活的面板名称数组，设为空数组表示默认折叠
+    const activeCollapse = ref([])
+
     return {
       isDevicesPanelCollapsed,
       devices,
@@ -1217,7 +1196,8 @@ export default {
       loading,
       loadDevices,
       refreshDevices,
-      toggleDeviceSelection
+      toggleDeviceSelection,
+      activeCollapse
     }
   }
 }
@@ -1249,97 +1229,92 @@ export default {
     }
   }
 
-  .device-status-section {
-    margin-bottom: 20px;
-    background-color: #fff;
+  .device-status {
+    padding: 10px;
+  }
+
+  .status-title {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+  }
+
+  .status-content {
+    display: flex;
+    gap: 20px;
+  }
+
+  .status-section {
+    flex: 1;
+
+    h4 {
+      margin-bottom: 10px;
+      color: var(--el-text-color-regular);
+      font-size: 14px;
+    }
+  }
+
+  // 在线设备样式
+  .online-devices {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(24px, 1fr));
+    gap: 4px;
+    max-width: 100%;
+    padding: 4px;
+    background-color: var(--el-bg-color-page);
     border-radius: 4px;
-    border: 1px solid #dcdfe6;
-    padding: 20px;
-
-    .section-header {
+    
+    .device-icon {
+      width: 24px;
+      height: 24px;
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      margin-bottom: 20px;
-
-      h3 {
-        margin: 0;
-        font-size: 16px;
-        color: #303133;
-        display: flex;
-        align-items: center;
-        gap: 8px;
+      justify-content: center;
+      border-radius: 4px;
+      background-color: var(--el-color-success-light-9);
+      color: var(--el-color-success);
+      cursor: pointer;
+      transition: all 0.2s;
+      
+      &:hover {
+        background-color: var(--el-color-success-light-8);
+        transform: translateY(-2px);
       }
-
-      .device-count {
+      
+      .el-icon {
         font-size: 14px;
-        color: #909399;
       }
     }
+  }
 
-    .device-groups {
+  // 离线设备样式
+  .offline-devices {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 4px;
+    padding: 4px;
+    background-color: var(--el-bg-color-page);
+    border-radius: 4px;
+
+    .device-item {
       display: flex;
-      flex-direction: column;
-      gap: 20px;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      background-color: var(--el-color-danger-light-9);
+      color: var(--el-color-danger);
+      font-size: 12px;
 
-      .device-group {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
+      .el-icon {
+        font-size: 14px;
+      }
 
-        .group-title {
-          font-size: 14px;
-          color: #606266;
-          font-weight: 500;
-        }
-
-        .device-list {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-          gap: 12px;
-
-          .device-card {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px;
-            border-radius: 4px;
-            border: 1px solid #dcdfe6;
-            cursor: pointer;
-            transition: all 0.3s;
-
-            &:hover {
-              border-color: #409eff;
-              box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-            }
-
-            &.selected {
-              border-color: #409eff;
-              background-color: #ecf5ff;
-            }
-
-            &.offline {
-              opacity: 0.7;
-              cursor: not-allowed;
-            }
-
-            .device-icon {
-              font-size: 24px;
-              color: #409eff;
-            }
-
-            .device-info {
-              display: flex;
-              flex-direction: column;
-              gap: 4px;
-
-              .device-name {
-                font-size: 14px;
-                color: #303133;
-              }
-            }
-          }
-        }
+      .device-name {
+        color: var(--el-text-color-regular);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
     }
   }
@@ -1375,6 +1350,17 @@ export default {
 
   .ml-10 {
     margin-left: 10px;
+  }
+
+  .collapse-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    
+    .device-count {
+      font-size: 14px;
+      color: var(--el-text-color-secondary);
+    }
   }
 }
 </style> 
