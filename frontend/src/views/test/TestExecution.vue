@@ -251,9 +251,45 @@
           hasChildren: 'hasChildren'
         }"
       >
-        <el-table-column prop="name" label="名称" min-width="200">
+        <el-table-column prop="id" label="ID" width="80">
           <template #default="{ row }">
-            <span>{{ row.name || row.description || '-' }}</span>
+            <span>{{ row.id }}</span>
+          </template>
+        </el-table-column>
+        
+        <el-table-column prop="test_item_id" label="测试项ID" width="100">
+          <template #default="{ row }">
+            <span>{{ row.test_item_id || '-' }}</span>
+          </template>
+        </el-table-column>
+
+        <el-table-column prop="test_group_id" label="测试组ID" width="100">
+          <template #default="{ row }">
+            <span>{{ row.test_group_id || '-' }}</span>
+          </template>
+        </el-table-column>
+
+        <el-table-column prop="group_name" label="测试组名称" min-width="120">
+          <template #default="{ row }">
+            <span>{{ row.group_name || '-' }}</span>
+          </template>
+        </el-table-column>
+
+        <el-table-column prop="device_id" label="设备ID" width="100">
+          <template #default="{ row }">
+            <span>{{ row.device_id || '-' }}</span>
+          </template>
+        </el-table-column>
+
+        <el-table-column prop="point_index" label="点位序号" width="100">
+          <template #default="{ row }">
+            <span>{{ row.point_index || '-' }}</span>
+          </template>
+        </el-table-column>
+
+        <el-table-column prop="name" label="名称" min-width="120">
+          <template #default="{ row }">
+            <span>{{ row.name || '-' }}</span>
           </template>
         </el-table-column>
         

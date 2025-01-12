@@ -9,17 +9,41 @@ async function getOrCreateTestItems(instanceId) {
   try {
     // 1. 先查询该实例是否有测试项
     const existingItems = await TestItemInstance.findAll({
-      where: { instance_id: instanceId }
+      where: { instance_id: instanceId },
+      include: [{
+        model: TestItem,
+        required: false,  // LEFT JOIN
+        attributes: ['id', 'device_id', 'point_index', 'name', 'test_group_id'],
+        include: [{
+          model: TestGroup,
+          required: false,  // LEFT JOIN
+          attributes: ['id', 'name']
+        }]
+      }],
+      order: [['id', 'ASC']]
     });
 
     // 2. 如果已有测试项，直接返回成功
     if (existingItems && existingItems.length > 0) {
+      // 处理数据，添加所有必要字段
+      const processedItems = existingItems.map(item => {
+        const testItem = item.TestItem || {};
+        return {
+          ...item.toJSON(),
+          device_id: testItem.device_id,
+          point_index: testItem.point_index,
+          name: testItem.name,
+          test_group_id: testItem.test_group_id,
+          group_name: testItem.TestGroup?.name
+        };
+      });
+      
       return {
         code: 200,
         message: "测试项已存在",
         data: {
-          count: existingItems.length,
-          items: existingItems
+          count: processedItems.length,
+          items: processedItems
         }
       };
     }
