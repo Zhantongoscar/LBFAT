@@ -7,6 +7,15 @@
           <div class="collapse-title">
             <span>测试设备状态</span>
             <span class="device-count">{{ onlineCount }}/{{ devices.length }}</span>
+            <div class="device-status-progress">
+              <el-progress
+                :percentage="(onlineCount / devices.length) * 100"
+                :format="() => ''"
+                :stroke-width="15"
+                status="success"
+                class="status-progress"
+              />
+            </div>
           </div>
         </template>
         <div class="device-status">
@@ -1355,11 +1364,34 @@ export default {
   .collapse-title {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 20px;
+    width: 100%;
     
     .device-count {
       font-size: 14px;
       color: var(--el-text-color-secondary);
+      white-space: nowrap;
+      margin-right: 10px;
+    }
+    
+    .device-status-progress {
+      flex: 1;
+      margin-right: 20px;
+      
+      .status-progress {
+        margin: 0;
+        
+        :deep(.el-progress-bar__outer) {
+          background-color: var(--el-fill-color-darker);
+          height: 20px !important;
+          border-radius: 4px;
+        }
+        
+        :deep(.el-progress-bar__inner) {
+          background-color: var(--el-color-success);
+          border-radius: 4px;
+        }
+      }
     }
   }
 }
