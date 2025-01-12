@@ -251,10 +251,9 @@
             <el-table-column prop="testItem.name" label="测试项名称" min-width="120" />
             <el-table-column prop="testItem.input_values" label="设定值" width="80" />
             <el-table-column prop="testItem.expected_values" label="预期值" width="80" />
-            <el-table-column label="测试值" width="150">
+            <el-table-column label="实际测量值" width="150">
               <template #default="{ row }">
-                <div>实际值：{{ row.actual_value || '-' }}</div>
-                <div>预期值：{{ row.expected_values || '-' }}</div>
+                <div>{{ row.actual_value || '-' }}</div>
               </template>
             </el-table-column>
             <el-table-column prop="execution_status" label="状态" width="100">
