@@ -855,20 +855,36 @@ export default {
       await createFormRef.value.validate(async (valid) => {
         if (valid) {
           try {
-            await createTestInstance(createForm.value)
+            // 1. 创建测试实例
+            console.log('开始创建测试实例:', createForm.value)
+            const createResponse = await createTestInstance(createForm.value)
+            console.log('测试实例创建响应:', createResponse)
+            
             ElMessage.success('创建成功')
             createDialogVisible.value = false
+            
+            // 2. 刷新获取实例列表
+            console.log('刷新测试实例列表...')
+            await fetchTestInstances()
+            
+            // 3. 获取新创建的实例ID
+            const newInstanceId = testInstances.value[0].id
+            console.log('获取到新创建的实例ID:', newInstanceId)
+            
+            // 4. 创建测试项
+            console.log('开始为实例创建测试项...')
+            const itemsResponse = await createInstanceItems(newInstanceId)
+            console.log('测试项创建响应:', itemsResponse)
+            
             // 重置表单
             createForm.value = {
               truth_table_id: '',
               product_sn: '',
               operator: 'root'
             }
-            // 刷新测试实例列表
-            await fetchTestInstances()
           } catch (error) {
-            console.error('创建测试实例失败:', error)
-            ElMessage.error('创建失败: ' + (error.response?.data?.message || error.message))
+            console.error('操作失败:', error)
+            ElMessage.error('操作失败: ' + (error.response?.data?.message || error.message))
           }
         }
       })
