@@ -365,13 +365,44 @@
               </el-option>
             </el-select>
           </el-form-item>
-          <el-form-item label="单元序号" prop="point_index">
-            <el-input-number 
-              v-model="testItemForm.point_index" 
-              :min="0"
-              :max="999"
-              placeholder="请输入单元序号"
+          <el-form-item label="测试项名称" prop="name">
+            <el-input 
+              v-model="testItemForm.name"
+              placeholder="请输入测试项名称"
             />
+          </el-form-item>
+          <el-form-item label="单元序号" prop="point_index">
+            <div class="point-index-container">
+              <el-input-number 
+                v-model="testItemForm.point_index" 
+                :min="0"
+                :max="19"
+                placeholder="请输入单元序号"
+                class="point-index-input"
+              />
+              <div class="quick-select-buttons">
+                <el-button-group>
+                  <el-button 
+                    v-for="i in 10" 
+                    :key="i-1"
+                    size="small"
+                    @click="testItemForm.point_index = i-1"
+                  >
+                    {{ i-1 }}
+                  </el-button>
+                </el-button-group>
+                <el-button-group style="margin-top: 5px">
+                  <el-button 
+                    v-for="i in 10" 
+                    :key="i+9"
+                    size="small"
+                    @click="testItemForm.point_index = i+9"
+                  >
+                    {{ i+9 }}
+                  </el-button>
+                </el-button-group>
+              </div>
+            </div>
           </el-form-item>
           <el-form-item label="模式" prop="mode">
             <el-select v-model="testItemForm.mode" placeholder="请选择模式">
@@ -594,6 +625,7 @@ export default {
     const testItemForm = reactive({
       device_id: '',
       point_index: 1,
+      name: '',
       description: '',
       input_values: 0,
       expected_values: 0,
@@ -612,6 +644,7 @@ export default {
       testItemForm.test_group_id = currentTestGroup.value.id;
       testItemForm.device_id = '';
       testItemForm.point_index = 1;
+      testItemForm.name = '';
       testItemForm.description = '';
       testItemForm.input_values = 0;
       testItemForm.expected_values = 0;
@@ -645,12 +678,13 @@ export default {
         testItemForm.id = row.id;
         testItemForm.test_group_id = row.test_group_id;
         testItemForm.device_id = row.device_id;
+        testItemForm.name = row.name || '';  // 设置测试项名称
         testItemForm.point_index = parseInt(row.point_index) || 1;
         testItemForm.description = row.description || '';
         testItemForm.input_values = parseFloat(row.input_values) || 0;
         testItemForm.expected_values = parseFloat(row.expected_values) || 0;
         testItemForm.timeout = parseInt(row.timeout) || 5000;
-        testItemForm.mode = row.mode || 'read';  // 设置测试模式
+        testItemForm.mode = row.mode || 'read';
 
         console.log('表单数据设置完成:', testItemForm);
       } catch (error) {
@@ -1026,33 +1060,33 @@ export default {
         const formData = {
           test_group_id: testItemForm.test_group_id,
           device_id: testItemForm.device_id,
+          name: testItemForm.name,  // 确保包含测试项名称
           point_index: testItemForm.point_index,
           description: testItemForm.description,
           input_values: testItemForm.input_values,
           expected_values: testItemForm.expected_values,
           timeout: testItemForm.timeout,
-          mode: testItemForm.mode  // 添加mode字段
+          mode: testItemForm.mode
         };
 
-        let response;
         if (testItemForm.id) {
           // 编辑模式
-          response = await testItemApi.update(testItemForm.id, formData);
-          ElMessage.success('修改测试项成功');
+          await testItemApi.update(testItemForm.id, formData);
+          ElMessage.success('更新测试项成功');
         } else {
-          // 新建模式
-          response = await testItemApi.create(formData);
+          // 创建模式
+          await testItemApi.create(formData);
           ElMessage.success('创建测试项成功');
         }
 
         testItemDialogVisible.value = false;
-        // 刷新当前测试组的测试项列表
+        // 刷新测试项列表
         if (currentTestGroup.value) {
           handleTestGroupClick(currentTestGroup.value);
         }
       } catch (error) {
-        console.error('提交测试项失败:', error);
-        ElMessage.error('提交失败: ' + (error.message || '未知错误'));
+        console.error('保存测试项失败:', error);
+        ElMessage.error('保存失败: ' + (error.message || '未知错误'));
       }
     };
 
@@ -1129,6 +1163,10 @@ export default {
     };
 
     const testItemRules = {
+      name: [
+        { required: true, message: '请输入测试项名称', trigger: 'blur' },
+        { min: 2, max: 100, message: '长度在 2 到 100 个字符', trigger: 'blur' }
+      ],
       device_id: [
         { required: true, message: '请选择设备', trigger: 'change' }
       ],
@@ -1340,5 +1378,26 @@ export default {
 
 :deep(.el-input__wrapper) {
   padding-right: 0;
+}
+
+.point-index-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.point-index-input {
+  width: 180px;
+}
+
+.quick-select-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.quick-select-buttons .el-button {
+  padding: 5px 12px;
+  min-width: 40px;
 }
 </style> 
