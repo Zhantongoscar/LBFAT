@@ -512,8 +512,14 @@ module.exports = {
         },
         include: [{
           model: TestItem,
+          as: 'testItem',
+          required: true,
+          attributes: ['id', 'device_id', 'point_index', 'name', 'test_group_id', 'input_values', 'expected_values', 'mode'],
           include: [{
-            model: TestGroup
+            model: TestGroup,
+            as: 'group',
+            required: false,
+            attributes: ['id', 'description', 'level', 'sequence']
           }]
         }],
         transaction
@@ -542,12 +548,12 @@ module.exports = {
         start_time: new Date()
       }, { transaction });
 
-      // 4. 执行测试
-      const { project_name, module_type, serial_number, channel } = testItem.TestItem;
+      // 4. 根据mode执行测试
+      const { project_name, module_type, serial_number, channel } = testItem.testItem;
       let response;
       
-      if (testItem.TestItem.type === 'DI' || testItem.TestItem.type === 'AI') {
-        // 输入类型测试
+      if (testItem.testItem.mode === 'read') {
+        // 读取命令
         response = await testMqttService.sendReadCommand(
           project_name,
           module_type,
@@ -555,18 +561,18 @@ module.exports = {
           channel
         );
       } else {
-        // 输出类型测试
+        // 写入命令
         response = await testMqttService.sendWriteCommand(
           project_name,
           module_type,
           serial_number,
           channel,
-          testItem.TestItem.expected_value
+          testItem.testItem.expected_values
         );
       }
 
       // 5. 更新测试结果
-      const passed = Math.abs(response.value - testItem.TestItem.expected_value) <= testItem.TestItem.tolerance;
+      const passed = Math.abs(response.value - testItem.testItem.expected_values) <= testItem.testItem.tolerance;
       await testItem.update({
         execution_status: 'completed',
         result_status: passed ? 'passed' : 'failed',
@@ -584,7 +590,8 @@ module.exports = {
           execution_status: 'completed',
           result_status: passed ? 'passed' : 'failed',
           actual_value: response.value,
-          expected_value: testItem.TestItem.expected_value
+          expected_value: testItem.testItem.expected_values,
+          mode: testItem.testItem.mode
         }
       });
 

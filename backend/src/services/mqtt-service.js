@@ -155,6 +155,10 @@ class MQTTService {
                                     channel,
                                     payload
                                 });
+
+                                // 调用 test-mqtt-service 的响应处理方法
+                                const testMqttService = require('./test-mqtt-service');
+                                testMqttService.handleResponse(topic, payload);
                             }
                         } catch (error) {
                             logger.error('处理MQTT消息失败:', error);

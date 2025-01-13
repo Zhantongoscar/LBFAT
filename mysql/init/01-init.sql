@@ -136,10 +136,12 @@ CREATE TABLE IF NOT EXISTS test_items (
   point_index INT NOT NULL COMMENT '设备点位索引',
   name VARCHAR(100) COMMENT '测试项名称',
   description TEXT COMMENT '测试项描述',
+    mode ENUM('read', 'write') NOT NULL DEFAULT 'read' COMMENT '测试模式',
   sequence INT NOT NULL DEFAULT 0 COMMENT '显示顺序',
   input_values FLOAT NOT NULL DEFAULT 0 COMMENT '输入值',
   expected_values FLOAT NOT NULL DEFAULT 0 COMMENT '预期结果',
   timeout INT NOT NULL DEFAULT 5000 COMMENT '超时时间(毫秒)',
+
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   FOREIGN KEY (test_group_id) REFERENCES test_groups(id) ON DELETE CASCADE,

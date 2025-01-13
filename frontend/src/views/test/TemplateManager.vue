@@ -449,6 +449,12 @@
               placeholder="请输入超时时间(毫秒)"
             />
           </el-form-item>
+          <el-form-item label="测试模式" prop="mode">
+            <el-select v-model="testItemForm.mode" placeholder="请选择测试模式">
+              <el-option label="读取" value="read" />
+              <el-option label="写入" value="write" />
+            </el-select>
+          </el-form-item>
         </el-form>
         <template #footer>
           <span class="dialog-footer">
@@ -635,6 +641,7 @@ export default {
       input_values: 0,
       expected_values: 0,
       timeout: 5000,
+      mode: 'read',
       test_group_id: null
     });
 
@@ -652,6 +659,7 @@ export default {
       testItemForm.input_values = 0;
       testItemForm.expected_values = 0;
       testItemForm.timeout = 5000;
+      testItemForm.mode = 'read';  // 默认为读取模式
       
       console.log('重新获取设备列表...');
       await fetchDevices();
@@ -679,12 +687,13 @@ export default {
         // 设置表单数据，保留id用于区分编辑模式
         testItemForm.id = row.id;
         testItemForm.test_group_id = row.test_group_id;
-        testItemForm.device_id = row.device_id; // 直接使用原始值，不需要转换
+        testItemForm.device_id = row.device_id;
         testItemForm.point_index = parseInt(row.point_index) || 1;
         testItemForm.description = row.description || '';
         testItemForm.input_values = parseFloat(row.input_values) || 0;
         testItemForm.expected_values = parseFloat(row.expected_values) || 0;
         testItemForm.timeout = parseInt(row.timeout) || 5000;
+        testItemForm.mode = row.mode || 'read';  // 设置测试模式
 
         console.log('表单数据设置完成:', testItemForm);
       } catch (error) {
@@ -1064,7 +1073,8 @@ export default {
           description: testItemForm.description,
           input_values: testItemForm.input_values,
           expected_values: testItemForm.expected_values,
-          timeout: testItemForm.timeout
+          timeout: testItemForm.timeout,
+          mode: testItemForm.mode  // 添加mode字段
         };
 
         let response;
@@ -1180,6 +1190,9 @@ export default {
       timeout: [
         { required: true, message: '请输入超时时间', trigger: 'blur' },
         { type: 'number', min: 1000, message: '超时时间必须大于1000ms', trigger: 'blur' }
+      ],
+      mode: [
+        { required: true, message: '请选择测试模式', trigger: 'change' }
       ]
     };
 

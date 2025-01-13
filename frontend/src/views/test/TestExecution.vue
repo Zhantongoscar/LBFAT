@@ -248,6 +248,16 @@
             <el-table-column prop="testItem.test_group_id" label="测试组ID" width="80" />
             <el-table-column prop="testItem.device_id" label="设备ID" width="80" />
             <el-table-column prop="testItem.point_index" label="通道" width="80" />
+            <el-table-column label="模式" width="100">
+              <template #default="{ row }">
+                <el-tag 
+                  :type="row.mode === 'read' ? 'success' : 'warning'"
+                  size="small"
+                >
+                  {{ row.mode === 'read' ? '读取' : '写入' }}
+                </el-tag>
+              </template>
+            </el-table-column>
             <el-table-column prop="testItem.name" label="测试项名称" min-width="120" />
             <el-table-column prop="testItem.input_values" label="设定值" width="80" />
             <el-table-column prop="testItem.expected_values" label="预期值" width="80" />
@@ -424,7 +434,9 @@ import {
   ExecutionStatus,
   ResultStatus,
   getOrCreateTestItems,
-  createInstanceItems
+  createInstanceItems,
+  executeTestItem,
+  skipTestItem
 } from '@/api/testInstance'
 import { getTruthTables } from '@/api/truthTable'
 
@@ -784,25 +796,45 @@ export default {
 
     // 实例操作项列表
     const filteredTestItems = computed(() => {
-      if (!selectedInstance.value || !selectedInstance.value.items) {
-        console.log('没有选中实例或测试项')
+      if (!selectedInstance.value) {
+        console.log('没有选中实例')
         return []
       }
-      console.log('当前测试项列表:', selectedInstance.value.items)
+
+      if (!selectedInstance.value.items) {
+        console.log('选中实例没有测试项:', selectedInstance.value)
+        return []
+      }
+
+      const items = selectedInstance.value.items
+      console.log('当前测试项列表:', items)
       
       // 按测试组分组
       const groupedItems = {}
-      const items = selectedInstance.value.items || []
       
       items.forEach(item => {
-        console.log('处理测试项:', item)
-        const groupId = item.test_group_id
+        if (!item) {
+          console.log('跳过空测试项')
+          return
+        }
+
+        if (!item.testItem) {
+          console.log('测试项缺少testItem属性:', item)
+          return
+        }
+
+        const groupId = item.testItem.test_group_id
+        if (!groupId) {
+          console.log('测试项缺少test_group_id:', item)
+          return
+        }
+
         if (!groupedItems[groupId]) {
           groupedItems[groupId] = {
             id: groupId,
-            description: item.group?.description || '未知测试组',
-            level: item.group?.level || 1,
-            sequence: item.group?.sequence || 0,
+            description: item.testItem.group?.description || '未知测试组',
+            level: item.testItem.group?.level || 1,
+            sequence: item.testItem.group?.sequence || 0,
             items: []
           }
         }
@@ -810,7 +842,6 @@ export default {
       })
       
       console.log('分组后的测试项:', groupedItems)
-      // 转换为数组并排序
       return Object.values(groupedItems).sort((a, b) => a.sequence - b.sequence)
     })
 
@@ -822,6 +853,83 @@ export default {
     // 判断是否可以跳过测试项
     const canSkipItem = (item) => {
       return item.execution_status === ExecutionStatus.PENDING
+    }
+
+    // 获取通道类型样式
+    const getChannelTypeStyle = (type) => {
+      if (!type) return ''  // 添加空值检查
+      switch (type) {
+        case 'DI':
+          return 'success'  // 绿色
+        case 'DO':
+          return 'warning'  // 黄色
+        case 'AI':
+          return 'info'     // 蓝色
+        case 'AO':
+          return 'danger'   // 红色
+        default:
+          return ''         // 默认灰色
+      }
+    }
+
+    // 处理执行测试项
+    const handleExecuteItem = async (item) => {
+      try {
+        console.log('执行测试项:', item)
+        loading.value = true
+        
+        // 调用执行API
+        const response = await executeTestItem(selectedInstance.value.id, item.id)
+        console.log('执行测试项响应:', response)
+        
+        if (response.code === 200) {
+          ElMessage.success('执行成功')
+          // 刷新测试实例列表
+          await fetchTestInstances()
+          // 更新选中的实例
+          const updatedInstance = testInstances.value.find(instance => instance.id === selectedInstance.value.id)
+          if (updatedInstance) {
+            selectedInstance.value = updatedInstance
+          }
+        } else {
+          throw new Error(response.message || '执行失败')
+        }
+      } catch (error) {
+        console.error('执行测试项失败:', error)
+        ElMessage.error('执行失败: ' + (error.response?.data?.message || error.message))
+      } finally {
+        loading.value = false
+      }
+    }
+
+    // 处理跳过测试项
+    const handleSkipItem = async (item) => {
+      try {
+        console.log('跳过测试项:', item)
+        loading.value = true
+        
+        // 调用跳过API
+        const response = await skipTestItem(selectedInstance.value.id, item.id)
+        console.log('跳过测试项响应:', response)
+        
+        if (response.code === 200) {
+          ElMessage.success('已跳过')
+          // 刷新测试实例列表
+          await fetchTestInstances()
+          // 更新选中的实例
+          const updatedInstance = testInstances.value.find(instance => instance.id === selectedInstance.value.id)
+          if (updatedInstance) {
+            selectedInstance.value = updatedInstance
+          }
+        } else {
+          throw new Error(response.message || '跳过失败')
+        }
+      } catch (error) {
+        console.error('跳过测试项失败:', error)
+        ElMessage.error('跳过失败: ' + (error.response?.data?.message || error.message))
+      } finally {
+        loading.value = false
+      }
     }
 
     // 组件挂载时加载数据
@@ -885,7 +993,9 @@ export default {
       formatDateTime: (date) => {
         if (!date) return ''
         return new Date(date).toLocaleString()
-      }
+      },
+
+      getChannelTypeStyle,
     }
   }
 }
