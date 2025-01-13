@@ -36,6 +36,11 @@ TestItem.init({
     type: DataTypes.TEXT,
     allowNull: true
   },
+  mode: {
+    type: DataTypes.ENUM('read', 'write'),
+    allowNull: false,
+    defaultValue: 'read'
+  },
   sequence: {
     type: DataTypes.INTEGER,
     allowNull: false,

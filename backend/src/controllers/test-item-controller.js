@@ -17,6 +17,11 @@ class TestItemController {
       
       const items = await TestItem.findAll({
         where: { test_group_id: groupId },
+        attributes: [
+          'id', 'test_group_id', 'device_id', 'point_index', 
+          'name', 'description', 'mode', 'sequence',
+          'input_values', 'expected_values', 'timeout'
+        ],
         include: [{
           model: require('../models/device'),
           as: 'device',
@@ -65,9 +70,34 @@ class TestItemController {
     try {
       console.log('\n========== 创建测试项开始 ==========');
       console.log('请求体数据:', JSON.stringify(req.body, null, 2));
+      console.log('mode字段值:', req.body.mode);
+      
+      // 验证必填字段
+      const requiredFields = ['test_group_id', 'device_id', 'point_index', 'mode'];
+      const missingFields = requiredFields.filter(field => !req.body[field]);
+      
+      if (missingFields.length > 0) {
+        console.error('缺少必填字段:', missingFields);
+        return res.status(400).json({
+          code: 400,
+          message: `缺少必填字段: ${missingFields.join(', ')}`,
+          error: 'ValidationError'
+        });
+      }
+
+      // 验证mode字段值
+      if (!['read', 'write'].includes(req.body.mode)) {
+        console.error('无效的mode值:', req.body.mode);
+        return res.status(400).json({
+          code: 400,
+          message: 'mode字段必须是 "read" 或 "write"',
+          error: 'ValidationError'
+        });
+      }
       
       const item = await TestItem.create(req.body);
       console.log('创建成功，新记录:', JSON.stringify(item, null, 2));
+      console.log('新记录的mode值:', item.mode);
       
       res.status(201).json({
         code: 201,
@@ -101,6 +131,17 @@ class TestItemController {
       console.log('\n========== 更新测试项开始 ==========');
       console.log('请求参数 - id:', id);
       console.log('请求体:', JSON.stringify(req.body, null, 2));
+      console.log('mode字段值:', req.body.mode);
+
+      // 验证mode字段值
+      if (req.body.mode && !['read', 'write'].includes(req.body.mode)) {
+        console.error('无效的mode值:', req.body.mode);
+        return res.status(400).json({
+          code: 400,
+          message: 'mode字段必须是 "read" 或 "write"',
+          error: 'ValidationError'
+        });
+      }
 
       const [updated] = await TestItem.update(req.body, {
         where: { id }
@@ -109,6 +150,7 @@ class TestItemController {
       if (updated) {
         const item = await TestItem.findByPk(id);
         console.log('更新成功，更新后的数据:', JSON.stringify(item, null, 2));
+        console.log('更新后的mode值:', item.mode);
         res.json({
           code: 200,
           message: '更新成功',

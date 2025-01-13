@@ -183,13 +183,8 @@
               :max-height="400"
             >
               <el-table-column prop="id" label="ID" width="60" />
-              <el-table-column prop="device_id" label="设备" width="160">
-                <template #default="{ row }">
-                  {{ row.device_id }}
-                </template>
-              </el-table-column>
-              <el-table-column prop="point_index" label="单元序号" width="100" />
-              <el-table-column prop="description" label="描述" min-width="200" />
+              <el-table-column prop="device_id" label="设备ID" width="80" />
+              <el-table-column prop="point_index" label="通道" width="80" />
               <el-table-column label="模式" width="100">
                 <template #default="{ row }">
                   <el-tag 
@@ -200,98 +195,24 @@
                   </el-tag>
                 </template>
               </el-table-column>
-              <el-table-column label="输入值" width="150">
-                <template #default="{ row }">
-                  <div class="value-input-container">
-                    <el-input
-                      v-model="row.input_values"
-                      type="number"
-                      step="0.01"
-                      style="width: 100px"
-                    >
-                      <template #append>
-                        <el-dropdown @command="(val) => handleQuickSelect(row, 'input_values', val)">
-                          <span class="el-dropdown-link">
-                            <el-icon><arrow-down /></el-icon>
-                          </span>
-                          <template #dropdown>
-                            <el-dropdown-menu>
-                              <el-dropdown-item :command="0">0</el-dropdown-item>
-                              <el-dropdown-item :command="100">100</el-dropdown-item>
-                            </el-dropdown-menu>
-                          </template>
-                        </el-dropdown>
-                      </template>
-                    </el-input>
-                  </div>
-                </template>
-              </el-table-column>
-              <el-table-column label="预期值" width="150">
-                <template #default="{ row }">
-                  <div class="value-input-container">
-                    <el-input
-                      v-model="row.expected_values"
-                      type="number"
-                      step="0.01"
-                      style="width: 100px"
-                    >
-                      <template #append>
-                        <el-dropdown @command="(val) => handleQuickSelect(row, 'expected_values', val)">
-                          <span class="el-dropdown-link">
-                            <el-icon><arrow-down /></el-icon>
-                          </span>
-                          <template #dropdown>
-                            <el-dropdown-menu>
-                              <el-dropdown-item :command="0">0</el-dropdown-item>
-                              <el-dropdown-item :command="100">100</el-dropdown-item>
-                            </el-dropdown-menu>
-                          </template>
-                        </el-dropdown>
-                      </template>
-                    </el-input>
-                  </div>
-                </template>
-              </el-table-column>
-              <el-table-column label="超时时间" prop="timeout" width="150">
-                <template #default="{ row }">
-                  <div class="value-input-container">
-                    <el-input
-                      v-model="row.timeout"
-                      type="number"
-                      step="1000"
-                      style="width: 100px"
-                    >
-                      <template #append>
-                        <el-dropdown @command="(val) => handleQuickSelect(row, 'timeout', val)">
-                          <span class="el-dropdown-link">
-                            <el-icon><arrow-down /></el-icon>
-                          </span>
-                          <template #dropdown>
-                            <el-dropdown-menu>
-                              <el-dropdown-item :command="1000">1000</el-dropdown-item>
-                              <el-dropdown-item :command="60000">60000</el-dropdown-item>
-                            </el-dropdown-menu>
-                          </template>
-                        </el-dropdown>
-                      </template>
-                    </el-input>
-                  </div>
-                </template>
-              </el-table-column>
-              <el-table-column label="操作" width="120" fixed="right">
-                <template #default="{ row }">
+              <el-table-column prop="name" label="测试项名称" min-width="120" />
+              <el-table-column prop="input_values" label="输入值" width="100" />
+              <el-table-column prop="expected_values" label="期望值" width="100" />
+              <el-table-column prop="timeout" label="超时(ms)" width="100" />
+              <el-table-column label="操作" width="200" fixed="right">
+                <template #default="scope">
                   <el-button-group>
                     <el-button 
                       type="primary" 
                       size="small" 
-                      @click="handleEditTestItem(row)"
+                      @click="handleEditTestItem(scope.row)"
                     >
                       编辑
                     </el-button>
                     <el-button 
                       type="danger" 
                       size="small" 
-                      @click="handleDeleteTestItem(row)"
+                      @click="handleDeleteTestItem(scope.row)"
                     >
                       删除
                     </el-button>
