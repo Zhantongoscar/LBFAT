@@ -411,10 +411,16 @@
           <el-form-item label="单元序号" prop="point_index">
             <el-input-number 
               v-model="testItemForm.point_index" 
-              :min="1"
+              :min="0"
               :max="999"
               placeholder="请输入单元序号"
             />
+          </el-form-item>
+          <el-form-item label="模式" prop="mode">
+            <el-select v-model="testItemForm.mode" placeholder="请选择模式">
+              <el-option label="读取" value="read" />
+              <el-option label="写入" value="write" />
+            </el-select>
           </el-form-item>
           <el-form-item label="描述" prop="description">
             <el-input
@@ -448,12 +454,6 @@
               :max="60000"
               placeholder="请输入超时时间(毫秒)"
             />
-          </el-form-item>
-          <el-form-item label="测试模式" prop="mode">
-            <el-select v-model="testItemForm.mode" placeholder="请选择测试模式">
-              <el-option label="读取" value="read" />
-              <el-option label="写入" value="write" />
-            </el-select>
           </el-form-item>
         </el-form>
         <template #footer>
@@ -1177,7 +1177,7 @@ export default {
       ],
       point_index: [
         { required: true, message: '请输入单元序号', trigger: 'blur' },
-        { type: 'number', min: 1, message: '单元序号必须大于0', trigger: 'blur' }
+        { type: 'number', min: 0, message: '单元序号必须大于等于0', trigger: 'blur' }
       ],
       input_values: [
         { required: true, message: '请输入输入值', trigger: 'blur' },
