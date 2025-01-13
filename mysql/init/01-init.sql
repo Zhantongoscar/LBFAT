@@ -143,7 +143,7 @@ CREATE TABLE IF NOT EXISTS test_items (
   point_index INT NOT NULL COMMENT '设备点位索引',
   name VARCHAR(100) COMMENT '测试项名称',
   description TEXT COMMENT '测试项描述',
-    mode ENUM('read', 'write') NOT NULL DEFAULT 'read' COMMENT '测试模式',
+  mode ENUM('read', 'write') NOT NULL DEFAULT 'read' COMMENT '测试模式',
   sequence INT NOT NULL DEFAULT 0 COMMENT '显示顺序',
   input_values FLOAT NOT NULL DEFAULT 0 COMMENT '输入值',
   expected_values FLOAT NOT NULL DEFAULT 0 COMMENT '预期结果',
@@ -280,18 +280,18 @@ INSERT INTO test_groups (id, truth_table_id, level, description, sequence) VALUE
 (2, 1, 1, '双DO测试 0L1H', 2);  -- 第二组：通道0低电平，通道1高电平
 
 -- 插入测试项数据
-INSERT INTO test_items (test_group_id, device_id, point_index, name, description, sequence, input_values, expected_values, timeout) VALUES
+INSERT INTO test_items (test_group_id, device_id, point_index, name, description, sequence, input_values, expected_values, timeout, mode) VALUES
 -- 第一组：0H1L
-(1, 1, 0, 'DO1测试', '通道0输出', 0, 100, 100, 5000),  -- 通道0设为高电平(100)
-(1, 1, 1, 'DO2测试', '通道1输出', 1, 0, 100, 5000),    -- 通道1设为低电平(0)
-(1, 1, 8, 'DI1测试', '通道8输入', 2, 0, 100, 5000),    -- 读取通道8
-(1, 1, 11, 'DI2测试', '通道11输入', 3, 0, 100, 5000),  -- 读取通道11
+(1, 1, 0, 'DO1测试', '通道0输出', 0, 100, 100, 5000, 'write'),  -- 通道0设为高电平(100)
+(1, 1, 1, 'DO2测试', '通道1输出', 1, 0, 100, 5000, 'write'),    -- 通道1设为低电平(0)
+(1, 1, 8, 'DI1测试', '通道8输入', 2, 0, 100, 5000, 'read'),     -- 读取通道8
+(1, 1, 11, 'DI2测试', '通道11输入', 3, 0, 100, 5000, 'read'),   -- 读取通道11
 
 -- 第二组：0L1H
-(2, 1, 0, 'DO1测试', '通道0输出', 0, 0, 100, 5000),    -- 通道0设为低电平(0)
-(2, 1, 1, 'DO2测试', '通道1输出', 1, 100, 100, 5000),  -- 通道1设为高电平(100)
-(2, 1, 8, 'DI1测试', '通道8输入', 2, 0, 100, 5000),    -- 读取通道8
-(2, 1, 11, 'DI2测试', '通道11输入', 3, 0, 100, 5000);  -- 读取通道11
+(2, 1, 0, 'DO1测试', '通道0输出', 0, 0, 100, 5000, 'write'),    -- 通道0设为低电平(0)
+(2, 1, 1, 'DO2测试', '通道1输出', 1, 100, 100, 5000, 'write'),  -- 通道1设为高电平(100)
+(2, 1, 8, 'DI1测试', '通道8输入', 2, 0, 100, 5000, 'read'),     -- 读取通道8
+(2, 1, 11, 'DI2测试', '通道11输入', 3, 0, 100, 5000, 'read');   -- 读取通道11
 
 -- 插入D设备点位配置（6个DI点位）
 INSERT INTO device_type_points (device_type_id, point_index, point_type, point_name, description) VALUES
