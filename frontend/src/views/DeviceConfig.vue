@@ -90,15 +90,30 @@
                     placeholder="序号"
                   />
                 </el-col>
-                <el-col :span="8">
-                  <el-select v-model="point.point_type" placeholder="类型" style="width: 100%">
+                <el-col :span="6">
+                  <el-select 
+                    v-model="point.point_type" 
+                    placeholder="类型" 
+                    style="width: 100%"
+                    @change="(val) => handlePointTypeChange(index, val)"
+                  >
                     <el-option label="DI" value="DI" />
                     <el-option label="DO" value="DO" />
                     <el-option label="AI" value="AI" />
                     <el-option label="AO" value="AO" />
                   </el-select>
                 </el-col>
-                <el-col :span="12">
+                <el-col :span="6">
+                  <el-select 
+                    v-model="point.mode" 
+                    placeholder="模式" 
+                    style="width: 100%"
+                  >
+                    <el-option label="读取" value="read" />
+                    <el-option label="写入" value="write" />
+                  </el-select>
+                </el-col>
+                <el-col :span="8">
                   <el-input 
                     v-model="point.description" 
                     placeholder="点位描述"
@@ -179,6 +194,7 @@ export default {
         point_index: 1,
         point_type: 'DI',
         point_name: '',
+        mode: 'read',
         description: ''
       }]
     })
@@ -191,30 +207,37 @@ export default {
       }
     })
 
-    // 监听点位数量变化
+    // 处理点位类型变化，自动设置mode
+    const handlePointTypeChange = (index, pointType) => {
+      const point = deviceForm.value.points[index];
+      // DO/AO -> write, DI/AI -> read
+      point.mode = ['DO', 'AO'].includes(pointType) ? 'write' : 'read';
+    }
+
+    // 更新点位数组
     const updatePoints = (newCount) => {
+      console.log('更新点位数组，新数量:', newCount);
       const currentPoints = deviceForm.value.points || [];
-      const newPoints = [];
+      const currentLength = currentPoints.length;
       
-      // 保持现有点位的配置
-      for (let i = 0; i < newCount; i++) {
-        if (i < currentPoints.length) {
-          newPoints.push({
-            ...currentPoints[i],
-            point_index: i  // 修改为从0开始
-          });
-        } else {
-          newPoints.push({
-            point_index: i,  // 修改为从0开始
+      if (newCount > currentLength) {
+        // 添加新点位
+        for (let i = currentLength; i < newCount; i++) {
+          currentPoints.push({
+            point_index: i + 1,
             point_type: 'DI',
             point_name: '',
+            mode: 'read',
             description: ''
           });
         }
+      } else if (newCount < currentLength) {
+        // 移除多余点位
+        currentPoints.splice(newCount);
       }
       
-      deviceForm.value.points = newPoints;
-      console.log('更新后的点位配置:', deviceForm.value.points);
+      deviceForm.value.points = currentPoints;
+      console.log('更新后的点位数组:', deviceForm.value.points);
     }
 
     // 监听点位数量变化
@@ -267,6 +290,7 @@ export default {
           point_index: 1,
           point_type: 'DI',
           point_name: '',
+          mode: 'read',
           description: ''
         }]
       };
@@ -275,23 +299,37 @@ export default {
 
     // 编辑处理
     const handleEdit = (row) => {
-      console.log('编辑行数据:', row);
+      console.log('开始编辑操作，行数据:', row);
       isEdit.value = true;
+      console.log('isEdit设置为:', isEdit.value);
+      
+      // 确保row.points存在且是数组
+      const points = Array.isArray(row.points) ? row.points : [];
+      console.log('处理前的点位数据:', points);
+      
       deviceForm.value = {
         id: row.id,
         type_name: row.type_name,
-        point_count: parseInt(row.point_count),
-        description: row.description,
-        points: Array.isArray(row.points) ? row.points.map((p, index) => ({
-          ...p,
-          point_index: index + 1  // 确保 point_index 正确
-        })) : []
+        point_count: parseInt(row.point_count) || 1,
+        description: row.description || '',
+        points: points.map((p, index) => ({
+          point_index: index + 1,
+          point_type: p.point_type || 'DI',
+          point_name: p.point_name || '',
+          mode: p.mode || (p.point_type === 'DO' || p.point_type === 'AO' ? 'write' : 'read'),
+          description: p.description || ''
+        }))
       };
+      
+      console.log('设置后的表单数据:', deviceForm.value);
       
       // 确保点位数组长度与点位数量匹配
       updatePoints(deviceForm.value.point_count);
-      console.log('编辑表单数据:', deviceForm.value);
+      console.log('更新点位后的表单数据:', deviceForm.value);
+      
+      // 确保对话框显示
       dialogVisible.value = true;
+      console.log('对话框显示状态:', dialogVisible.value);
     }
 
     // 删除处理
@@ -336,9 +374,10 @@ export default {
         const formData = {
           ...deviceForm.value,
           points: deviceForm.value.points.map((p, index) => ({
-            point_index: index,  // 修改为从0开始
+            point_index: index,
             point_type: p.point_type,
-            description: p.description || `${p.point_type}${index}`  // 修改为从0开始
+            mode: p.mode,
+            description: p.description || `${p.point_type}${index}`
           }))
         };
 
@@ -353,7 +392,7 @@ export default {
         }
         
         dialogVisible.value = false;
-        await loadDeviceTypes(); // 重新加载数据
+        await loadDeviceTypes();
       } catch (error) {
         console.error('提交表单错误:', error);
         ElMessage.error(error.message || (isEdit.value ? '更新失败' : '添加失败'));
@@ -375,38 +414,33 @@ export default {
 
       try {
         // 解析格式字符串
-        const groups = format.split('+').map(g => g.trim())
-        let totalPoints = 0
-        const newPoints = []
-        
-        // 验证格式
-        const validTypes = ['DI', 'DO', 'AI', 'AO']
-        for (const group of groups) {
-          const match = group.match(/^(\d+)(DI|DO|AI|AO)$/)
-          if (!match) {
-            throw new Error(`格式错误：${group}`)
-          }
-          
-          const [, count, type] = match
-          if (!validTypes.includes(type)) {
-            throw new Error(`不支持的类型：${type}`)
-          }
-          
-          // 创建点位
-          const pointCount = parseInt(count)
-          for (let i = 0; i < pointCount; i++) {
-            newPoints.push({
-              point_index: totalPoints + i + 1,
-              point_type: type,
-              description: `${type}${totalPoints + i + 1}`
-            })
-          }
-          totalPoints += pointCount
-        }
+        const parts = format.split('+').map(part => part.trim())
+        const points = []
+        let currentIndex = 0
 
-        // 更新表单数据
-        deviceForm.value.point_count = totalPoints
-        deviceForm.value.points = newPoints
+        parts.forEach(part => {
+          const match = part.match(/^(\d+)(DI|DO|AI|AO)$/)
+          if (!match) {
+            throw new Error(`格式错误: ${part}`)
+          }
+
+          const [, count, type] = match
+          const mode = ['DO', 'AO'].includes(type) ? 'write' : 'read'  // 根据类型设置mode
+
+          for (let i = 0; i < parseInt(count); i++) {
+            points.push({
+              point_index: currentIndex + 1,
+              point_type: type,
+              point_name: `${type}${currentIndex}`,
+              mode: mode,  // 添加mode
+              description: `${deviceForm.value.type_name}${type}点${currentIndex}`
+            })
+            currentIndex++
+          }
+        })
+
+        deviceForm.value.points = points
+        deviceForm.value.point_count = points.length
         deviceForm.value.description = format
 
         quickSetDialog.value.visible = false
@@ -432,7 +466,8 @@ export default {
       handleSubmit,
       quickSetDialog,
       showQuickSetDialog,
-      handleQuickSet
+      handleQuickSet,
+      handlePointTypeChange,
     }
   }
 }
