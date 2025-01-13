@@ -72,7 +72,7 @@
         </el-form-item>
         
         <el-form-item label="模块类型" prop="module_type">
-          <el-select v-model="deviceForm.module_type" placeholder="请选择模块类型" style="width: 100%">
+          <el-select v-model="deviceForm.module_type" placeholder="请选择模块类型" style="width: 100%" @change="handleModuleTypeChange">
             <el-option
               v-for="type in deviceTypes"
               :key="type.type_name"
@@ -157,6 +157,7 @@ const deviceForm = ref({
   project_name: '',
   module_type: '',
   serial_number: '',
+  type_id: null,
   description: ''
 })
 
@@ -224,6 +225,7 @@ const showAddDialog = () => {
     project_name: '',
     module_type: '',
     serial_number: '',
+    type_id: null,
     description: ''
   }
   dialogVisible.value = true
@@ -342,6 +344,14 @@ const loadSubscribedTopics = () => {
       subscribeTime: new Date().toLocaleString()
     }
   ]
+}
+
+// 监听模块类型变化
+const handleModuleTypeChange = (value) => {
+  const selectedType = deviceTypes.value.find(type => type.type_name === value)
+  if (selectedType) {
+    deviceForm.value.type_id = selectedType.id
+  }
 }
 
 onMounted(() => {

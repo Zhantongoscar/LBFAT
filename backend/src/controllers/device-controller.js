@@ -44,6 +44,16 @@ const deviceController = {
   // 创建设备
   async createDevice(req, res) {
     try {
+      const { project_name, module_type, serial_number, type_id } = req.body;
+      
+      // 验证必填字段
+      if (!project_name || !module_type || !serial_number || !type_id) {
+        return res.status(400).json({
+          code: 400,
+          message: '缺少必要参数：project_name, module_type, serial_number, type_id 为必填项'
+        });
+      }
+
       const device = await Device.upsert(req.body);
       res.status(201).json({
         code: 200,
@@ -51,9 +61,10 @@ const deviceController = {
         data: device
       });
     } catch (error) {
+      console.error('创建设备失败:', error);
       res.status(500).json({
         code: 500,
-        message: error.message
+        message: error.message || '创建设备失败'
       });
     }
   },

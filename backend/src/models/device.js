@@ -21,6 +21,14 @@ Device.init({
     type: DataTypes.STRING(20),
     allowNull: false
   },
+  type_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'device_types',
+      key: 'id'
+    }
+  },
   status: {
     type: DataTypes.ENUM('online', 'offline'),
     defaultValue: 'offline'

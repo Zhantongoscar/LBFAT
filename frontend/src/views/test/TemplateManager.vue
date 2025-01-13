@@ -190,6 +190,16 @@
               </el-table-column>
               <el-table-column prop="point_index" label="单元序号" width="100" />
               <el-table-column prop="description" label="描述" min-width="200" />
+              <el-table-column label="模式" width="100">
+                <template #default="{ row }">
+                  <el-tag 
+                    :type="row.mode === 'read' ? 'success' : 'warning'"
+                    size="small"
+                  >
+                    {{ row.mode === 'read' ? '读取' : '写入' }}
+                  </el-tag>
+                </template>
+              </el-table-column>
               <el-table-column label="输入值" width="150">
                 <template #default="{ row }">
                   <div class="value-input-container">
@@ -234,6 +244,32 @@
                             <el-dropdown-menu>
                               <el-dropdown-item :command="0">0</el-dropdown-item>
                               <el-dropdown-item :command="100">100</el-dropdown-item>
+                            </el-dropdown-menu>
+                          </template>
+                        </el-dropdown>
+                      </template>
+                    </el-input>
+                  </div>
+                </template>
+              </el-table-column>
+              <el-table-column label="超时时间" prop="timeout" width="150">
+                <template #default="{ row }">
+                  <div class="value-input-container">
+                    <el-input
+                      v-model="row.timeout"
+                      type="number"
+                      step="1000"
+                      style="width: 100px"
+                    >
+                      <template #append>
+                        <el-dropdown @command="(val) => handleQuickSelect(row, 'timeout', val)">
+                          <span class="el-dropdown-link">
+                            <el-icon><arrow-down /></el-icon>
+                          </span>
+                          <template #dropdown>
+                            <el-dropdown-menu>
+                              <el-dropdown-item :command="1000">1000</el-dropdown-item>
+                              <el-dropdown-item :command="60000">60000</el-dropdown-item>
                             </el-dropdown-menu>
                           </template>
                         </el-dropdown>

@@ -67,6 +67,7 @@ CREATE TABLE IF NOT EXISTS devices (
     project_name VARCHAR(50) NOT NULL COMMENT '项目名称',
     module_type VARCHAR(20) NOT NULL COMMENT '模块类型',
     serial_number VARCHAR(20) NOT NULL COMMENT '序列号',
+    type_id INT NOT NULL COMMENT '设备类型ID',
     status ENUM('online', 'offline') DEFAULT 'offline' COMMENT '设备状态',
     rssi INT DEFAULT 0 COMMENT '信号强度',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
@@ -74,9 +75,14 @@ CREATE TABLE IF NOT EXISTS devices (
     UNIQUE KEY uk_device (project_name, module_type, serial_number),
     INDEX idx_project_name (project_name),
     INDEX idx_status (status),
+    INDEX idx_type_id (type_id),
     CONSTRAINT fk_project_name FOREIGN KEY (project_name) 
         REFERENCES project_subscriptions(project_name) 
         ON DELETE CASCADE 
+        ON UPDATE CASCADE,
+    CONSTRAINT fk_type_id FOREIGN KEY (type_id)
+        REFERENCES device_types(id)
+        ON DELETE RESTRICT
         ON UPDATE CASCADE
 ) COMMENT '设备管理表';
 
@@ -171,10 +177,10 @@ INSERT INTO project_subscriptions (project_name, is_subscribed) VALUES
 ('lb_prod', false);
 
 -- 插入设备数据
-INSERT INTO devices (id, project_name, module_type, serial_number, status, rssi) VALUES
-(1, 'lb_test', 'EBD', '1', 'offline', 0),
-(2, 'lb_test', 'EDB', '4', 'offline', 0),
-(3, 'lb_test', 'EDB', '5', 'offline', 0)
+INSERT INTO devices (id, project_name, module_type, serial_number, type_id, status, rssi) VALUES
+(1, 'lb_test', 'EBD', '1', 2, 'offline', 0),
+(2, 'lb_test', 'EDB', '4', 1, 'offline', 0),
+(3, 'lb_test', 'EDB', '5', 1, 'offline', 0)
 ON DUPLICATE KEY UPDATE status = 'offline';
 
 -- 插入MQTT订阅
