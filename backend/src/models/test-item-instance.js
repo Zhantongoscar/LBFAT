@@ -25,6 +25,54 @@ TestItemInstance.init({
       key: 'id'
     }
   },
+  test_group_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'test_groups',
+      key: 'id'
+    }
+  },
+  name: {
+    type: DataTypes.STRING(100),
+    allowNull: false
+  },
+  description: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  device_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'devices',
+      key: 'id'
+    }
+  },
+  point_index: {
+    type: DataTypes.INTEGER,
+    allowNull: false
+  },
+  input_values: {
+    type: DataTypes.FLOAT,
+    allowNull: false,
+    defaultValue: 0
+  },
+  expected_values: {
+    type: DataTypes.FLOAT,
+    allowNull: false,
+    defaultValue: 0
+  },
+  timeout: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 5000
+  },
+  sequence: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 0
+  },
   mode: {
     type: DataTypes.ENUM('read', 'write'),
     allowNull: false,
