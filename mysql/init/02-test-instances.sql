@@ -10,7 +10,10 @@ CREATE TABLE IF NOT EXISTS test_instances (
   end_time DATETIME,                 -- 结束时间
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- 创建时间
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, -- 更新时间
-  FOREIGN KEY (truth_table_id) REFERENCES truth_tables(id)
+  FOREIGN KEY (truth_table_id) REFERENCES truth_tables(id),
+  INDEX idx_truth_table (truth_table_id),
+  INDEX idx_status (status),
+  INDEX idx_result (result)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='测试实例主表';
 
 -- 创建测试项实例表
@@ -28,9 +31,12 @@ CREATE TABLE IF NOT EXISTS test_item_instances (
   timeout INT NOT NULL DEFAULT 5000,
   sequence INT NOT NULL DEFAULT 0,
   mode ENUM('read', 'write') NOT NULL DEFAULT 'read',
-  execution_status ENUM('pending','running','completed','skipped','timeout') DEFAULT 'pending',
+  enabled BOOLEAN DEFAULT TRUE COMMENT '是否启用',
+  execution_status ENUM('disabled','pending','running','completed','skipped','timeout','error') DEFAULT 'pending',
   result_status ENUM('unknown','pass','fail','error') DEFAULT 'unknown',
   actual_value FLOAT,
+  failure_reason TEXT COMMENT '失败原因',
+  retry_count INT DEFAULT 0 COMMENT '当前重试次数',
   error_message TEXT,
   start_time DATETIME,
   end_time DATETIME,
@@ -45,17 +51,9 @@ CREATE TABLE IF NOT EXISTS test_item_instances (
   INDEX idx_test_group (test_group_id),
   INDEX idx_device (device_id),
   INDEX idx_execution_status (execution_status),
-  INDEX idx_result_status (result_status)
+  INDEX idx_result_status (result_status),
+  INDEX idx_enabled (enabled)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='测试项实例表';
-
--- 创建索引
-CREATE INDEX idx_test_instances_truth_table ON test_instances(truth_table_id);
-CREATE INDEX idx_test_instances_status ON test_instances(status);
-CREATE INDEX idx_test_instances_result ON test_instances(result);
-CREATE INDEX idx_test_item_instances_instance ON test_item_instances(instance_id);
-CREATE INDEX idx_test_item_instances_item ON test_item_instances(test_item_id);
-CREATE INDEX idx_test_item_instances_status ON test_item_instances(execution_status);
-CREATE INDEX idx_test_item_instances_result ON test_item_instances(result_status);
 
 -- 插入演示测试实例
 INSERT INTO `test_instances` (`truth_table_id`, `product_sn`, `operator`, `status`, `result`, `created_at`, `updated_at`)

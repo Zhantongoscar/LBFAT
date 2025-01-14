@@ -581,7 +581,7 @@ module.exports = {
       const passed = Math.abs(response.value - testItem.expected_values) <= testItem.tolerance;
       await testItem.update({
         execution_status: 'completed',
-        result_status: passed ? 'passed' : 'failed',
+        result_status: passed ? 'pass' : 'fail',
         actual_value: response.value,
         end_time: new Date()
       }, { transaction });
@@ -594,7 +594,7 @@ module.exports = {
         data: {
           id: testItem.id,
           execution_status: 'completed',
-          result_status: passed ? 'passed' : 'failed',
+          result_status: passed ? 'pass' : 'fail',
           actual_value: response.value,
           expected_value: testItem.expected_values,
           mode: testItem.mode
