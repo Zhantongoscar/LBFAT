@@ -44,14 +44,13 @@ class TestMqttService {
                     throw new Error('无效的响应数据')
                 }
                 
-                // 标准化响应格式
-                const result = {
-                    command: response.command || 1,
-                    status: response.status || 'success',
-                    value: Number(response.value || 0)
+                // 检查响应状态
+                if (response.status !== 'success') {
+                    throw new Error(response.error || '执行失败')
                 }
                 
-                handler.resolve(result)
+                // 直接返回响应数据，保持原始格式
+                handler.resolve(response)
             } catch (error) {
                 logger.error('解析响应数据失败:', error)
                 handler.reject(new Error('响应数据格式错误: ' + error.message))
