@@ -1,4 +1,4 @@
-const { TestInstance, TestItemInstance, TestItem, TestGroup, TruthTable } = require('../models');
+const { TestInstance, TestItemInstance, TestItem, TestGroup, TruthTable, Device } = require('../models');
 const { TestStatus, TestResult } = require('../constants/test-status');
 const sequelize = require('../config/database');
 const testMqttService = require('../services/test-mqtt-service');
@@ -552,30 +552,33 @@ module.exports = {
       }, { transaction });
 
       // 4. 根据mode执行测试
-      const { project_name, module_type, serial_number, channel } = testItem.testItem;
+      const device = await Device.findByPk(testItem.device_id);
+      if (!device) {
+        throw new Error('设备不存在');
+      }
+
       let response;
-      
-      if (testItem.testItem.mode === 'read') {
+      if (testItem.mode === 'read') {
         // 读取命令
         response = await testMqttService.sendReadCommand(
-          project_name,
-          module_type,
-          serial_number,
-          channel
+          device.project_name,
+          device.module_type,
+          device.serial_number,
+          testItem.point_index
         );
       } else {
         // 写入命令
         response = await testMqttService.sendWriteCommand(
-          project_name,
-          module_type,
-          serial_number,
-          channel,
-          testItem.testItem.expected_values
+          device.project_name,
+          device.module_type,
+          device.serial_number,
+          testItem.point_index,
+          testItem.input_values
         );
       }
 
       // 5. 更新测试结果
-      const passed = Math.abs(response.value - testItem.testItem.expected_values) <= testItem.testItem.tolerance;
+      const passed = Math.abs(response.value - testItem.expected_values) <= testItem.tolerance;
       await testItem.update({
         execution_status: 'completed',
         result_status: passed ? 'passed' : 'failed',
@@ -593,8 +596,8 @@ module.exports = {
           execution_status: 'completed',
           result_status: passed ? 'passed' : 'failed',
           actual_value: response.value,
-          expected_value: testItem.testItem.expected_values,
-          mode: testItem.testItem.mode
+          expected_value: testItem.expected_values,
+          mode: testItem.mode
         }
       });
 

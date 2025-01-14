@@ -294,6 +294,7 @@
                       type="primary"
                       link
                       size="small"
+                      @click="handleExecuteItem(row)"
                     >
                       执行
                     </el-button>
@@ -302,6 +303,7 @@
                       type="warning"
                       link
                       size="small"
+                      @click="handleSkipItem(row)"
                     >
                       跳过
                     </el-button>
@@ -309,6 +311,7 @@
                       type="info"
                       link
                       size="small"
+                      @click="showItemDetails(row)"
                     >
                       详情
                     </el-button>
@@ -672,10 +675,15 @@ export default {
 
     const createFormRef = ref()
 
-    const handleCreate = () => {
+    const handleCreate = async () => {
       createDialogVisible.value = true
+      // 获取真值表列表
+      if (truthTables.value.length === 0) {
+        await fetchTruthTables()
+      }
+      // 设置默认值
       createForm.value = {
-        truth_table_id: '',
+        truth_table_id: truthTables.value.length > 0 ? truthTables.value[0].id : '',
         product_sn: '',
         operator: 'root'
       }
@@ -683,6 +691,11 @@ export default {
 
     const submitCreate = async () => {
       if (!createFormRef.value) return
+      
+      // 如果没有选择真值表，使用第一个可用的真值表
+      if (!createForm.value.truth_table_id && truthTables.value.length > 0) {
+        createForm.value.truth_table_id = truthTables.value[0].id
+      }
       
       await createFormRef.value.validate(async (valid) => {
         if (valid) {
@@ -1030,6 +1043,8 @@ export default {
       showItemDetails,
       canExecuteItem,
       canSkipItem,
+      handleExecuteItem,
+      handleSkipItem,
 
       // 格式化方法
       formatDateTime: (date) => {
