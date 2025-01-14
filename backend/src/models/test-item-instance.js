@@ -25,6 +25,11 @@ TestItemInstance.init({
       key: 'id'
     }
   },
+  mode: {
+    type: DataTypes.ENUM('read', 'write'),
+    allowNull: false,
+    defaultValue: 'read'
+  },
   execution_status: {
     type: DataTypes.ENUM('pending', 'running', 'completed', 'skipped', 'timeout'),
     defaultValue: 'pending'

@@ -15,19 +15,37 @@ CREATE TABLE IF NOT EXISTS test_instances (
 
 -- 创建测试项实例表
 CREATE TABLE IF NOT EXISTS test_item_instances (
-  id INT AUTO_INCREMENT PRIMARY KEY,  -- 已经是自增整型
-  instance_id INT NOT NULL,          -- 修改为整型
-  test_item_id INT NOT NULL,         -- 关联的测试项ID
-  execution_status ENUM('pending','running','completed','skipped','timeout') DEFAULT 'pending', -- 执行状态
-  result_status ENUM('unknown','pass','fail','error') DEFAULT 'unknown',  -- 结果状态
-  actual_value FLOAT,                -- 实际测试值
-  error_message TEXT,                -- 错误信息
-  start_time DATETIME,               -- 开始时间
-  end_time DATETIME,                 -- 结束时间
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  instance_id INT NOT NULL,
+  test_item_id INT NOT NULL,
+  test_group_id INT NOT NULL,
+  name VARCHAR(100) NOT NULL,
+  description TEXT,
+  device_id INT NOT NULL,
+  point_index INT NOT NULL,
+  input_values FLOAT NOT NULL DEFAULT 0,
+  expected_values FLOAT NOT NULL DEFAULT 0,
+  timeout INT NOT NULL DEFAULT 5000,
+  sequence INT NOT NULL DEFAULT 0,
+  mode ENUM('read', 'write') NOT NULL DEFAULT 'read',
+  execution_status ENUM('pending','running','completed','skipped','timeout') DEFAULT 'pending',
+  result_status ENUM('unknown','pass','fail','error') DEFAULT 'unknown',
+  actual_value FLOAT,
+  error_message TEXT,
+  start_time DATETIME,
+  end_time DATETIME,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (instance_id) REFERENCES test_instances(id),
-  FOREIGN KEY (test_item_id) REFERENCES test_items(id)
+  FOREIGN KEY (instance_id) REFERENCES test_instances(id) ON DELETE CASCADE,
+  FOREIGN KEY (test_item_id) REFERENCES test_items(id),
+  FOREIGN KEY (test_group_id) REFERENCES test_groups(id),
+  FOREIGN KEY (device_id) REFERENCES devices(id),
+  INDEX idx_instance (instance_id),
+  INDEX idx_test_item (test_item_id),
+  INDEX idx_test_group (test_group_id),
+  INDEX idx_device (device_id),
+  INDEX idx_execution_status (execution_status),
+  INDEX idx_result_status (result_status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='测试项实例表';
 
 -- 创建索引

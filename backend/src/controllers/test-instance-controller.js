@@ -18,7 +18,7 @@ async function getOrCreateTestItems(instanceId) {
         model: TestItem,
         as: 'testItem',
         required: false,  // LEFT JOIN
-        attributes: ['id', 'device_id', 'point_index', 'name', 'test_group_id', 'input_values', 'expected_values'],
+        attributes: ['id', 'device_id', 'point_index', 'name', 'test_group_id', 'input_values', 'expected_values', 'mode'],
         include: [{
           model: TestGroup,
           as: 'group',
@@ -45,6 +45,7 @@ async function getOrCreateTestItems(instanceId) {
           point_index: testItem.point_index,
           name: testItem.name,
           test_group_id: testItem.test_group_id,
+          mode: testItem.mode,
           group: {
             id: group.id,
             description: group.description,
@@ -423,7 +424,8 @@ module.exports = {
                 console.log('创建测试项:', {
                     name: templateItem.name,
                     deviceId: templateItem.device_id,
-                    pointIndex: templateItem.point_index
+                    pointIndex: templateItem.point_index,
+                    mode: templateItem.mode
                 });
 
                 const newItem = await TestItemInstance.create({
@@ -438,6 +440,7 @@ module.exports = {
                     expected_values: templateItem.expected_values,
                     timeout: templateItem.timeout,
                     sequence: templateItem.sequence,
+                    mode: templateItem.mode,
                     execution_status: 'pending',
                     result_status: 'unknown',
                     actual_value: null,

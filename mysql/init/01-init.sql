@@ -148,7 +148,6 @@ CREATE TABLE IF NOT EXISTS test_items (
   input_values FLOAT NOT NULL DEFAULT 0 COMMENT '输入值',
   expected_values FLOAT NOT NULL DEFAULT 0 COMMENT '预期结果',
   timeout INT NOT NULL DEFAULT 5000 COMMENT '超时时间(毫秒)',
-
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   FOREIGN KEY (test_group_id) REFERENCES test_groups(id) ON DELETE CASCADE,
@@ -156,6 +155,59 @@ CREATE TABLE IF NOT EXISTS test_items (
   INDEX idx_device (device_id),
   INDEX idx_point_index (point_index)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='测试项表';
+
+-- 测试实例表
+CREATE TABLE IF NOT EXISTS test_instances (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  truth_table_id INT NOT NULL COMMENT '关联真值表ID',
+  product_sn VARCHAR(100) NOT NULL COMMENT '产品序列号',
+  operator VARCHAR(50) NOT NULL COMMENT '操作员',
+  status ENUM('pending', 'running', 'completed', 'aborted') DEFAULT 'pending' COMMENT '执行状态',
+  result ENUM('unknown', 'pass', 'fail') DEFAULT 'unknown' COMMENT '测试结果',
+  start_time TIMESTAMP NULL COMMENT '开始时间',
+  end_time TIMESTAMP NULL COMMENT '结束时间',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  FOREIGN KEY (truth_table_id) REFERENCES truth_tables(id),
+  INDEX idx_product_sn (product_sn),
+  INDEX idx_status (status),
+  INDEX idx_result (result)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='测试实例表';
+
+-- 测试项实例表
+CREATE TABLE IF NOT EXISTS test_item_instances (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  instance_id INT NOT NULL COMMENT '所属测试实例ID',
+  test_item_id INT NOT NULL COMMENT '关联测试项ID',
+  test_group_id INT NOT NULL COMMENT '所属测试组ID',
+  name VARCHAR(100) NOT NULL COMMENT '测试项名称',
+  description TEXT COMMENT '测试项描述',
+  device_id INT NOT NULL COMMENT '关联设备ID',
+  point_index INT NOT NULL COMMENT '设备点位索引',
+  input_values FLOAT NOT NULL DEFAULT 0 COMMENT '输入值',
+  expected_values FLOAT NOT NULL DEFAULT 0 COMMENT '预期结果',
+  timeout INT NOT NULL DEFAULT 5000 COMMENT '超时时间(毫秒)',
+  sequence INT NOT NULL DEFAULT 0 COMMENT '显示顺序',
+  mode ENUM('read', 'write') NOT NULL DEFAULT 'read' COMMENT '测试模式',
+  execution_status ENUM('pending', 'running', 'completed', 'skipped', 'timeout') DEFAULT 'pending' COMMENT '执行状态',
+  result_status ENUM('unknown', 'pass', 'fail', 'error') DEFAULT 'unknown' COMMENT '测试结果',
+  actual_value FLOAT NULL COMMENT '实际值',
+  error_message TEXT COMMENT '错误信息',
+  start_time TIMESTAMP NULL COMMENT '开始时间',
+  end_time TIMESTAMP NULL COMMENT '结束时间',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  FOREIGN KEY (instance_id) REFERENCES test_instances(id) ON DELETE CASCADE,
+  FOREIGN KEY (test_item_id) REFERENCES test_items(id),
+  FOREIGN KEY (test_group_id) REFERENCES test_groups(id),
+  FOREIGN KEY (device_id) REFERENCES devices(id),
+  INDEX idx_instance (instance_id),
+  INDEX idx_test_item (test_item_id),
+  INDEX idx_test_group (test_group_id),
+  INDEX idx_device (device_id),
+  INDEX idx_execution_status (execution_status),
+  INDEX idx_result_status (result_status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='测试项实例表';
 
 -- =====================================================
 -- 初始数据插入
