@@ -228,86 +228,95 @@
 
       <div v-loading="loadingTestItems">
         <div v-for="group in filteredTestItems" :key="group.id" class="test-group">
-          <div class="group-header">
-            <div class="group-title">
-              {{ group.description }}
-              <el-tag size="small" type="info" class="ml-10">
-                {{ group.items.length }} 项
-              </el-tag>
-            </div>
-            <div class="group-level">
-              <el-tag size="small" type="success">
-                Level {{ group.level }}
-              </el-tag>
+          <div class="group-header" @click="toggleGroup(group.id)">
+            <div class="group-info">
+              <span class="group-id">测试组{{ group.items[0]?.testItem?.test_group_id }}：</span>
+              <span class="group-title">{{ group.description }}</span>
+              <el-tag size="small" type="info" class="item-count">{{ group.items.length }} 项</el-tag>
+              <div class="group-progress">
+                <span class="progress-text">{{ getGroupProgress(group) }}%</span>
+                <el-progress 
+                  :percentage="getGroupProgress(group)"
+                  :status="getGroupProgressStatus(group)"
+                  :stroke-width="15"
+                  :format="() => ''"
+                />
+              </div>
+              <el-icon class="expand-icon" :class="{ 'is-active': expandedGroups.includes(group.id) }">
+                <ArrowDown />
+              </el-icon>
             </div>
           </div>
 
-          <el-table :data="group.items" border>
-            <el-table-column prop="id" label="ID" width="80" />
-            <el-table-column prop="test_item_id" label="测试项ID" width="80" />
-            <el-table-column prop="testItem.test_group_id" label="测试组ID" width="80" />
-            <el-table-column prop="testItem.device_id" label="设备ID" width="80" />
-            <el-table-column prop="testItem.point_index" label="通道" width="80" />
-            <el-table-column label="模式" width="100">
-              <template #default="{ row }">
-                <el-tag 
-                  :type="row.mode === 'read' ? 'success' : 'warning'"
-                  size="small"
-                >
-                  {{ row.mode === 'read' ? '读取' : '写入' }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="testItem.name" label="测试项名称" min-width="120" />
-            <el-table-column prop="testItem.input_values" label="设定值" width="80" />
-            <el-table-column prop="testItem.expected_values" label="预期值" width="80" />
-            <el-table-column label="实际测量值" width="150">
-              <template #default="{ row }">
-                <div>{{ row.actual_value || '-' }}</div>
-              </template>
-            </el-table-column>
-            <el-table-column prop="execution_status" label="状态" width="100">
-              <template #default="{ row }">
-                <el-tag :type="getItemStatusType(row.execution_status)">
-                  {{ getItemStatusText(row.execution_status) }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="result_status" label="结果" width="100">
-              <template #default="{ row }">
-                <el-tag :type="getResultType(row.result_status)">
-                  {{ getResultText(row.result_status) }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column label="操作" width="200" fixed="right">
-              <template #default="{ row }">
-                <el-button
-                  v-if="canExecuteItem(row)"
-                  type="primary"
-                  link
-                  @click="handleExecuteItem(row)"
-                >
-                  执行
-                </el-button>
-                <el-button
-                  v-if="canSkipItem(row)"
-                  type="warning"
-                  link
-                  @click="handleSkipItem(row)"
-                >
-                  跳过
-                </el-button>
-                <el-button
-                  type="info"
-                  link
-                  @click="showItemDetails(row)"
-                >
-                  详情
-                </el-button>
-              </template>
-            </el-table-column>
-          </el-table>
+          <el-collapse-transition>
+            <div v-show="expandedGroups.includes(group.id)">
+              <el-table :data="group.items" border size="small">
+                <el-table-column prop="id" label="ID" width="50" show-overflow-tooltip />
+                <el-table-column prop="test_item_id" label="测试项ID" width="60" show-overflow-tooltip />
+                <el-table-column prop="testItem.device_id" label="设备ID" width="60" show-overflow-tooltip />
+                <el-table-column prop="testItem.point_index" label="通道" width="50" show-overflow-tooltip />
+                <el-table-column label="模式" width="60" show-overflow-tooltip>
+                  <template #default="{ row }">
+                    <el-tag 
+                      :type="row.mode === 'read' ? 'success' : 'warning'"
+                      size="small"
+                    >
+                      {{ row.mode === 'read' ? '读取' : '写入' }}
+                    </el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="testItem.name" label="测试项名称" min-width="100" show-overflow-tooltip />
+                <el-table-column prop="testItem.input_values" label="设定值" width="60" show-overflow-tooltip />
+                <el-table-column prop="testItem.expected_values" label="预期值" width="60" show-overflow-tooltip />
+                <el-table-column label="实际测量值" width="70" show-overflow-tooltip>
+                  <template #default="{ row }">
+                    <span>{{ row.actual_value || '-' }}</span>
+                  </template>
+                </el-table-column>
+                <el-table-column label="状态" width="60" show-overflow-tooltip>
+                  <template #default="{ row }">
+                    <el-tag :type="getItemStatusType(row.execution_status)" size="small">
+                      {{ getItemStatusText(row.execution_status) }}
+                    </el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column label="结果" width="60" show-overflow-tooltip>
+                  <template #default="{ row }">
+                    <el-tag :type="getResultType(row.result_status)" size="small">
+                      {{ getResultText(row.result_status) }}
+                    </el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column label="操作" width="150" fixed="right">
+                  <template #default="{ row }">
+                    <el-button
+                      v-if="canExecuteItem(row)"
+                      type="primary"
+                      link
+                      size="small"
+                    >
+                      执行
+                    </el-button>
+                    <el-button
+                      v-if="canSkipItem(row)"
+                      type="warning"
+                      link
+                      size="small"
+                    >
+                      跳过
+                    </el-button>
+                    <el-button
+                      type="info"
+                      link
+                      size="small"
+                    >
+                      详情
+                    </el-button>
+                  </template>
+                </el-table-column>
+              </el-table>
+            </div>
+          </el-collapse-transition>
         </div>
       </div>
     </el-card>
@@ -421,7 +430,7 @@
 
 <script>
 import { ref, computed, onMounted } from 'vue'
-import { Monitor } from '@element-plus/icons-vue'
+import { Monitor, ArrowDown } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { 
   getTestInstances, 
@@ -443,7 +452,8 @@ import { getTruthTables } from '@/api/truthTable'
 export default {
   name: 'TestExecution',
   components: {
-    Monitor
+    Monitor,
+    ArrowDown
   },
   setup() {
     // 设备面板收纳状态
@@ -932,6 +942,38 @@ export default {
       }
     }
 
+    // 获取测试组的进度
+    const getGroupProgress = (group) => {
+      if (!group.items || group.items.length === 0) return 0
+      const completed = group.items.filter(
+        item => item.execution_status === ExecutionStatus.COMPLETED
+      ).length
+      return Math.round((completed / group.items.length) * 100)
+    }
+
+    // 获取测试组的进度状态
+    const getGroupProgressStatus = (group) => {
+      const hasError = group.items.some(
+        item => item.result_status === ResultStatus.FAIL || 
+               item.result_status === ResultStatus.ERROR
+      )
+      if (hasError) return 'exception'
+      if (getGroupProgress(group) === 100) return 'success'
+      return ''
+    }
+
+    // 默认折叠状态
+    const expandedGroups = ref([])
+    
+    const toggleGroup = (groupId) => {
+      const index = expandedGroups.value.indexOf(groupId)
+      if (index === -1) {
+        expandedGroups.value.push(groupId)
+      } else {
+        expandedGroups.value.splice(index, 1)
+      }
+    }
+
     // 组件挂载时加载数据
     onMounted(async () => {
       try {
@@ -996,6 +1038,11 @@ export default {
       },
 
       getChannelTypeStyle,
+
+      getGroupProgress,
+      getGroupProgressStatus,
+      expandedGroups,
+      toggleGroup,
     }
   }
 }
@@ -1190,26 +1237,70 @@ export default {
   background-color: #fff;
   border-radius: 4px;
   box-shadow: 0 2px 12px 0 rgba(0,0,0,0.1);
-}
+  
+  .group-header {
+    padding: 12px 20px;
+    background-color: var(--el-color-primary-light-9);
+    border-bottom: 1px solid #e4e7ed;
+    cursor: pointer;
+    
+    &:hover {
+      background-color: var(--el-color-primary-light-8);
+    }
+    
+    .group-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      
+      .group-id {
+        font-size: 15px;
+        font-weight: bold;
+        color: var(--el-color-primary);
+        white-space: nowrap;
+      }
+      
+      .group-title {
+        font-size: 15px;
+        font-weight: 500;
+        color: var(--el-text-color-primary);
+        white-space: nowrap;
+      }
+      
+      .item-count {
+        white-space: nowrap;
+      }
 
-.group-header {
-  padding: 12px 20px;
-  background-color: #f5f7fa;
-  border-bottom: 1px solid #e4e7ed;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.group-title {
-  font-size: 14px;
-  font-weight: 500;
-  color: #303133;
-}
-
-.group-level {
-  font-size: 12px;
-  color: #909399;
+      .group-progress {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 200px;
+        
+        .progress-text {
+          font-size: 14px;
+          color: var(--el-text-color-secondary);
+          white-space: nowrap;
+        }
+        
+        .el-progress {
+          margin: 0;
+          flex: 1;
+        }
+      }
+      
+      .expand-icon {
+        font-size: 20px;
+        color: var(--el-text-color-secondary);
+        transition: transform 0.3s;
+        
+        &.is-active {
+          transform: rotate(180deg);
+        }
+      }
+    }
+  }
 }
 
 /* 状态标签样式 */
@@ -1227,5 +1318,26 @@ export default {
 :deep(.el-table th) {
   text-align: center;
   background-color: #f5f7fa;
+}
+
+/* 表格样式优化 */
+:deep(.el-table) {
+  // 设置表格紧凑模式
+  --el-table-header-padding: 8px 0;
+  --el-table-cell-padding: 4px 0;
+  
+  // 确保内容不换行
+  td .cell, 
+  th .cell {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  // 调整标签大小
+  .el-tag {
+    transform: scale(0.9);
+    margin: 0;
+  }
 }
 </style> 
