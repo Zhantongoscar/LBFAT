@@ -552,54 +552,110 @@ module.exports = {
       }, { transaction });
 
       // 4. 根据mode执行测试
-      const device = await Device.findByPk(testItem.device_id);
+      const device = await Device.findByPk(testItem.testItem.device_id);
       if (!device) {
         throw new Error('设备不存在');
       }
 
       let response;
-      if (testItem.mode === 'read') {
-        // 读取命令
-        response = await testMqttService.sendReadCommand(
-          device.project_name,
-          device.module_type,
-          device.serial_number,
-          testItem.point_index
-        );
-      } else {
-        // 写入命令
-        response = await testMqttService.sendWriteCommand(
-          device.project_name,
-          device.module_type,
-          device.serial_number,
-          testItem.point_index,
-          testItem.input_values
-        );
-      }
+      try {
+        if (testItem.testItem.mode === 'read') {
+          response = await testMqttService.sendReadCommand(
+            device.project_name,
+            device.module_type,
+            device.serial_number,
+            testItem.testItem.point_index
+          );
+        } else {
+          response = await testMqttService.sendWriteCommand(
+            device.project_name,
+            device.module_type,
+            device.serial_number,
+            testItem.testItem.point_index,
+            testItem.testItem.input_values
+          );
+        }
 
-      // 5. 更新测试结果
-      const passed = Math.abs(response.value - testItem.expected_values) <= testItem.tolerance;
-      await testItem.update({
-        execution_status: 'completed',
-        result_status: passed ? 'pass' : 'fail',
-        actual_value: response.value,
-        end_time: new Date()
-      }, { transaction });
+        logger.info('MQTT响应:', response);
 
-      await transaction.commit();
-      
-      res.json({
-        code: 200,
-        message: '测试项执行成功',
-        data: {
-          id: testItem.id,
+        // 验证响应数据
+        if (!response || typeof response !== 'object') {
+          throw new Error('无效的响应数据');
+        }
+        if (!('value' in response) || !('status' in response)) {
+          throw new Error('响应数据格式错误');
+        }
+        if (response.status !== 'success') {
+          throw new Error(`设备执行失败: ${response.error || '未知错误'}`);
+        }
+
+        // 5. 更新测试结果
+        const tolerance = 0.001; // 设置允许的误差范围
+        const actualValue = Number(response.value);
+        const expectedValue = Number(testItem.testItem.expected_values);
+        const passed = Math.abs(actualValue - expectedValue) <= tolerance;
+        
+        const endTime = new Date();
+        const duration = endTime - testItem.start_time;
+
+        // 更新数据库
+        await testItem.update({
           execution_status: 'completed',
           result_status: passed ? 'pass' : 'fail',
-          actual_value: response.value,
-          expected_value: testItem.expected_values,
-          mode: testItem.mode
-        }
-      });
+          actual_value: actualValue,
+          error_message: passed ? null : `期望值: ${expectedValue}, 实际值: ${actualValue}`,
+          end_time: endTime
+        }, { transaction });
+
+        await transaction.commit();
+        
+        // 返回完整的执行结果
+        res.json({
+          code: 200,
+          message: '测试项执行成功',
+          data: {
+            id: testItem.id,
+            name: testItem.name,
+            description: testItem.description,
+            execution_status: 'completed',
+            result_status: passed ? 'pass' : 'fail',
+            actual_value: actualValue,
+            expected_value: expectedValue,
+            error_message: passed ? null : `期望值: ${expectedValue}, 实际值: ${actualValue}`,
+            mode: testItem.testItem.mode,
+            point_index: testItem.testItem.point_index,
+            start_time: testItem.start_time,
+            end_time: endTime,
+            duration: duration,
+            device: {
+              project_name: device.project_name,
+              module_type: device.module_type,
+              serial_number: device.serial_number
+            }
+          }
+        });
+
+      } catch (error) {
+        // 处理错误
+        const errorMessage = error.message || '执行失败';
+        const errorStatus = error.message.includes('超时') ? 'timeout' : 'error';
+        
+        await testItem.update({
+          execution_status: errorStatus,
+          result_status: 'error',
+          error_message: errorMessage,
+          end_time: new Date()
+        }, { transaction });
+        
+        await transaction.commit();
+        
+        logger.error('执行测试项失败:', error);
+        res.status(500).json({
+          code: 500,
+          message: '执行测试项失败',
+          error: errorMessage
+        });
+      }
 
     } catch (error) {
       await transaction.rollback();

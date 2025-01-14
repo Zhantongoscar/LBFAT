@@ -16,6 +16,25 @@ CREATE TABLE IF NOT EXISTS test_instances (
   INDEX idx_result (result)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='测试实例主表';
 
+-- 创建测试组表
+CREATE TABLE IF NOT EXISTS test_groups (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  truth_table_id INT NOT NULL,
+  level TINYINT NOT NULL DEFAULT 0 COMMENT '测试级别：0-普通类，1-安全类',
+  description TEXT,
+  sequence INT NOT NULL DEFAULT 0,
+  enabled BOOLEAN DEFAULT TRUE COMMENT '是否启用',
+  execution_mode ENUM('sequential','parallel') DEFAULT 'sequential' COMMENT '执行模式：顺序/并行',
+  failure_strategy ENUM('continue','stop') DEFAULT 'stop' COMMENT '失败策略：继续/停止',
+  max_retries INT DEFAULT 0 COMMENT '最大重试次数',
+  group_status ENUM('disabled','ready','running','paused','completed') DEFAULT 'ready' COMMENT '组状态',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (truth_table_id) REFERENCES truth_tables(id),
+  INDEX idx_group_status (group_status),
+  INDEX idx_enabled (enabled)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='测试组表';
+
 -- 创建测试项实例表
 CREATE TABLE IF NOT EXISTS test_item_instances (
   id INT AUTO_INCREMENT PRIMARY KEY,

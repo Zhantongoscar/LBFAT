@@ -339,6 +339,28 @@ class MQTTService {
             });
         });
     }
+
+    // 取消订阅主题
+    async unsubscribe(topic) {
+        if (!this.client) {
+            logger.error('MQTT客户端未连接，无法取消订阅');
+            throw new Error('MQTT client not connected');
+        }
+
+        return new Promise((resolve, reject) => {
+            this.client.unsubscribe(topic, (error) => {
+                if (error) {
+                    logger.error(`取消订阅失败: ${topic}`, error);
+                    reject(error);
+                } else {
+                    logger.info(`成功取消订阅: ${topic}`);
+                    // 更新订阅列表
+                    this.subscriptions = this.subscriptions.filter(t => t !== topic);
+                    resolve();
+                }
+            });
+        });
+    }
 }
 
 // 创建单例实例
