@@ -266,6 +266,11 @@
                   </template>
                 </el-table-column>
                 <el-table-column prop="testItem.name" label="测试项名称" min-width="100" show-overflow-tooltip />
+                <el-table-column prop="timeout" label="延时(ms)" width="80" show-overflow-tooltip>
+                  <template #default="{ row }">
+                    {{ row.timeout || 5000 }}
+                  </template>
+                </el-table-column>
                 <el-table-column prop="testItem.input_values" label="设定值" width="60" show-overflow-tooltip />
                 <el-table-column prop="testItem.expected_values" label="预期值" width="60" show-overflow-tooltip />
                 <el-table-column label="实际测量值" width="70" show-overflow-tooltip>
