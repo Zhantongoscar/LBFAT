@@ -335,12 +335,12 @@ INSERT INTO test_groups (id, truth_table_id, level, description, sequence) VALUE
 INSERT INTO test_items (test_group_id, device_id, point_index, name, description, sequence, input_values, expected_values, timeout, mode) VALUES
 -- 第一组：0H1L
 (1, 1, 0, 'DO1测试', '通道0输出', 0, 100, 100, 5000, 'write'),  -- 通道0设为高电平(100)
-(1, 1, 1, 'DO2测试', '通道1输出', 1, 0, 100, 5000, 'write'),    -- 通道1设为低电平(0)
+(1, 1, 1, 'DO2测试', '通道1输出', 1, 0, 0, 5000, 'write'),    -- 通道1设为低电平(0)
 (1, 1, 8, 'DI1测试', '通道8输入', 2, 0, 0, 5000, 'read'),     -- 读取通道8
 (1, 1, 11, 'DI2测试', '通道11输入', 3, 0, 100, 5000, 'read'),   -- 读取通道11
 
 -- 第二组：0L1H
-(2, 1, 0, 'DO1测试', '通道0输出', 0, 0, 100, 5000, 'write'),    -- 通道0设为低电平(0)
+(2, 1, 0, 'DO1测试', '通道0输出', 0, 0, 0, 5000, 'write'),    -- 通道0设为低电平(0)
 (2, 1, 1, 'DO2测试', '通道1输出', 1, 100, 100, 5000, 'write'),  -- 通道1设为高电平(100)
 (2, 1, 8, 'DI1测试', '通道8输入', 2, 0, 100, 5000, 'read'),     -- 读取通道8
 (2, 1, 11, 'DI2测试', '通道11输入', 3, 0, 0, 5000, 'read');   -- 读取通道11

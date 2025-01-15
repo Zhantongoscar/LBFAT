@@ -130,7 +130,7 @@
           fixed="right"
         >
           <template #default="{ row }">
-            <el-button
+            <el-button 
               v-if="canDelete(row)"
               type="danger"
               link
@@ -605,18 +605,18 @@ export default {
     }
 
     const getItemStatusType = (status) => {
-      const types = {
+  const types = {
         [ExecutionStatus.PENDING]: 'info',
         [ExecutionStatus.RUNNING]: 'warning',
         [ExecutionStatus.COMPLETED]: 'success',
         [ExecutionStatus.SKIPPED]: '',
         [ExecutionStatus.TIMEOUT]: 'danger'
-      }
-      return types[status] || 'info'
-    }
+  }
+  return types[status] || 'info'
+}
 
     const getItemStatusText = (status) => {
-      const texts = {
+  const texts = {
         [ExecutionStatus.PENDING]: '待执行',
         [ExecutionStatus.RUNNING]: '执行中',
         [ExecutionStatus.COMPLETED]: '已完成',
@@ -626,18 +626,18 @@ export default {
       return texts[status] || '未知'
     }
 
-    const getResultType = (result) => {
-      const types = {
+const getResultType = (result) => {
+  const types = {
         [ResultStatus.PASS]: 'success',
         [ResultStatus.FAIL]: 'danger',
         [ResultStatus.ERROR]: 'danger',
         [ResultStatus.UNKNOWN]: 'info'
-      }
-      return types[result] || 'info'
-    }
+  }
+  return types[result] || 'info'
+}
 
-    const getResultText = (result) => {
-      const texts = {
+const getResultText = (result) => {
+  const texts = {
         [ResultStatus.PASS]: '通过',
         [ResultStatus.FAIL]: '失败',
         [ResultStatus.ERROR]: '错误',
@@ -681,7 +681,7 @@ export default {
     const createDialogVisible = ref(false)
     const createForm = ref({
       truth_table_id: '',
-      product_sn: '',
+      product_sn: 'test1',
       operator: 'root'
     })
 
@@ -933,31 +933,61 @@ export default {
         console.log('执行测试项响应:', response)
         
         if (response.code === 200) {
-          // 更新测试项状态
-          item.execution_status = ExecutionStatus.COMPLETED
-          item.result_status = response.data.result_status
-          item.actual_value = response.data.actual_value
+          ElMessage.success('执行成功')
           
-          // 更新当前实例的进度
-          const instance = selectedInstance.value
-          if (instance) {
-            const completedCount = instance.items.filter(
-              i => i.execution_status === ExecutionStatus.COMPLETED
-            ).length
-            instance.progress = Math.round((completedCount / instance.items.length) * 100)
-            
-            // 检查是否所有测试项都已完成
-            if (completedCount === instance.items.length) {
-              instance.status = TestStatus.COMPLETED
-              // 检查是否有失败的测试项
-              const hasFailedItems = instance.items.some(
-                i => i.result_status === ResultStatus.FAIL || i.result_status === ResultStatus.ERROR
+          // 设置一个轮询来检查状态更新
+          const checkStatus = async () => {
+            try {
+              // 获取最新状态
+              await fetchTestInstances()
+              // 更新选中的实例
+              const updatedInstance = testInstances.value.find(
+                instance => instance.id === selectedInstance.value.id
               )
-              instance.result = hasFailedItems ? ResultStatus.FAIL : ResultStatus.PASS
+              if (updatedInstance) {
+                selectedInstance.value = updatedInstance
+                // 检查测试项是否已完成
+                const updatedItem = updatedInstance.items?.find(i => i.id === item.id)
+                if (updatedItem) {
+                  console.log('检查到的状态:', updatedItem.execution_status)
+                  // 如果状态仍为pending，继续等待
+                  if (updatedItem.execution_status === ExecutionStatus.PENDING) {
+                    return false
+                  }
+                  // 如果状态已完成，停止轮询
+                  if (updatedItem.execution_status === ExecutionStatus.COMPLETED) {
+                    return true
+                  }
+                }
+              }
+              return false
+            } catch (error) {
+              console.error('检查状态失败:', error)
+              return true // 发生错误时停止轮询
+            }
+          }
+
+          // 首次查询前先等待3秒，给后端处理时间
+          await new Promise(resolve => setTimeout(resolve, 3000))
+          
+          // 使用递归方式进行轮询，每次等待响应后再进行下一次查询
+          const poll = async (retries = 10) => {
+            if (retries === 0) {
+              console.log('达到最大重试次数')
+              return
+            }
+            
+            const shouldStop = await checkStatus()
+            if (!shouldStop) {
+              // 如果需要继续查询，等待1秒后再次尝试
+              await new Promise(resolve => setTimeout(resolve, 1000))
+              await poll(retries - 1)
             }
           }
           
-          ElMessage.success('执行成功')
+          // 开始轮询
+          await poll()
+          
         } else {
           item.execution_status = ExecutionStatus.PENDING // 恢复状态
           throw new Error(response.message || '执行失败')
@@ -992,7 +1022,7 @@ export default {
         } else {
           throw new Error(response.message || '跳过失败')
         }
-      } catch (error) {
+  } catch (error) {
         console.error('跳过测试项失败:', error)
         ElMessage.error('跳过失败: ' + (error.response?.data?.message || error.message))
       } finally {
@@ -1119,12 +1149,12 @@ export default {
 
   .box-card {
     margin-bottom: 20px;
-  }
+}
 
-  .card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 
     .header-left {
       display: flex;
