@@ -949,7 +949,7 @@ const getResultText = (result) => {
           await new Promise(resolve => setTimeout(resolve, 2000))
           
           let retryCount = 0
-          const maxRetries = 10
+          const maxRetries = 15
           let success = false
           
           while (retryCount < maxRetries) {
@@ -977,29 +977,49 @@ const getResultText = (result) => {
                     // 继续等待
                     await new Promise(resolve => setTimeout(resolve, 1000))
                   } else if (latestItem.execution_status === ExecutionStatus.TIMEOUT) {
-                    throw new Error('执行超时')
+                    ElMessage.error('执行超时')
+                    break
                   }
                 }
               }
               
               retryCount++
+              if (retryCount >= maxRetries) {
+                ElMessage.warning('执行结果等待超时，请刷新页面查看最新状态')
+                break
+              }
             } catch (error) {
               console.error('检查状态失败:', error)
-              throw error
-            }
-          }
-          
-          if (!success) {
-            if (retryCount >= maxRetries) {
-              ElMessage.warning('执行结果等待超时，请刷新页面查看最新状态')
+              // 不抛出错误，继续重试
+              await new Promise(resolve => setTimeout(resolve, 1000))
             }
           }
         } else {
-          throw new Error(response.message || '执行失败')
+          // 不立即显示错误，等待并再次检查状态
+          await new Promise(resolve => setTimeout(resolve, 2000))
+          await fetchTestInstances()
+          
+          const finalInstance = testInstances.value.find(
+            instance => instance.id === selectedInstance.value.id
+          )
+          if (finalInstance) {
+            const finalItem = finalInstance.items?.find(i => i.id === item.id)
+            if (finalItem) {
+              if (finalItem.execution_status === ExecutionStatus.COMPLETED) {
+                selectedInstance.value = JSON.parse(JSON.stringify(finalInstance))
+                await nextTick()
+                ElMessage.success('执行成功')
+              }
+              // 只有在确认失败时才显示错误
+              else if (finalItem.execution_status === ExecutionStatus.PENDING) {
+                ElMessage.error('执行失败')
+              }
+            }
+          }
         }
       } catch (error) {
         console.error('执行测试项失败:', error)
-        // 不要立即显示错误，先等待一会儿再检查最终状态
+        // 不立即显示错误信息，等待最终状态
         await new Promise(resolve => setTimeout(resolve, 2000))
         await fetchTestInstances()
         
@@ -1008,14 +1028,16 @@ const getResultText = (result) => {
         )
         if (finalInstance) {
           const finalItem = finalInstance.items?.find(i => i.id === item.id)
-          if (finalItem && finalItem.execution_status === ExecutionStatus.COMPLETED) {
-            // 如果最终状态是完成的，说明实际上是成功的
-            selectedInstance.value = JSON.parse(JSON.stringify(finalInstance))
-            await nextTick()
-            ElMessage.success('执行成功')
-          } else {
-            // 确实是失败的才显示错误
-            ElMessage.error('执行失败: ' + error.message)
+          if (finalItem) {
+            if (finalItem.execution_status === ExecutionStatus.COMPLETED) {
+              selectedInstance.value = JSON.parse(JSON.stringify(finalInstance))
+              await nextTick()
+              ElMessage.success('执行成功')
+            }
+            // 只有在确认失败时才显示错误
+            else if (finalItem.execution_status === ExecutionStatus.PENDING) {
+              ElMessage.error('执行失败')
+            }
           }
         }
       } finally {
