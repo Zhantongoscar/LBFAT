@@ -400,8 +400,10 @@
         </el-form-item>
         <el-form-item label="产品序列号" prop="product_sn">
           <el-input
-            v-model="createForm.product_sn"
+            v-model="createForm.product_sn" 
             placeholder="请输入产品序列号"
+            @keyup.enter="submitCreate"
+            :value="'test1'"
           />
         </el-form-item>
         <el-form-item label="操作员" prop="operator">
