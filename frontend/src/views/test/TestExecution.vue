@@ -223,6 +223,14 @@
             <span>实例操作项列表</span>
             <el-tag type="info" class="ml-10">{{ selectedInstance.product_sn }}</el-tag>
           </div>
+          <div class="header-right">
+            <el-button
+              type="warning"
+              size="small"
+            >
+              测试集复位
+            </el-button>
+          </div>
         </div>
       </template>
 
@@ -242,6 +250,13 @@
                   :format="() => ''"
                 />
               </div>
+              <el-button
+                type="warning"
+                size="small"
+                style="margin-left: 10px;"
+              >
+                组测试复位
+              </el-button>
               <el-icon class="expand-icon" :class="{ 'is-active': expandedGroups.includes(group.id) }">
                 <ArrowDown />
               </el-icon>
@@ -642,10 +657,14 @@ export default {
 
     // 获取进度条状态
     const getProgressStatus = (instance) => {
+      if (!instance) return ''
       if (instance.status === TestStatus.ABORTED) return 'exception'
       if (instance.result === ResultStatus.FAIL) return 'exception'
-      if (instance.status === TestStatus.COMPLETED) return 'success'
-      return ''
+      if (instance.status === TestStatus.COMPLETED) {
+        return instance.result === ResultStatus.PASS ? 'success' : 'warning'
+      }
+      if (instance.status === TestStatus.RUNNING) return 'warning'
+      return 'info'
     }
 
     // 判断是否可以开始测试
@@ -906,20 +925,41 @@ export default {
         console.log('执行测试项:', item)
         loading.value = true
         
+        // 立即更新状态为执行中
+        item.execution_status = ExecutionStatus.RUNNING
+        
         // 调用执行API
         const response = await executeTestItem(selectedInstance.value.id, item.id)
         console.log('执行测试项响应:', response)
         
         if (response.code === 200) {
-          ElMessage.success('执行成功')
-          // 刷新测试实例列表
-          await fetchTestInstances()
-          // 更新选中的实例
-          const updatedInstance = testInstances.value.find(instance => instance.id === selectedInstance.value.id)
-          if (updatedInstance) {
-            selectedInstance.value = updatedInstance
+          // 更新测试项状态
+          item.execution_status = ExecutionStatus.COMPLETED
+          item.result_status = response.data.result_status
+          item.actual_value = response.data.actual_value
+          
+          // 更新当前实例的进度
+          const instance = selectedInstance.value
+          if (instance) {
+            const completedCount = instance.items.filter(
+              i => i.execution_status === ExecutionStatus.COMPLETED
+            ).length
+            instance.progress = Math.round((completedCount / instance.items.length) * 100)
+            
+            // 检查是否所有测试项都已完成
+            if (completedCount === instance.items.length) {
+              instance.status = TestStatus.COMPLETED
+              // 检查是否有失败的测试项
+              const hasFailedItems = instance.items.some(
+                i => i.result_status === ResultStatus.FAIL || i.result_status === ResultStatus.ERROR
+              )
+              instance.result = hasFailedItems ? ResultStatus.FAIL : ResultStatus.PASS
+            }
           }
+          
+          ElMessage.success('执行成功')
         } else {
+          item.execution_status = ExecutionStatus.PENDING // 恢复状态
           throw new Error(response.message || '执行失败')
         }
       } catch (error) {
@@ -971,13 +1011,18 @@ export default {
 
     // 获取测试组的进度状态
     const getGroupProgressStatus = (group) => {
+      if (!group || !group.items || group.items.length === 0) return ''
       const hasError = group.items.some(
         item => item.result_status === ResultStatus.FAIL || 
                item.result_status === ResultStatus.ERROR
       )
+      const hasRunning = group.items.some(
+        item => item.execution_status === ExecutionStatus.RUNNING
+      )
       if (hasError) return 'exception'
+      if (hasRunning) return 'warning'
       if (getGroupProgress(group) === 100) return 'success'
-      return ''
+      return 'info'
     }
 
     // 默认折叠状态
@@ -992,7 +1037,7 @@ export default {
       }
     }
 
-    // 组件挂载时加载数据
+    // 组件挂载时启动定时器
     onMounted(async () => {
       try {
         await loadDevices()
