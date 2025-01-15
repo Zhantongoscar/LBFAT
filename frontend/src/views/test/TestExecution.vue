@@ -251,6 +251,14 @@
                 />
               </div>
               <el-button
+                type="primary"
+                size="small"
+                style="margin-left: 10px;"
+                @click.stop="handleGroupTest(group)"
+              >
+                组测试
+              </el-button>
+              <el-button
                 type="warning"
                 size="small"
                 style="margin-left: 10px;"

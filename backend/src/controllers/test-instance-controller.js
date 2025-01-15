@@ -666,5 +666,24 @@ module.exports = {
         error: error.message
       });
     }
+  },
+
+  // 重置测试组
+  resetGroupItems: async (req, res) => {
+    try {
+      const { instanceId, groupId } = req.params
+      
+      // 暂时只返回成功响应
+      res.json({
+        code: 200,
+        message: 'success'
+      })
+    } catch (error) {
+      console.error('重置测试组失败:', error)
+      res.status(500).json({
+        code: 500,
+        message: error.message || '重置测试组失败'
+      })
+    }
   }
 }; 

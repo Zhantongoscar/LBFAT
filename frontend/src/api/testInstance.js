@@ -119,3 +119,11 @@ export function createInstanceItems(instanceId) {
   })
 }
 
+// 重置测试组
+export const resetGroupItems = (instanceId, groupId) => {
+  return api({
+    url: `/test-instances/${instanceId}/groups/${groupId}/reset`,
+    method: 'post'
+  })
+}
+
