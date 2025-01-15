@@ -254,6 +254,7 @@
                 type="warning"
                 size="small"
                 style="margin-left: 10px;"
+                @click.stop="handleResetGroup(group)"
               >
                 组测试复位
               </el-button>
@@ -400,7 +401,7 @@
         </el-form-item>
         <el-form-item label="产品序列号" prop="product_sn">
           <el-input
-            v-model="createForm.product_sn" 
+            v-model="createForm.product_sn"
             placeholder="请输入产品序列号"
             @keyup.enter="submitCreate"
             :value="'test1'"
@@ -470,7 +471,8 @@ import {
   getOrCreateTestItems,
   createInstanceItems,
   executeTestItem,
-  skipTestItem
+  skipTestItem,
+  resetGroupItems
 } from '@/api/testInstance'
 import { getTruthTables } from '@/api/truthTable'
 
@@ -1114,6 +1116,59 @@ const getResultText = (result) => {
       }
     }
 
+    // 处理组测试复位
+    const handleResetGroup = async (group) => {
+      try {
+        // 确认对话框
+        await ElMessageBox.confirm('确定要重置该组的所有测试项吗？', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        })
+
+        loading.value = true
+        // 找到该组的所有测试项
+        const groupItems = group.items || []
+        
+        // 更新本地状态
+        const instanceIndex = testInstances.value.findIndex(
+          instance => instance.id === selectedInstance.value.id
+        )
+        
+        if (instanceIndex !== -1) {
+          const updatedInstance = {
+            ...testInstances.value[instanceIndex],
+            items: testInstances.value[instanceIndex].items.map(item => {
+              if (groupItems.some(groupItem => groupItem.id === item.id)) {
+                return {
+                  ...item,
+                  execution_status: ExecutionStatus.PENDING,
+                  result_status: null,
+                  actual_value: null,
+                  start_time: null,
+                  end_time: null
+                }
+              }
+              return item
+            })
+          }
+          
+          testInstances.value[instanceIndex] = updatedInstance
+          selectedInstance.value = JSON.parse(JSON.stringify(updatedInstance))
+          await nextTick()
+          
+          ElMessage.success('测试组已重置')
+        }
+      } catch (error) {
+        if (error !== 'cancel') {
+          console.error('重置测试组失败:', error)
+          ElMessage.error('重置失败')
+        }
+      } finally {
+        loading.value = false
+      }
+    }
+
     // 组件挂载时启动定时器
     onMounted(async () => {
       try {
@@ -1185,6 +1240,7 @@ const getResultText = (result) => {
       getGroupProgressStatus,
       expandedGroups,
       toggleGroup,
+      handleResetGroup,
     }
   }
 }
