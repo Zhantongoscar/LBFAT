@@ -290,7 +290,7 @@
                 <el-table-column prop="testItem.expected_values" label="预期值" width="60" show-overflow-tooltip />
                 <el-table-column label="实际测量值" width="70" show-overflow-tooltip>
                   <template #default="{ row }">
-                    <span>{{ row.actual_value || '-' }}</span>
+                    <span>{{ row.actual_value !== null && row.actual_value !== undefined ? row.actual_value : '-' }}</span>
                   </template>
                 </el-table-column>
                 <el-table-column label="状态" width="60" show-overflow-tooltip>
@@ -452,7 +452,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { Monitor, ArrowDown } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { 
@@ -925,76 +925,99 @@ const getResultText = (result) => {
         console.log('执行测试项:', item)
         loading.value = true
         
-        // 立即更新状态为执行中
-        item.execution_status = ExecutionStatus.RUNNING
+        // 先将状态设置为执行中
+        const itemIndex = selectedInstance.value.items.findIndex(i => i.id === item.id)
+        if (itemIndex !== -1) {
+          const updatedItems = [...selectedInstance.value.items]
+          updatedItems[itemIndex] = {
+            ...updatedItems[itemIndex],
+            execution_status: ExecutionStatus.RUNNING
+          }
+          selectedInstance.value = {
+            ...selectedInstance.value,
+            items: updatedItems
+          }
+          await nextTick()
+        }
         
         // 调用执行API
         const response = await executeTestItem(selectedInstance.value.id, item.id)
         console.log('执行测试项响应:', response)
         
         if (response.code === 200) {
-          ElMessage.success('执行成功')
+          // 等待后端处理完成
+          await new Promise(resolve => setTimeout(resolve, 2000))
           
-          // 设置一个轮询来检查状态更新
-          const checkStatus = async () => {
+          let retryCount = 0
+          const maxRetries = 10
+          let success = false
+          
+          while (retryCount < maxRetries) {
             try {
-              // 获取最新状态
+              console.log(`第 ${retryCount + 1} 次检查状态`)
+              // 重新获取数据
               await fetchTestInstances()
-              // 更新选中的实例
-              const updatedInstance = testInstances.value.find(
+              const latestInstance = testInstances.value.find(
                 instance => instance.id === selectedInstance.value.id
               )
-              if (updatedInstance) {
-                selectedInstance.value = updatedInstance
-                // 检查测试项是否已完成
-                const updatedItem = updatedInstance.items?.find(i => i.id === item.id)
-                if (updatedItem) {
-                  console.log('检查到的状态:', updatedItem.execution_status)
-                  // 如果状态仍为pending，继续等待
-                  if (updatedItem.execution_status === ExecutionStatus.PENDING) {
-                    return false
-                  }
-                  // 如果状态已完成，停止轮询
-                  if (updatedItem.execution_status === ExecutionStatus.COMPLETED) {
-                    return true
+              
+              if (latestInstance) {
+                selectedInstance.value = JSON.parse(JSON.stringify(latestInstance))
+                await nextTick()
+                
+                const latestItem = latestInstance.items?.find(i => i.id === item.id)
+                if (latestItem) {
+                  console.log('当前状态:', latestItem.execution_status, '实际值:', latestItem.actual_value)
+                  
+                  if (latestItem.execution_status === ExecutionStatus.COMPLETED) {
+                    ElMessage.success('执行成功')
+                    success = true
+                    break
+                  } else if (latestItem.execution_status === ExecutionStatus.RUNNING) {
+                    // 继续等待
+                    await new Promise(resolve => setTimeout(resolve, 1000))
+                  } else if (latestItem.execution_status === ExecutionStatus.TIMEOUT) {
+                    throw new Error('执行超时')
                   }
                 }
               }
-              return false
+              
+              retryCount++
             } catch (error) {
               console.error('检查状态失败:', error)
-              return true // 发生错误时停止轮询
-            }
-          }
-
-          // 首次查询前先等待3秒，给后端处理时间
-          await new Promise(resolve => setTimeout(resolve, 3000))
-          
-          // 使用递归方式进行轮询，每次等待响应后再进行下一次查询
-          const poll = async (retries = 10) => {
-            if (retries === 0) {
-              console.log('达到最大重试次数')
-              return
-            }
-            
-            const shouldStop = await checkStatus()
-            if (!shouldStop) {
-              // 如果需要继续查询，等待1秒后再次尝试
-              await new Promise(resolve => setTimeout(resolve, 1000))
-              await poll(retries - 1)
+              throw error
             }
           }
           
-          // 开始轮询
-          await poll()
-          
+          if (!success) {
+            if (retryCount >= maxRetries) {
+              ElMessage.warning('执行结果等待超时，请刷新页面查看最新状态')
+            }
+          }
         } else {
-          item.execution_status = ExecutionStatus.PENDING // 恢复状态
           throw new Error(response.message || '执行失败')
         }
       } catch (error) {
         console.error('执行测试项失败:', error)
-        ElMessage.error('执行失败: ' + (error.response?.data?.message || error.message))
+        // 不要立即显示错误，先等待一会儿再检查最终状态
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        await fetchTestInstances()
+        
+        const finalInstance = testInstances.value.find(
+          instance => instance.id === selectedInstance.value.id
+        )
+        if (finalInstance) {
+          const finalItem = finalInstance.items?.find(i => i.id === item.id)
+          if (finalItem && finalItem.execution_status === ExecutionStatus.COMPLETED) {
+            // 如果最终状态是完成的，说明实际上是成功的
+            selectedInstance.value = JSON.parse(JSON.stringify(finalInstance))
+            await nextTick()
+            ElMessage.success('执行成功')
+          } else {
+            // 确实是失败的才显示错误
+            ElMessage.error('执行失败: ' + error.message)
+          }
+        }
       } finally {
         loading.value = false
       }
