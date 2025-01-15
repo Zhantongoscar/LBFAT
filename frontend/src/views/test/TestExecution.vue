@@ -1177,6 +1177,90 @@ const getResultText = (result) => {
       }
     }
 
+    // 处理组测试
+    const handleGroupTest = async (group) => {
+      try {
+        loading.value = true
+        
+        // 第一阶段：执行所有写入操作
+        const writeItems = group.items.filter(item => item.mode === 'write')
+        console.log('第一阶段 - 写入操作项:', writeItems)
+        
+        // 并行执行所有写入操作
+        const writePromises = writeItems.map(item => executeTestItem(selectedInstance.value.id, item.id))
+        await Promise.all(writePromises)
+        
+        // 等待所有写入操作完成
+        let retryCount = 0
+        const maxRetries = 30
+        
+        while (retryCount < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, 1000))
+          await fetchTestInstances()
+          
+          const latestInstance = testInstances.value.find(
+            instance => instance.id === selectedInstance.value.id
+          )
+          
+          if (latestInstance) {
+            selectedInstance.value = latestInstance
+            const allWriteCompleted = writeItems.every(writeItem => {
+              const latestItem = latestInstance.items.find(i => i.id === writeItem.id)
+              return latestItem && latestItem.execution_status === ExecutionStatus.COMPLETED
+            })
+            
+            if (allWriteCompleted) {
+              console.log('所有写入操作已完成')
+              break
+            }
+          }
+          
+          retryCount++
+        }
+        
+        // 第二阶段：执行所有读取操作
+        const readItems = group.items.filter(item => item.mode === 'read')
+        console.log('第二阶段 - 读取操作项:', readItems)
+        
+        // 并行执行所有读取操作
+        const readPromises = readItems.map(item => executeTestItem(selectedInstance.value.id, item.id))
+        await Promise.all(readPromises)
+        
+        // 等待所有读取操作完成
+        retryCount = 0
+        while (retryCount < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, 1000))
+          await fetchTestInstances()
+          
+          const latestInstance = testInstances.value.find(
+            instance => instance.id === selectedInstance.value.id
+          )
+          
+          if (latestInstance) {
+            selectedInstance.value = latestInstance
+            const allReadCompleted = readItems.every(readItem => {
+              const latestItem = latestInstance.items.find(i => i.id === readItem.id)
+              return latestItem && latestItem.execution_status === ExecutionStatus.COMPLETED
+            })
+            
+            if (allReadCompleted) {
+              console.log('所有读取操作已完成')
+              ElMessage.success('组测试完成')
+              break
+            }
+          }
+          
+          retryCount++
+        }
+        
+      } catch (error) {
+        console.error('组测试执行失败:', error)
+        ElMessage.error('组测试执行失败: ' + (error.response?.data?.message || error.message))
+      } finally {
+        loading.value = false
+      }
+    }
+
     // 组件挂载时启动定时器
     onMounted(async () => {
       try {
@@ -1249,6 +1333,7 @@ const getResultText = (result) => {
       expandedGroups,
       toggleGroup,
       handleResetGroup,
+      handleGroupTest,
     }
   }
 }
