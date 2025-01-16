@@ -223,14 +223,6 @@
             <span>实例操作项列表</span>
             <el-tag type="info" class="ml-10">{{ selectedInstance.product_sn }}</el-tag>
           </div>
-          <div class="header-right">
-            <el-button
-              type="warning"
-              size="small"
-            >
-              测试集复位
-            </el-button>
-          </div>
         </div>
       </template>
 
@@ -238,13 +230,6 @@
         <div v-for="group in filteredTestItems" :key="group.id" class="test-group">
           <div class="group-header" @click="toggleGroup(group.id)">
             <div class="group-info">
-              <el-checkbox
-                v-model="group.enable"
-                style="margin-right: 10px;"
-                @click.stop
-              >
-                启用
-              </el-checkbox>
               <span class="group-id">测试组{{ group.items[0]?.testItem?.test_group_id }}：</span>
               <span class="group-title">{{ group.description }}</span>
               <el-tag size="small" type="info" class="item-count">{{ group.items.length }} 项</el-tag>
@@ -264,14 +249,6 @@
                 @click.stop="handleGroupTest(group)"
               >
                 组测试
-              </el-button>
-              <el-button
-                type="warning"
-                size="small"
-                style="margin-left: 10px;"
-                @click.stop="handleResetGroup(group)"
-              >
-                组测试复位
               </el-button>
               <el-icon class="expand-icon" :class="{ 'is-active': expandedGroups.includes(group.id) }">
                 <ArrowDown />
@@ -1131,59 +1108,6 @@ const getResultText = (result) => {
       }
     }
 
-    // 处理组测试复位
-    const handleResetGroup = async (group) => {
-      try {
-        // 确认对话框
-        await ElMessageBox.confirm('确定要重置该组的所有测试项吗？', '提示', {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
-          type: 'warning'
-        })
-
-        loading.value = true
-        // 找到该组的所有测试项
-        const groupItems = group.items || []
-        
-        // 更新本地状态
-        const instanceIndex = testInstances.value.findIndex(
-          instance => instance.id === selectedInstance.value.id
-        )
-        
-        if (instanceIndex !== -1) {
-          const updatedInstance = {
-            ...testInstances.value[instanceIndex],
-            items: testInstances.value[instanceIndex].items.map(item => {
-              if (groupItems.some(groupItem => groupItem.id === item.id)) {
-                return {
-                  ...item,
-                  execution_status: ExecutionStatus.PENDING,
-                  result_status: null,
-                  actual_value: null,
-                  start_time: null,
-                  end_time: null
-                }
-              }
-              return item
-            })
-          }
-          
-          testInstances.value[instanceIndex] = updatedInstance
-          selectedInstance.value = JSON.parse(JSON.stringify(updatedInstance))
-          await nextTick()
-          
-          ElMessage.success('测试组已重置')
-        }
-      } catch (error) {
-        if (error !== 'cancel') {
-          console.error('重置测试组失败:', error)
-          ElMessage.error('重置失败')
-        }
-      } finally {
-        loading.value = false
-      }
-    }
-
     // 处理组测试
     const handleGroupTest = async (group) => {
       try {
@@ -1339,7 +1263,6 @@ const getResultText = (result) => {
       getGroupProgressStatus,
       expandedGroups,
       toggleGroup,
-      handleResetGroup,
       handleGroupTest,
     }
   }
