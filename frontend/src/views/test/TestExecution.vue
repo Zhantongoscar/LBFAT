@@ -238,6 +238,13 @@
         <div v-for="group in filteredTestItems" :key="group.id" class="test-group">
           <div class="group-header" @click="toggleGroup(group.id)">
             <div class="group-info">
+              <el-checkbox
+                v-model="group.enable"
+                style="margin-right: 10px;"
+                @click.stop
+              >
+                启用
+              </el-checkbox>
               <span class="group-id">测试组{{ group.items[0]?.testItem?.test_group_id }}：</span>
               <span class="group-title">{{ group.description }}</span>
               <el-tag size="small" type="info" class="item-count">{{ group.items.length }} 项</el-tag>

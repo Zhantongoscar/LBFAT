@@ -87,3 +87,80 @@ SELECT
 FROM `truth_tables`
 WHERE `name` = '安全开关测试'
 LIMIT 1; 
+
+-- 创建测试计划表
+CREATE TABLE IF NOT EXISTS test_plans (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL COMMENT '计划名称',
+    description TEXT COMMENT '计划描述',
+    truth_table_id INT NOT NULL COMMENT '关联真值表ID',
+    execution_mode ENUM('sequential','parallel') DEFAULT 'sequential' COMMENT '执行模式',
+    failure_strategy ENUM('continue','stop') DEFAULT 'stop' COMMENT '失败策略',
+    created_by INT COMMENT '创建人ID',
+    updated_by INT COMMENT '最后修改人ID',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    FOREIGN KEY (truth_table_id) REFERENCES truth_tables(id) ON DELETE CASCADE,
+    FOREIGN KEY (created_by) REFERENCES users(id),
+    FOREIGN KEY (updated_by) REFERENCES users(id),
+    UNIQUE KEY uk_name_truth_table (name, truth_table_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='测试计划表';
+
+-- 创建测试计划-组关联表
+CREATE TABLE IF NOT EXISTS test_plan_groups (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    plan_id INT NOT NULL COMMENT '测试计划ID',
+    group_id INT NOT NULL COMMENT '测试组ID',
+    sequence INT NOT NULL DEFAULT 0 COMMENT '执行顺序',
+    dependencies JSON COMMENT '依赖的其他组ID',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    FOREIGN KEY (plan_id) REFERENCES test_plans(id) ON DELETE CASCADE,
+    FOREIGN KEY (group_id) REFERENCES test_groups(id) ON DELETE CASCADE,
+    UNIQUE KEY uk_plan_group (plan_id, group_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='测试计划-组关联表';
+
+-- 创建测试实例-组执行表
+CREATE TABLE IF NOT EXISTS test_instance_groups (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    instance_id INT NOT NULL COMMENT '测试实例ID',
+    group_id INT NOT NULL COMMENT '测试组ID',
+    status ENUM('pending','running','completed','skipped') DEFAULT 'pending' COMMENT '执行状态',
+    result ENUM('unknown','pass','fail') DEFAULT 'unknown' COMMENT '测试结果',
+    start_time TIMESTAMP NULL COMMENT '开始时间',
+    end_time TIMESTAMP NULL COMMENT '结束时间',
+    error_message TEXT COMMENT '错误信息',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    FOREIGN KEY (instance_id) REFERENCES test_instances(id) ON DELETE CASCADE,
+    FOREIGN KEY (group_id) REFERENCES test_groups(id) ON DELETE CASCADE,
+    UNIQUE KEY uk_instance_group (instance_id, group_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='测试实例-组执行表';
+
+-- 修改现有的test_groups表，添加新字段
+ALTER TABLE test_groups
+ADD COLUMN state_retention BOOLEAN DEFAULT FALSE COMMENT '是否保持状态',
+ADD COLUMN dependencies JSON COMMENT '依赖的其他测试组',
+ADD COLUMN completion_requirements JSON COMMENT '完成要求';
+
+-- 添加测试计划示例数据
+INSERT INTO test_plans (name, description, truth_table_id, execution_mode, failure_strategy, created_by)
+SELECT 
+    CONCAT('默认测试计划-', tt.name) as name,
+    CONCAT('针对真值表"', tt.name, '"的默认测试计划') as description,
+    tt.id as truth_table_id,
+    'sequential' as execution_mode,
+    'stop' as failure_strategy,
+    (SELECT id FROM users WHERE username = 'root') as created_by
+FROM truth_tables tt
+ON DUPLICATE KEY UPDATE updated_at = CURRENT_TIMESTAMP;
+
+-- 为每个测试计划添加其关联的测试组
+INSERT INTO test_plan_groups (plan_id, group_id, sequence)
+SELECT 
+    tp.id as plan_id,
+    tg.id as group_id,
+    tg.sequence as sequence
+FROM test_plans tp
+JOIN test_groups tg ON tp.truth_table_id = tg.truth_table_id
+ON DUPLICATE KEY UPDATE sequence = tg.sequence; 
