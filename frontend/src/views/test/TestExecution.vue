@@ -53,17 +53,19 @@
     </el-collapse>
 
     <!-- 测试实例列表面板 -->
-    <el-card class="box-card">
+    <el-card class="box-card mb-20">
       <template #header>
         <div class="card-header">
           <div class="header-left">
             <span>测试实例列表</span>
-            <el-input v-model="searchQuery" placeholder="搜索测试实例" style="width: 200px; margin-left: 10px;" clearable />
+            <el-tag type="info" class="ml-10">
+              {{ testInstances.length }}
+            </el-tag>
           </div>
           <div class="header-right">
-            <el-button type="success" @click="handleSaveConfig">保存配置</el-button>
-            <el-button type="primary" @click="handleLoadConfig">加载配置</el-button>
-            <el-button type="primary" @click="handleCreate">新建测试实例</el-button>
+            <el-button type="primary" size="small" @click="handleCreate">
+              新建测试实例
+            </el-button>
           </div>
         </div>
       </template>
@@ -228,39 +230,29 @@
         <div v-for="group in filteredTestItems" :key="group.id" class="test-group">
           <div class="group-header" @click="toggleGroup(group.id)">
             <div class="group-info">
-              <div class="group-level" :class="group.level === 1 ? 'safety' : 'normal'">
-                {{ group.level === 1 ? '安全组' : '普通组' }}
-              </div>
-              <span class="group-name">测试组{{ group.id }}：{{ group.name }}</span>
-              <div class="group-status">
-                <el-tag 
-                  :type="getGroupStatusType(group)"
-                  size="small"
-                >
-                  {{ getGroupStatusText(group) }}
-                </el-tag>
-              </div>
+              <span class="group-id">测试组{{ group.items[0]?.testItem?.test_group_id }}：</span>
+              <span class="group-title">{{ group.description }}</span>
+              <el-tag size="small" type="info" class="item-count">{{ group.items.length }} 项</el-tag>
               <div class="group-progress">
+                <span class="progress-text">{{ getGroupProgress(group) }}%</span>
                 <el-progress 
                   :percentage="getGroupProgress(group)"
                   :status="getGroupProgressStatus(group)"
+                  :stroke-width="15"
+                  :format="() => ''"
                 />
               </div>
               <el-button
                 type="primary"
                 size="small"
-                @click="handleGroupTest(group)"
-                :disabled="!canExecuteGroup(group)"
+                style="margin-left: 10px;"
+                @click.stop="handleGroupTest(group)"
               >
                 组测试
               </el-button>
-              <el-tooltip
-                v-if="!canExecuteGroup(group) && group.level === 0"
-                content="需要先完成所有安全组测试"
-                placement="top"
-              >
-                <el-icon class="warning-icon"><Warning /></el-icon>
-              </el-tooltip>
+              <el-icon class="expand-icon" :class="{ 'is-active': expandedGroups.includes(group.id) }">
+                <ArrowDown />
+              </el-icon>
             </div>
           </div>
 
@@ -456,7 +448,7 @@
 
 <script>
 import { ref, computed, onMounted, nextTick } from 'vue'
-import { Monitor, ArrowDown, Warning } from '@element-plus/icons-vue'
+import { Monitor, ArrowDown } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { 
   getTestInstances, 
@@ -480,8 +472,7 @@ export default {
   name: 'TestExecution',
   components: {
     Monitor,
-    ArrowDown,
-    Warning
+    ArrowDown
   },
   setup() {
     // 设备面板收纳状态
@@ -610,18 +601,18 @@ export default {
     }
 
     const getItemStatusType = (status) => {
-      const types = {
+  const types = {
         [ExecutionStatus.PENDING]: 'info',
         [ExecutionStatus.RUNNING]: 'warning',
         [ExecutionStatus.COMPLETED]: 'success',
         [ExecutionStatus.SKIPPED]: '',
         [ExecutionStatus.TIMEOUT]: 'danger'
-      }
-      return types[status] || 'info'
-    }
+  }
+  return types[status] || 'info'
+}
 
     const getItemStatusText = (status) => {
-      const texts = {
+  const texts = {
         [ExecutionStatus.PENDING]: '待执行',
         [ExecutionStatus.RUNNING]: '执行中',
         [ExecutionStatus.COMPLETED]: '已完成',
@@ -631,18 +622,18 @@ export default {
       return texts[status] || '未知'
     }
 
-    const getResultType = (result) => {
-      const types = {
+const getResultType = (result) => {
+  const types = {
         [ResultStatus.PASS]: 'success',
         [ResultStatus.FAIL]: 'danger',
         [ResultStatus.ERROR]: 'danger',
         [ResultStatus.UNKNOWN]: 'info'
-      }
-      return types[result] || 'info'
-    }
+  }
+  return types[result] || 'info'
+}
 
-    const getResultText = (result) => {
-      const texts = {
+const getResultText = (result) => {
+  const texts = {
         [ResultStatus.PASS]: '通过',
         [ResultStatus.FAIL]: '失败',
         [ResultStatus.ERROR]: '错误',
@@ -1072,7 +1063,7 @@ export default {
         } else {
           throw new Error(response.message || '跳过失败')
         }
-      } catch (error) {
+  } catch (error) {
         console.error('跳过测试项失败:', error)
         ElMessage.error('跳过失败: ' + (error.response?.data?.message || error.message))
       } finally {
@@ -1117,43 +1108,9 @@ export default {
       }
     }
 
-    // 检查安全组状态
-    const checkSafetyGroups = computed(() => {
-      if (!selectedInstance.value?.items) return false
-      const safetyGroups = filteredTestItems.value.filter(group => group.level === 1)
-      if (safetyGroups.length === 0) return true // 如果没有安全组，则返回true
-      
-      return safetyGroups.every(group => 
-        group.items.every(item => 
-          item.execution_status === 'completed' && item.result_status === 'pass'
-        )
-      )
-    })
-
-    // 判断组是否可以执行
-    const canExecuteGroup = (group) => {
-      if (!selectedInstance.value) return false
-      if (selectedInstance.value.status !== 'running') return false
-      
-      // 如果是安全组，直接允许执行
-      if (group.level === 1) return true
-      
-      // 如果是普通组，需要检查安全组状态
-      return checkSafetyGroups.value
-    }
-
     // 处理组测试
     const handleGroupTest = async (group) => {
       try {
-        if (!canExecuteGroup(group)) {
-          if (group.level === 0 && !checkSafetyGroups.value) {
-            ElMessage.warning('请先完成所有安全组测试')
-            return
-          }
-          ElMessage.warning('当前无法执行组测试')
-          return
-        }
-
         loading.value = true
         
         // 第一阶段：执行所有写入操作
@@ -1180,7 +1137,7 @@ export default {
             selectedInstance.value = latestInstance
             const allWriteCompleted = writeItems.every(writeItem => {
               const latestItem = latestInstance.items.find(i => i.id === writeItem.id)
-              return latestItem && latestItem.execution_status === 'completed'
+              return latestItem && latestItem.execution_status === ExecutionStatus.COMPLETED
             })
             
             if (allWriteCompleted) {
@@ -1214,7 +1171,7 @@ export default {
             selectedInstance.value = latestInstance
             const allReadCompleted = readItems.every(readItem => {
               const latestItem = latestInstance.items.find(i => i.id === readItem.id)
-              return latestItem && latestItem.execution_status === 'completed'
+              return latestItem && latestItem.execution_status === ExecutionStatus.COMPLETED
             })
             
             if (allReadCompleted) {
@@ -1235,15 +1192,6 @@ export default {
       }
     }
 
-    // 组配置管理
-    const handleSaveConfig = () => {
-      ElMessage.info('保存配置功能开发中')
-    }
-
-    const handleLoadConfig = () => {
-      ElMessage.info('加载配置功能开发中')
-    }
-
     // 组件挂载时启动定时器
     onMounted(async () => {
       try {
@@ -1254,46 +1202,6 @@ export default {
         console.error('初始化数据加载失败:', error)
       }
     })
-
-    // 获取组状态类型
-    const getGroupStatusType = (group) => {
-      if (!group || !group.items || group.items.length === 0) return 'info'
-      
-      const hasError = group.items.some(item => 
-        item.result_status === 'fail' || item.result_status === 'error'
-      )
-      const hasRunning = group.items.some(item => 
-        item.execution_status === 'running'
-      )
-      const allCompleted = group.items.every(item => 
-        item.execution_status === 'completed'
-      )
-      
-      if (hasError) return 'danger'
-      if (hasRunning) return 'warning'
-      if (allCompleted) return 'success'
-      return 'info'
-    }
-
-    // 获取组状态文本
-    const getGroupStatusText = (group) => {
-      if (!group || !group.items || group.items.length === 0) return '未开始'
-      
-      const hasError = group.items.some(item => 
-        item.result_status === 'fail' || item.result_status === 'error'
-      )
-      const hasRunning = group.items.some(item => 
-        item.execution_status === 'running'
-      )
-      const allCompleted = group.items.every(item => 
-        item.execution_status === 'completed'
-      )
-      
-      if (hasError) return '失败'
-      if (hasRunning) return '执行中'
-      if (allCompleted) return '完成'
-      return '未开始'
-    }
 
     return {
       // 设备相关
@@ -1356,18 +1264,6 @@ export default {
       expandedGroups,
       toggleGroup,
       handleGroupTest,
-      checkSafetyGroups,
-      canExecuteGroup,
-
-      // 组配置管理
-      handleSaveConfig,
-      handleLoadConfig,
-
-      // 获取组状态类型
-      getGroupStatusType,
-
-      // 获取组状态文本
-      getGroupStatusText,
     }
   }
 }
@@ -1664,74 +1560,5 @@ export default {
     transform: scale(0.9);
     margin: 0;
   }
-}
-
-.mr-10 {
-  margin-right: 10px;
-}
-
-.group-level {
-  min-width: 60px;
-  text-align: center;
-}
-
-.header-right {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
-.group-header {
-  .group-info {
-    .group-level {
-      min-width: 60px;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-size: 12px;
-      font-weight: bold;
-      
-      &.safety {
-        background-color: var(--el-color-danger-light-9);
-        color: var(--el-color-danger);
-        border: 1px solid var(--el-color-danger-light-5);
-      }
-      
-      &.normal {
-        background-color: var(--el-color-info-light-9);
-        color: var(--el-color-info);
-        border: 1px solid var(--el-color-info-light-5);
-      }
-    }
-  }
-}
-
-.group-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  
-  .group-name {
-    font-weight: bold;
-    color: var(--el-text-color-primary);
-  }
-  
-  .group-status {
-    min-width: 60px;
-  }
-  
-  .group-progress {
-    flex: 1;
-    margin: 0 20px;
-  }
-  
-  .warning-icon {
-    color: var(--el-color-warning);
-    font-size: 16px;
-  }
-}
-
-.group-items {
-  padding: 12px;
 }
 </style> 
