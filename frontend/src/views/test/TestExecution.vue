@@ -598,8 +598,58 @@ export default {
           }
         )
 
+        // 启动测试实例
         await testInstanceStore.startTestInstance(instance.id)
         ElMessage.success('测试已开始')
+
+        let hasFailedGroup = false
+
+        // 逐个执行启用的测试组
+        for (const group of enabledGroups) {
+          try {
+            console.log(`开始执行测试组: ${group.description}`)
+            await handleGroupTest(group)
+            
+            // 等待一段时间再执行下一组
+            await new Promise(resolve => setTimeout(resolve, 2000))
+            
+            // 刷新实例状态
+            await fetchTestInstances()
+            const updatedInstance = testInstances.value.find(i => i.id === instance.id)
+            if (updatedInstance) {
+              selectedInstance.value = updatedInstance
+              
+              // 检查当前组的测试结果
+              const groupItems = selectedInstance.value.items.filter(
+                item => item.testItem.test_group_id === group.id
+              )
+              const hasFailedItems = groupItems.some(
+                item => item.result_status === ResultStatus.FAIL || 
+                       item.result_status === ResultStatus.ERROR
+              )
+              if (hasFailedItems) {
+                hasFailedGroup = true
+              }
+            }
+          } catch (error) {
+            console.error(`测试组 ${group.description} 执行失败:`, error)
+            ElMessage.error(`测试组 ${group.description} 执行失败`)
+            hasFailedGroup = true
+          }
+        }
+
+        // 完成所有测试组后，设置最终状态
+        const finalResult = hasFailedGroup ? TestResult.FAIL : TestResult.PASS
+        await completeTest(instance.id, finalResult)
+        
+        // 再次刷新状态
+        await fetchTestInstances()
+        const finalInstance = testInstances.value.find(i => i.id === instance.id)
+        if (finalInstance) {
+          selectedInstance.value = finalInstance
+          ElMessage.success(`所有测试组执行完成，最终结果: ${finalResult === TestResult.PASS ? '通过' : '失败'}`)
+        }
+
       } catch (error) {
         if (error !== 'cancel') {
           ElMessage.error(`启动测试失败：${error.message}`)
@@ -1219,7 +1269,7 @@ const getResultText = (result) => {
             
             if (allReadCompleted) {
               console.log('所有读取操作已完成')
-              ElMessage.success('组测试完成')
+              ElMessage.success(`测试组 ${group.description} 执行完成`)
               break
             }
           }
@@ -1229,7 +1279,7 @@ const getResultText = (result) => {
         
       } catch (error) {
         console.error('组测试执行失败:', error)
-        ElMessage.error('组测试执行失败: ' + (error.response?.data?.message || error.message))
+        throw error
       } finally {
         loading.value = false
       }
