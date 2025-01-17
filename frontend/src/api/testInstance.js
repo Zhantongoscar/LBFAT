@@ -1,4 +1,5 @@
 import api from '@/utils/api'
+import request from '@/utils/request'
 
 // 测试实例状态枚举
 export const TestStatus = {
@@ -123,6 +124,23 @@ export function createInstanceItems(instanceId) {
 export const resetGroupItems = (instanceId, groupId) => {
   return api({
     url: `/test-instances/${instanceId}/groups/${groupId}/reset`,
+    method: 'post'
+  })
+}
+
+// 更新测试组启用状态
+export function updateTestGroupEnable(groupId, enable) {
+  return request({
+    url: `/api/test-groups/${groupId}/enable`,
+    method: 'put',
+    data: { enable }
+  })
+}
+
+// 中止测试
+export function abortTest(id) {
+  return api({
+    url: `/test-instances/${id}/abort`,
     method: 'post'
   })
 }

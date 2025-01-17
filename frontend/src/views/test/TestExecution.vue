@@ -233,6 +233,14 @@
               <span class="group-id">测试组{{ group.items[0]?.testItem?.test_group_id }}：</span>
               <span class="group-title">{{ group.description }}</span>
               <el-tag size="small" type="info" class="item-count">{{ group.items.length }} 项</el-tag>
+              <el-switch
+                v-model="group.enable"
+                @click.stop
+                @change="handleGroupEnableChange(group)"
+                style="margin-left: 10px;"
+                active-text="启用"
+                inactive-text="禁用"
+              />
               <div class="group-progress">
                 <span class="progress-text">{{ getGroupProgress(group) }}%</span>
                 <el-progress 
@@ -247,92 +255,99 @@
                 size="small"
                 style="margin-left: 10px;"
                 @click.stop="handleGroupTest(group)"
+                :disabled="!group.enable"
               >
-                组测试
+                测试此组
               </el-button>
-              <el-icon class="expand-icon" :class="{ 'is-active': expandedGroups.includes(group.id) }">
-                <ArrowDown />
-              </el-icon>
             </div>
           </div>
+          <div class="group-content" v-show="expandedGroups.includes(group.id)">
+            <el-table :data="group.items" border style="width: 100%">
+              <el-table-column prop="id" label="ID" width="50" show-overflow-tooltip />
+              <el-table-column prop="test_item_id" label="测试项ID" width="60" show-overflow-tooltip />
+              <el-table-column prop="testItem.device_id" label="设备ID" width="60" show-overflow-tooltip />
+              <el-table-column prop="testItem.point_index" label="通道" width="50" show-overflow-tooltip />
+              <el-table-column label="模式" width="60" show-overflow-tooltip>
+                <template #default="{ row }">
+                  <el-tag 
+                    :type="row.mode === 'read' ? 'success' : 'warning'"
+                    size="small"
+                  >
+                    {{ row.mode === 'read' ? '读取' : '写入' }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column prop="testItem.name" label="测试项名称" min-width="100" show-overflow-tooltip />
+              <el-table-column prop="timeout" label="延时(ms)" width="80" show-overflow-tooltip>
+                <template #default="{ row }">
+                  {{ row.timeout || 5000 }}
+                </template>
+              </el-table-column>
+              <el-table-column prop="testItem.input_values" label="设定值" width="60" show-overflow-tooltip />
+              <el-table-column prop="testItem.expected_values" label="预期值" width="60" show-overflow-tooltip />
+              <el-table-column label="实际测量值" width="70" show-overflow-tooltip>
+                <template #default="{ row }">
+                  <span>{{ row.actual_value !== null && row.actual_value !== undefined ? row.actual_value : '-' }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column label="状态" width="60" show-overflow-tooltip>
+                <template #default="{ row }">
+                  <el-tag :type="getItemStatusType(row.execution_status)" size="small">
+                    {{ getItemStatusText(row.execution_status) }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column label="结果" width="60" show-overflow-tooltip>
+                <template #default="{ row }">
+                  <el-tag :type="getResultType(row.result_status)" size="small">
+                    {{ getResultText(row.result_status) }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="150" fixed="right">
+                <template #default="{ row }">
+                  <el-button
+                    v-if="canExecuteItem(row)"
+                    type="primary"
+                    link
+                    size="small"
+                    @click="handleExecuteItem(row)"
+                  >
+                    执行
+                  </el-button>
+                  <el-button
+                    v-if="canSkipItem(row)"
+                    type="warning"
+                    link
+                    size="small"
+                    @click="handleSkipItem(row)"
+                  >
+                    跳过
+                  </el-button>
+                  <el-button
+                    type="info"
+                    link
+                    size="small"
+                    @click="showItemDetails(row)"
+                  >
+                    详情
+                  </el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
+        </div>
 
-          <el-collapse-transition>
-            <div v-show="expandedGroups.includes(group.id)">
-              <el-table :data="group.items" border size="small">
-                <el-table-column prop="id" label="ID" width="50" show-overflow-tooltip />
-                <el-table-column prop="test_item_id" label="测试项ID" width="60" show-overflow-tooltip />
-                <el-table-column prop="testItem.device_id" label="设备ID" width="60" show-overflow-tooltip />
-                <el-table-column prop="testItem.point_index" label="通道" width="50" show-overflow-tooltip />
-                <el-table-column label="模式" width="60" show-overflow-tooltip>
-                  <template #default="{ row }">
-                    <el-tag 
-                      :type="row.mode === 'read' ? 'success' : 'warning'"
-                      size="small"
-                    >
-                      {{ row.mode === 'read' ? '读取' : '写入' }}
-                    </el-tag>
-                  </template>
-                </el-table-column>
-                <el-table-column prop="testItem.name" label="测试项名称" min-width="100" show-overflow-tooltip />
-                <el-table-column prop="timeout" label="延时(ms)" width="80" show-overflow-tooltip>
-                  <template #default="{ row }">
-                    {{ row.timeout || 5000 }}
-                  </template>
-                </el-table-column>
-                <el-table-column prop="testItem.input_values" label="设定值" width="60" show-overflow-tooltip />
-                <el-table-column prop="testItem.expected_values" label="预期值" width="60" show-overflow-tooltip />
-                <el-table-column label="实际测量值" width="70" show-overflow-tooltip>
-                  <template #default="{ row }">
-                    <span>{{ row.actual_value !== null && row.actual_value !== undefined ? row.actual_value : '-' }}</span>
-                  </template>
-                </el-table-column>
-                <el-table-column label="状态" width="60" show-overflow-tooltip>
-                  <template #default="{ row }">
-                    <el-tag :type="getItemStatusType(row.execution_status)" size="small">
-                      {{ getItemStatusText(row.execution_status) }}
-                    </el-tag>
-                  </template>
-                </el-table-column>
-                <el-table-column label="结果" width="60" show-overflow-tooltip>
-                  <template #default="{ row }">
-                    <el-tag :type="getResultType(row.result_status)" size="small">
-                      {{ getResultText(row.result_status) }}
-                    </el-tag>
-                  </template>
-                </el-table-column>
-                <el-table-column label="操作" width="150" fixed="right">
-                  <template #default="{ row }">
-                    <el-button
-                      v-if="canExecuteItem(row)"
-                      type="primary"
-                      link
-                      size="small"
-                      @click="handleExecuteItem(row)"
-                    >
-                      执行
-                    </el-button>
-                    <el-button
-                      v-if="canSkipItem(row)"
-                      type="warning"
-                      link
-                      size="small"
-                      @click="handleSkipItem(row)"
-                    >
-                      跳过
-                    </el-button>
-                    <el-button
-                      type="info"
-                      link
-                      size="small"
-                      @click="showItemDetails(row)"
-                    >
-                      详情
-                    </el-button>
-                  </template>
-                </el-table-column>
-              </el-table>
-            </div>
-          </el-collapse-transition>
+        <!-- 添加批量操作按钮 -->
+        <div class="batch-operations" style="margin-bottom: 20px;">
+          <el-button-group>
+            <el-button type="primary" size="small" @click="enableAllGroups">
+              全部启用
+            </el-button>
+            <el-button type="info" size="small" @click="disableAllGroups">
+              全部禁用
+            </el-button>
+          </el-button-group>
         </div>
       </div>
     </el-card>
@@ -467,6 +482,12 @@ import {
   resetGroupItems
 } from '@/api/testInstance'
 import { getTruthTables } from '@/api/truthTable'
+import { useTestInstanceStore } from '@/stores/testInstance'
+import { useDeviceStore } from '@/stores/device'
+import { formatDateTime } from '@/utils/format'
+
+const testInstanceStore = useTestInstanceStore()
+const deviceStore = useDeviceStore()
 
 export default {
   name: 'TestExecution',
@@ -557,11 +578,32 @@ export default {
     // 开始测试实例
     const startInstance = async (instance) => {
       try {
-        await startTest(instance.id)
-        ElMessage.success('开始测试')
-        await fetchTestInstances()
+        if (!instance) return
+        
+        // 检查是否有启用的测试组
+        const enabledGroups = filteredTestItems.value.filter(group => group.enable)
+        if (enabledGroups.length === 0) {
+          ElMessage.warning('请至少启用一个测试组')
+          return
+        }
+
+        // 确认启动测试
+        await ElMessageBox.confirm(
+          `将开始执行 ${instance.product_sn} 的测试，共 ${enabledGroups.length} 个测试组，是否继续？`,
+          '确认开始测试',
+          {
+            confirmButtonText: '开始测试',
+            cancelButtonText: '取消',
+            type: 'info'
+          }
+        )
+
+        await testInstanceStore.startTestInstance(instance.id)
+        ElMessage.success('测试已开始')
       } catch (error) {
-        ElMessage.error('开始测试失败')
+        if (error !== 'cancel') {
+          ElMessage.error(`启动测试失败：${error.message}`)
+        }
       }
     }
 
@@ -878,6 +920,7 @@ const getResultText = (result) => {
             description: item.testItem.group?.description || '未知测试组',
             level: item.testItem.group?.level || 1,
             sequence: item.testItem.group?.sequence || 0,
+            enable: item.testItem.group?.enable ?? true, // 默认启用
             items: []
           }
         }
@@ -1189,6 +1232,47 @@ const getResultText = (result) => {
         ElMessage.error('组测试执行失败: ' + (error.response?.data?.message || error.message))
       } finally {
         loading.value = false
+      }
+    }
+
+    // 处理测试组启用状态变更
+    const handleGroupEnableChange = async (group) => {
+      try {
+        await testInstanceStore.updateTestGroupEnable(group.id, group.enable)
+        ElMessage.success(`测试组${group.enable ? '启用' : '禁用'}成功`)
+      } catch (error) {
+        ElMessage.error(`测试组${group.enable ? '启用' : '禁用'}失败：${error.message}`)
+        group.enable = !group.enable // 恢复状态
+      }
+    }
+
+    // 批量启用所有测试组
+    const enableAllGroups = async () => {
+      try {
+        await Promise.all(
+          filteredTestItems.value.map(group => 
+            testInstanceStore.updateTestGroupEnable(group.id, true)
+          )
+        )
+        filteredTestItems.value.forEach(group => group.enable = true)
+        ElMessage.success('所有测试组已启用')
+      } catch (error) {
+        ElMessage.error(`批量启用失败：${error.message}`)
+      }
+    }
+
+    // 批量禁用所有测试组
+    const disableAllGroups = async () => {
+      try {
+        await Promise.all(
+          filteredTestItems.value.map(group => 
+            testInstanceStore.updateTestGroupEnable(group.id, false)
+          )
+        )
+        filteredTestItems.value.forEach(group => group.enable = false)
+        ElMessage.success('所有测试组已禁用')
+      } catch (error) {
+        ElMessage.error(`批量禁用失败：${error.message}`)
       }
     }
 
