@@ -105,6 +105,12 @@ const routes = [
         meta: { requiresAuth: true }
       },
       {
+        path: 'group-execution',
+        name: 'GroupExecution',
+        component: () => import('../views/test/group/index.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
         path: 'report',
         name: 'TestReport',
         component: () => import('../views/test/TestReport.vue'),
