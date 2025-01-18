@@ -74,6 +74,10 @@
               <el-icon><VideoPlay /></el-icon>
               <template #title>测试执行</template>
             </el-menu-item>
+            <el-menu-item index="/test/group-execution">
+              <el-icon><Collection /></el-icon>
+              <template #title>组测试执行</template>
+            </el-menu-item>
             <el-menu-item index="/test/report">
               <el-icon><DataAnalysis /></el-icon>
               <template #title>测试报告</template>
@@ -131,7 +135,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { Loading, Monitor, Message, Operation, Tools, Document, Setting, VideoPlay, DataAnalysis, Expand, Fold, User, ArrowDown, SwitchButton, Picture } from '@element-plus/icons-vue'
+import { Loading, Monitor, Message, Operation, Tools, Document, Setting, VideoPlay, DataAnalysis, Expand, Fold, User, ArrowDown, SwitchButton, Picture, Collection } from '@element-plus/icons-vue'
 import { ElMessageBox } from 'element-plus'
 import { buhlerLogoBase64 } from '@/assets/buhler-logo.js'
 
