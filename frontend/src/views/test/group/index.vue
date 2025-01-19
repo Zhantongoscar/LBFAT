@@ -20,6 +20,7 @@
         :selected-plan-id="selectedPlanId"
         @select="handlePlanSelect"
         @search="handleSearch"
+        @delete="handlePlanDelete"
       />
 
       <!-- 右侧测试组详情 -->
@@ -45,7 +46,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { Plus, VideoPlay, VideoPause } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import PlanList from './components/PlanList.vue'
 import GroupDetail from './components/GroupDetail.vue'
 import PlanDialog from './components/PlanDialog.vue'
@@ -152,6 +153,44 @@ const handleSearch = (keyword) => {
 const viewGroupDetail = (group) => {
   // TODO: 实现查看测试组详情的逻辑
   console.log('查看测试组详情:', group)
+}
+
+// 删除测试计划
+const deletePlan = async (planId) => {
+  try {
+    await request({
+      url: `/test-group/${planId}`,
+      method: 'delete'
+    })
+    ElMessage.success('测试计划删除成功')
+    await fetchTestPlans()
+    // 如果删除的是当前选中的计划，清空选中状态
+    if (selectedPlanId.value === planId.toString()) {
+      selectedPlanId.value = ''
+    }
+  } catch (error) {
+    console.error('删除测试计划失败:', error)
+    ElMessage.error('删除测试计划失败')
+  }
+}
+
+// 在 PlanList 组件中添加删除事件监听
+const handlePlanDelete = (planId) => {
+  ElMessageBox.confirm(
+    '确定要删除这个测试计划吗？',
+    '警告',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    }
+  )
+    .then(() => {
+      deletePlan(planId)
+    })
+    .catch(() => {
+      // 用户点击取消
+    })
 }
 </script>
 

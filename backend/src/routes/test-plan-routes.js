@@ -78,4 +78,35 @@ router.post('/', async (req, res) => {
   }
 })
 
+// 删除测试计划
+router.delete('/:id', async (req, res) => {
+  try {
+    const { id } = req.params
+
+    // 检查测试计划是否存在
+    const plan = await db.query('SELECT id FROM test_plans WHERE id = ?', [id])
+    if (plan.length === 0) {
+      return res.status(404).json({
+        code: 404,
+        message: '测试计划不存在'
+      })
+    }
+
+    // 删除测试计划
+    await db.query('DELETE FROM test_plans WHERE id = ?', [id])
+
+    res.json({
+      code: 200,
+      message: '测试计划删除成功'
+    })
+  } catch (error) {
+    console.error('删除测试计划失败:', error)
+    res.status(500).json({
+      code: 500,
+      message: '删除测试计划失败',
+      error: error.message
+    })
+  }
+})
+
 module.exports = router 

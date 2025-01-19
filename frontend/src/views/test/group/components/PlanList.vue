@@ -23,13 +23,23 @@
           <el-icon><Document /></el-icon>
           <template #title>
             <span>{{ plan.name }}</span>
-            <el-tag 
-              size="small" 
-              :type="getStatusType(plan.status)"
-              class="status-tag"
-            >
-              {{ getStatusText(plan.status) }}
-            </el-tag>
+            <div class="plan-actions">
+              <el-tag 
+                size="small" 
+                :type="getStatusType(plan.status)"
+                class="status-tag"
+              >
+                {{ getStatusText(plan.status) }}
+              </el-tag>
+              <el-button
+                type="danger"
+                size="small"
+                circle
+                @click.stop="handleDelete(plan.id)"
+              >
+                <el-icon><Delete /></el-icon>
+              </el-button>
+            </div>
           </template>
         </el-menu-item>
       </el-menu>
@@ -39,7 +49,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import { Document, Search } from '@element-plus/icons-vue'
+import { Document, Search, Delete } from '@element-plus/icons-vue'
 import { usePlanStatus } from '../composables/usePlanStatus'
 
 const props = defineProps({
@@ -53,13 +63,17 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['select', 'search'])
+const emit = defineEmits(['select', 'search', 'delete'])
 
 const searchKeyword = ref('')
 const { getStatusType, getStatusText } = usePlanStatus()
 
 const handleSearch = () => {
   emit('search', searchKeyword.value)
+}
+
+const handleDelete = (planId) => {
+  emit('delete', planId)
 }
 </script>
 
@@ -81,9 +95,19 @@ const handleSearch = () => {
   margin-left: 10px;
 }
 
+.plan-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 :deep(.el-menu-item) {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+:deep(.el-menu-item .el-button) {
+  margin-left: 8px;
 }
 </style> 
