@@ -63,7 +63,7 @@ app.use('/api/truth-tables', truthTableRoutes);
 app.use('/api/test-items', testItemRoutes);
 app.use('/api/test-instances', testInstanceRoutes);
 app.use('/api/test', testRoutes);
-app.use('/api/test-group', testPlanRoutes);
+app.use('/api/test-plans', testPlanRoutes);
 
 console.log('=== 路由注册完成 ===');
 

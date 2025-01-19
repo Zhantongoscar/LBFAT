@@ -84,8 +84,8 @@ router.post('/', async (req, res) => {
     if (groups.length > 0) {
       const values = groups.map(group => [result.insertId, group.id, group.sequence])
       await db.query(
-        'INSERT INTO test_plan_groups (plan_id, group_id, sequence) VALUES ?',
-        [values]
+        'INSERT INTO test_plan_groups (plan_id, group_id, sequence) VALUES (' + values.map(() => '(?, ?, ?)').join(',') + ')',
+        values.flat()
       )
     }
 

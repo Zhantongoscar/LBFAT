@@ -88,7 +88,7 @@ const fetchTruthTables = async () => {
 const fetchTestPlans = async () => {
   try {
     const response = await request({
-      url: '/test/plans',
+      url: '/test-plans',
       method: 'get'
     })
     testPlans.value = response.data.data || []
@@ -124,7 +124,7 @@ const createNewPlan = () => {
 const submitPlan = async (plan) => {
   try {
     await request({
-      url: '/test/plans',
+      url: '/test-plans',
       method: 'post',
       data: {
         name: plan.name,
@@ -159,12 +159,11 @@ const viewGroupDetail = (group) => {
 const deletePlan = async (planId) => {
   try {
     await request({
-      url: `/test/plans/${planId}`,
+      url: `/test-plans/${planId}`,
       method: 'delete'
     })
     ElMessage.success('测试计划删除成功')
     await fetchTestPlans()
-    // 如果删除的是当前选中的计划，清空选中状态
     if (selectedPlanId.value === planId.toString()) {
       selectedPlanId.value = ''
     }
