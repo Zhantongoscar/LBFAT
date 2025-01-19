@@ -2,13 +2,13 @@
   <div class="group-execution-container">
     <!-- 顶部操作栏 -->
     <div class="operation-bar">
-      <el-button type="primary" @click="createNewPlan">
+      <el-button type="primary" @click="createNewPlan" :loading="isLoading">
         <el-icon><Plus /></el-icon>新建测试计划
       </el-button>
-      <el-button type="success" @click="startGroupTest" :disabled="!selectedPlan">
+      <el-button type="success" @click="startGroupTest" :disabled="!selectedPlan || isLoading">
         <el-icon><VideoPlay /></el-icon>开始组测试
       </el-button>
-      <el-button type="warning" @click="stopGroupTest" :disabled="!isTestRunning">
+      <el-button type="warning" @click="stopGroupTest" :disabled="!isTestRunning || isLoading">
         <el-icon><VideoPause /></el-icon>停止测试
       </el-button>
     </div>
@@ -18,6 +18,7 @@
       <PlanList
         :plans="filteredPlans"
         :selected-plan-id="selectedPlanId"
+        :loading="isLoading"
         @select="handlePlanSelect"
         @search="handleSearch"
         @delete="handlePlanDelete"
@@ -28,6 +29,7 @@
         v-if="selectedPlan"
         :plan="selectedPlan"
         :is-test-running="isTestRunning"
+        :loading="isLoading"
         @view-detail="viewGroupDetail"
         @run-group="runSingleGroup"
         @remove-group="removeGroup"
@@ -62,7 +64,8 @@ const selectedPlanId = ref('')
 const searchKeyword = ref('')
 const dialogVisible = ref(false)
 const truthTables = ref([])
-const testPlans = ref([])  // 初始化为空数组
+const testPlans = ref([])
+const isLoading = ref(false)  // 添加加载状态
 
 // 使用组合式函数
 const { isTestRunning, startGroupTest, stopGroupTest, runSingleGroup, removeGroup } = useGroupTest()
@@ -87,6 +90,7 @@ const fetchTruthTables = async () => {
 // 获取测试计划列表
 const fetchTestPlans = async () => {
   try {
+    isLoading.value = true
     const response = await request({
       url: '/test-plans',
       method: 'get'
@@ -95,6 +99,8 @@ const fetchTestPlans = async () => {
   } catch (error) {
     console.error('获取测试计划列表失败:', error)
     ElMessage.error('获取测试计划列表失败')
+  } finally {
+    isLoading.value = false
   }
 }
 
@@ -123,6 +129,7 @@ const createNewPlan = () => {
 
 const submitPlan = async (plan) => {
   try {
+    isLoading.value = true
     await request({
       url: '/test-plans',
       method: 'post',
@@ -135,10 +142,17 @@ const submitPlan = async (plan) => {
       }
     })
     ElMessage.success('测试计划创建成功')
-    await fetchTestPlans()
+    dialogVisible.value = false
+    
+    // 添加延时后再获取最新列表
+    setTimeout(async () => {
+      await fetchTestPlans()
+      isLoading.value = false
+    }, 1000)  // 延时1秒
   } catch (error) {
     console.error('创建测试计划失败:', error)
     ElMessage.error('创建测试计划失败')
+    isLoading.value = false
   }
 }
 

@@ -82,9 +82,12 @@ router.post('/', async (req, res) => {
 
     // 关联测试组到测试计划
     if (groups.length > 0) {
+      // 构建批量插入的值
       const values = groups.map(group => [result.insertId, group.id, group.sequence])
+      
+      // 修改批量插入的SQL语句格式
       await db.query(
-        'INSERT INTO test_plan_groups (plan_id, group_id, sequence) VALUES (' + values.map(() => '(?, ?, ?)').join(',') + ')',
+        `INSERT INTO test_plan_groups (plan_id, group_id, sequence) VALUES ${values.map(() => '(?,?,?)').join(',')}`,
         values.flat()
       )
     }
