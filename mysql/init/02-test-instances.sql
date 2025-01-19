@@ -143,7 +143,20 @@ ADD COLUMN state_retention BOOLEAN DEFAULT FALSE COMMENT '是否保持状态',
 ADD COLUMN dependencies JSON COMMENT '依赖的其他测试组',
 ADD COLUMN completion_requirements JSON COMMENT '完成要求';
 
+-- 为每个测试计划添加其关联的测试组
+/*
+INSERT INTO test_plan_groups (plan_id, group_id, sequence)
+SELECT 
+    tp.id as plan_id,
+    tg.id as group_id,
+    tg.sequence as sequence
+FROM test_plans tp
+JOIN test_groups tg ON tp.truth_table_id = tg.truth_table_id
+ON DUPLICATE KEY UPDATE sequence = tg.sequence;
+*/
+
 -- 添加测试计划示例数据
+/*
 INSERT INTO test_plans (name, description, truth_table_id, execution_mode, failure_strategy, created_by)
 SELECT 
     CONCAT('默认测试计划-', tt.name) as name,
@@ -154,13 +167,4 @@ SELECT
     (SELECT id FROM users WHERE username = 'root') as created_by
 FROM truth_tables tt
 ON DUPLICATE KEY UPDATE updated_at = CURRENT_TIMESTAMP;
-
--- 为每个测试计划添加其关联的测试组
-INSERT INTO test_plan_groups (plan_id, group_id, sequence)
-SELECT 
-    tp.id as plan_id,
-    tg.id as group_id,
-    tg.sequence as sequence
-FROM test_plans tp
-JOIN test_groups tg ON tp.truth_table_id = tg.truth_table_id
-ON DUPLICATE KEY UPDATE sequence = tg.sequence; 
+*/ 
