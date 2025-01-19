@@ -88,7 +88,7 @@ const fetchTruthTables = async () => {
 const fetchTestPlans = async () => {
   try {
     const response = await request({
-      url: '/test-group',
+      url: '/test/plans',
       method: 'get'
     })
     testPlans.value = response.data.data || []
@@ -124,7 +124,7 @@ const createNewPlan = () => {
 const submitPlan = async (plan) => {
   try {
     await request({
-      url: '/test-group',
+      url: '/test/plans',
       method: 'post',
       data: {
         name: plan.name,
@@ -159,7 +159,7 @@ const viewGroupDetail = (group) => {
 const deletePlan = async (planId) => {
   try {
     await request({
-      url: `/test-group/${planId}`,
+      url: `/test/plans/${planId}`,
       method: 'delete'
     })
     ElMessage.success('测试计划删除成功')

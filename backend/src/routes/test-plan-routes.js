@@ -5,6 +5,7 @@ const db = require('../utils/db')
 // 获取测试计划列表
 router.get('/', async (req, res) => {
   try {
+    // 获取测试计划基本信息
     const plans = await db.query(`
       SELECT p.*, t.name as truth_table_name 
       FROM test_plans p
@@ -12,6 +13,18 @@ router.get('/', async (req, res) => {
       ORDER BY p.created_at DESC
     `)
     
+    // 获取每个计划关联的测试组
+    for (let plan of plans) {
+      const groups = await db.query(`
+        SELECT g.*, tg.sequence
+        FROM test_groups g
+        JOIN test_plan_groups tg ON g.id = tg.group_id
+        WHERE tg.plan_id = ?
+        ORDER BY tg.sequence
+      `, [plan.id])
+      plan.groups = groups
+    }
+
     res.json({
       code: 200,
       message: 'success',
@@ -60,6 +73,21 @@ router.post('/', async (req, res) => {
        VALUES (?, ?, ?, ?, ?)`,
       [name, truth_table_id, description, execution_mode, failure_strategy]
     )
+
+    // 获取真值表下的所有测试组
+    const groups = await db.query(
+      'SELECT id, sequence FROM test_groups WHERE truth_table_id = ?',
+      [truth_table_id]
+    )
+
+    // 关联测试组到测试计划
+    if (groups.length > 0) {
+      const values = groups.map(group => [result.insertId, group.id, group.sequence])
+      await db.query(
+        'INSERT INTO test_plan_groups (plan_id, group_id, sequence) VALUES ?',
+        [values]
+      )
+    }
 
     res.json({
       code: 200,
