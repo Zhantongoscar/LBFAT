@@ -167,4 +167,17 @@ SELECT
     (SELECT id FROM users WHERE username = 'root') as created_by
 FROM truth_tables tt
 ON DUPLICATE KEY UPDATE updated_at = CURRENT_TIMESTAMP;
-*/ 
+*/
+
+-- 创建测试组实例表
+CREATE TABLE IF NOT EXISTS test_group_instances (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  plan_id INT NOT NULL,
+  group_id INT NOT NULL,
+  enabled BOOLEAN DEFAULT true,
+  config JSON,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (plan_id) REFERENCES test_plans(id) ON DELETE CASCADE,
+  FOREIGN KEY (group_id) REFERENCES test_groups(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4; 

@@ -16,7 +16,12 @@ router.get('/', async (req, res) => {
     // 获取每个计划关联的测试组
     for (let plan of plans) {
       const groups = await db.query(`
-        SELECT g.*, tg.sequence
+        SELECT 
+          g.*,
+          tg.sequence,
+          tg.dependencies,
+          tg.created_at,
+          tg.updated_at
         FROM test_groups g
         JOIN test_plan_groups tg ON g.id = tg.group_id
         WHERE tg.plan_id = ?
@@ -90,6 +95,13 @@ router.post('/', async (req, res) => {
         `INSERT INTO test_plan_groups (plan_id, group_id, sequence) VALUES ${values.map(() => '(?,?,?)').join(',')}`,
         values.flat()
       )
+
+      // 为每个组创建实例
+      const instanceValues = groups.map(group => [result.insertId, group.id])
+      await db.query(
+        `INSERT INTO test_group_instances (plan_id, group_id) VALUES ${instanceValues.map(() => '(?,?)').join(',')}`,
+        instanceValues.flat()
+      )
     }
 
     res.json({
@@ -135,6 +147,45 @@ router.delete('/:id', async (req, res) => {
     res.status(500).json({
       code: 500,
       message: '删除测试计划失败',
+      error: error.message
+    })
+  }
+})
+
+// 更新测试组实例配置
+router.put('/:planId/groups/:groupId', async (req, res) => {
+  try {
+    const { planId, groupId } = req.params
+    const { enabled, config } = req.body
+
+    // 检查实例是否存在
+    const instance = await db.query(
+      'SELECT id FROM test_group_instances WHERE plan_id = ? AND group_id = ?',
+      [planId, groupId]
+    )
+
+    if (instance.length === 0) {
+      return res.status(404).json({
+        code: 404,
+        message: '测试组实例不存在'
+      })
+    }
+
+    // 更新配置
+    await db.query(
+      'UPDATE test_group_instances SET enabled = ?, config = ? WHERE plan_id = ? AND group_id = ?',
+      [enabled, JSON.stringify(config), planId, groupId]
+    )
+
+    res.json({
+      code: 200,
+      message: '测试组实例配置更新成功'
+    })
+  } catch (error) {
+    console.error('更新测试组实例配置失败:', error)
+    res.status(500).json({
+      code: 500,
+      message: '更新测试组实例配置失败',
       error: error.message
     })
   }
