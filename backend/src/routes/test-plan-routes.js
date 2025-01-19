@@ -85,6 +85,14 @@ router.post('/', async (req, res) => {
       [truth_table_id]
     )
 
+    // 创建测试实例
+    const testInstance = await db.query(
+      `INSERT INTO test_instances 
+       (truth_table_id, product_sn, operator, status, result)
+       VALUES (?, ?, ?, 'pending', 'unknown')`,
+      [truth_table_id, 'TBD', 'system']  // 临时使用系统默认值
+    )
+
     // 关联测试组到测试计划
     if (groups.length > 0) {
       // 构建批量插入的值
@@ -97,9 +105,9 @@ router.post('/', async (req, res) => {
       )
 
       // 为每个组创建实例
-      const instanceValues = groups.map(group => [result.insertId, group.id])
+      const instanceValues = groups.map(group => [testInstance.insertId, group.id])
       await db.query(
-        `INSERT INTO test_group_instances (plan_id, group_id) VALUES ${instanceValues.map(() => '(?,?)').join(',')}`,
+        `INSERT INTO test_instance_groups (instance_id, group_id) VALUES ${instanceValues.map(() => '(?,?)').join(',')}`,
         instanceValues.flat()
       )
     }
@@ -160,7 +168,7 @@ router.put('/:planId/groups/:groupId', async (req, res) => {
 
     // 检查实例是否存在
     const instance = await db.query(
-      'SELECT id FROM test_group_instances WHERE plan_id = ? AND group_id = ?',
+      'SELECT id FROM test_instance_groups WHERE instance_id = ? AND group_id = ?',
       [planId, groupId]
     )
 
@@ -173,8 +181,8 @@ router.put('/:planId/groups/:groupId', async (req, res) => {
 
     // 更新配置
     await db.query(
-      'UPDATE test_group_instances SET enabled = ?, config = ? WHERE plan_id = ? AND group_id = ?',
-      [enabled, JSON.stringify(config), planId, groupId]
+      'UPDATE test_instance_groups SET status = ?, result = ? WHERE instance_id = ? AND group_id = ?',
+      [enabled ? 'pending' : 'skipped', 'unknown', planId, groupId]
     )
 
     res.json({
