@@ -43,13 +43,14 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { Plus, VideoPlay, VideoPause } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import PlanList from './components/PlanList.vue'
 import GroupDetail from './components/GroupDetail.vue'
 import PlanDialog from './components/PlanDialog.vue'
 import { useGroupTest } from './composables/useGroupTest'
+import request from '@/utils/request'
 
 defineOptions({
   name: 'GroupExecution'
@@ -59,44 +60,48 @@ defineOptions({
 const selectedPlanId = ref('')
 const searchKeyword = ref('')
 const dialogVisible = ref(false)
+const truthTables = ref([])
+const testPlans = ref([])  // 初始化为空数组
 
 // 使用组合式函数
 const { isTestRunning, startGroupTest, stopGroupTest, runSingleGroup, removeGroup } = useGroupTest()
 
-// 模拟数据
-const truthTables = ref([
-  { id: 1, name: '真值表1' },
-  { id: 2, name: '真值表2' }
-])
-
-const testPlans = ref([
-  {
-    id: 1,
-    name: '测试计划1',
-    description: '这是测试计划1的描述',
-    status: 'pending',
-    groups: [
-      {
-        id: 1,
-        name: '测试组1',
-        level: 1,
-        description: '安全类测试组',
-        status: 'pending',
-        execution_mode: 'sequential',
-        failure_strategy: 'stop'
-      },
-      {
-        id: 2,
-        name: '测试组2',
-        level: 0,
-        description: '普通测试组',
-        status: 'pending',
-        execution_mode: 'parallel',
-        failure_strategy: 'continue'
-      }
-    ]
+// 获取真值表数据
+const fetchTruthTables = async () => {
+  try {
+    const response = await request({
+      url: '/truth-tables',
+      method: 'get'
+    })
+    truthTables.value = response.data.data.map(table => ({
+      id: table.id,
+      name: `${table.name}`
+    }))
+  } catch (error) {
+    console.error('获取真值表失败:', error)
+    ElMessage.error('获取真值表失败')
   }
-])
+}
+
+// 获取测试计划列表
+const fetchTestPlans = async () => {
+  try {
+    const response = await request({
+      url: '/test-group',
+      method: 'get'
+    })
+    testPlans.value = response.data.data || []
+  } catch (error) {
+    console.error('获取测试计划列表失败:', error)
+    ElMessage.error('获取测试计划列表失败')
+  }
+}
+
+// 在组件挂载时获取数据
+onMounted(() => {
+  fetchTruthTables()
+  fetchTestPlans()
+})
 
 // 计算属性
 const filteredPlans = computed(() => {
@@ -116,9 +121,24 @@ const createNewPlan = () => {
 }
 
 const submitPlan = async (plan) => {
-  // TODO: 实现提交测试计划的逻辑
-  console.log('提交测试计划:', plan)
-  ElMessage.success('测试计划创建成功')
+  try {
+    await request({
+      url: '/test-group',
+      method: 'post',
+      data: {
+        name: plan.name,
+        truth_table_id: plan.truth_table_id,
+        description: plan.description,
+        execution_mode: plan.execution_mode,
+        failure_strategy: plan.failure_strategy
+      }
+    })
+    ElMessage.success('测试计划创建成功')
+    await fetchTestPlans()
+  } catch (error) {
+    console.error('创建测试计划失败:', error)
+    ElMessage.error('创建测试计划失败')
+  }
 }
 
 const handlePlanSelect = (index) => {
