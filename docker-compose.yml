@@ -106,7 +106,9 @@ services:
           memory: 128M
 
   neo4j:
-    image: neo4j:5.12.0
+    build:
+      context: ./neo4j
+      dockerfile: Dockerfile
     container_name: lbfat-neo4j
     ports:
       - "7474:7474"  # HTTP
@@ -115,8 +117,7 @@ services:
       - ./neo4j/data:/data
       - ./neo4j/logs:/logs
       - ./neo4j/conf:/conf
-      - ./neo4j/import:/var/lib/neo4j/import  # 用于LOAD CSV
-      - ./neo4j/admin-import:/import  # 用于neo4j-admin import
+      - ./neo4j/import:/import  # 修改为统一使用/import目录
     environment:
       - NEO4J_AUTH=neo4j/13701033228
       - NEO4J_dbms_memory_pagecache_size=1G
