@@ -117,7 +117,7 @@ services:
       - ./neo4j/data:/data
       - ./neo4j/logs:/logs
       - ./neo4j/conf:/conf
-      - ./neo4j/import:/import  # 修改为统一使用/import目录
+      - ./neo4j/import:/import  # 用于导入CSV文件
     environment:
       - NEO4J_AUTH=neo4j/13701033228
       - NEO4J_dbms_memory_pagecache_size=1G
@@ -128,7 +128,7 @@ services:
       - NEO4J_apoc_export_file_enabled=true
       - NEO4J_dbms_security_allow__csv__import__from__file__urls=true
     networks:
-      - lbfat-network
+      - lbfat_network
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider localhost:7474 || exit 1"]
@@ -138,6 +138,4 @@ services:
 
 networks:
   lbfat_network:
-    driver: bridge
-  lbfat-network:
     driver: bridge
