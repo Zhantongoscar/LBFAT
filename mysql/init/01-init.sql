@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS device_type_points (
     device_type_id INT NOT NULL,
     point_index INT NOT NULL,
     point_type ENUM('DI','DO','AI','AO') NOT NULL,
+    sim_type ENUM('A','B','C','D','F','U','W','DD','PDI','PDO','PAI','PAO') NOT NULL DEFAULT 'D' COMMENT '模拟类型',
     point_name VARCHAR(50) NOT NULL,
     mode ENUM('read','write') NOT NULL DEFAULT 'read',
     description TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
