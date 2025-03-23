@@ -260,7 +260,18 @@ INSERT INTO device_types (type_name, point_count, description) VALUES
 ('A', 6, '普通模块 A：6点（6DO）'),
 ('C', 6, '普通模块 C：6点（6DO）'),
 ('F', 6, '普通模块 F：6点（6DI）'),
-('W', 6, '普通模块 W：6点（6DI）');
+('W', 6, '普通模块 W：6点（6DI）'),
+('EL2809', 16, '16DO'),
+('EL1809', 16, '16DI'),
+('EL3204', 4, '4AI'),
+('EL1859', 8, '8DI 8DO'),
+('EL3064', 4, '4AI'),
+('EL4132', 2, '2AO'),
+('EL8601-8411', 6, '机器人模块 1 2 3di  4 5 do 910di 14ao'),
+('EL4004', 4, '4AO'),
+('EL3162', 2, '2AI'),
+('EL1004', 4, '4DI'),
+('EL3314', 4, '4XTC 8pin');
 
 -- 插入EDB设备点位配置
 INSERT INTO device_type_points (device_type_id, point_index, point_type, sim_type, point_name, mode, description) VALUES
