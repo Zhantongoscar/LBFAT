@@ -19,9 +19,20 @@ mysql/data/
 emqx/data/
 emqx/log/
 
+# Neo4j
+neo4j/data/
+neo4j/logs/
+neo4j/import/
+neo4j/admin-import/
+
+# Mosquitto
+mosquitto/data/
+mosquitto/log/
+
 # Logs
 logs/
 *.log
+**/*.log
 
 # IDE
 .idea/
@@ -38,4 +49,10 @@ backup/
 
 # Package locks
 package-lock.json
-yarn.lock 
+yarn.lock
+
+# Test
+__tests__/
+coverage/
+.nyc_output/
+test-results/
