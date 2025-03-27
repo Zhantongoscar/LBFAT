@@ -271,7 +271,19 @@ INSERT INTO device_types (type_name, point_count, description) VALUES
 ('EL4004', 4, '4AO'),
 ('EL3162', 2, '2AI'),
 ('EL1004', 4, '4DI'),
-('EL3314', 4, '4XTC 8pin');
+('EL3314', 4, '4XTC 8pin'),
+('EL3403', 8, '8PIN 3U,N 3I,N'),
+('EL5151', 8, '8PIN 编码器接口'),
+('EK1101', 6, 'EtherCAT耦合器'),
+('EK1005', 3, 'EtherCAT扩展模块'),
+('EK1122', 4, 'EtherCAT分支模块'),
+('FLK-D25', 16, 'D-sub接口模块'),
+('EL9100', 3, '电源馈电模块'),
+('EL6731', 2, 'PROFIBUS主站模块'),
+('GV204-X1', 4, '屏蔽和电源接口'),
+('GV204-X2', 8, '编码器输入接口'),
+('GV204-X3', 4, '输出接口1'),
+('GV204-X4', 8, '输出接口2');
 
 -- 插入EDB设备点位配置
 INSERT INTO device_type_points (device_type_id, point_index, point_type, sim_type, point_name, mode, description) VALUES
@@ -429,126 +441,354 @@ INSERT INTO device_type_points (device_type_id, point_index, point_type, sim_typ
 ((SELECT id FROM device_types WHERE type_name = 'EW'), 19, 'DI', 'W', 'DI18', 'read', 'EW数字输入点18');
 
 -- PDI设备点位配置（16个DI点位）
-INSERT INTO device_type_points (device_type_id, point_index, point_type, point_name, description) VALUES
-((SELECT id FROM device_types WHERE type_name = 'PDI'), 0, 'DI', 'DI0', 'PDI数字输入点0'),
-((SELECT id FROM device_types WHERE type_name = 'PDI'), 1, 'DI', 'DI1', 'PDI数字输入点1'),
-((SELECT id FROM device_types WHERE type_name = 'PDI'), 2, 'DI', 'DI2', 'PDI数字输入点2'),
-((SELECT id FROM device_types WHERE type_name = 'PDI'), 3, 'DI', 'DI3', 'PDI数字输入点3'),
-((SELECT id FROM device_types WHERE type_name = 'PDI'), 4, 'DI', 'DI4', 'PDI数字输入点4'),
-((SELECT id FROM device_types WHERE type_name = 'PDI'), 5, 'DI', 'DI5', 'PDI数字输入点5'),
-((SELECT id FROM device_types WHERE type_name = 'PDI'), 6, 'DI', 'DI6', 'PDI数字输入点6'),
-((SELECT id FROM device_types WHERE type_name = 'PDI'), 7, 'DI', 'DI7', 'PDI数字输入点7'),
-((SELECT id FROM device_types WHERE type_name = 'PDI'), 8, 'DI', 'DI8', 'PDI数字输入点8'),
-((SELECT id FROM device_types WHERE type_name = 'PDI'), 9, 'DI', 'DI9', 'PDI数字输入点9'),
-((SELECT id FROM device_types WHERE type_name = 'PDI'), 10, 'DI', 'DI10', 'PDI数字输入点10'),
-((SELECT id FROM device_types WHERE type_name = 'PDI'), 11, 'DI', 'DI11', 'PDI数字输入点11'),
-((SELECT id FROM device_types WHERE type_name = 'PDI'), 12, 'DI', 'DI12', 'PDI数字输入点12'),
-((SELECT id FROM device_types WHERE type_name = 'PDI'), 13, 'DI', 'DI13', 'PDI数字输入点13'),
-((SELECT id FROM device_types WHERE type_name = 'PDI'), 14, 'DI', 'DI14', 'PDI数字输入点14'),
-((SELECT id FROM device_types WHERE type_name = 'PDI'), 15, 'DI', 'DI15', 'PDI数字输入点15');
+INSERT INTO device_type_points (device_type_id, point_index, point_type, sim_type, point_name, mode, description) VALUES
+((SELECT id FROM device_types WHERE type_name = 'PDI'), 0, 'DI', 'PDI', 'DI0', 'read', 'PDI数字输入点0'),
+((SELECT id FROM device_types WHERE type_name = 'PDI'), 1, 'DI', 'PDI', 'DI1', 'read', 'PDI数字输入点1'),
+((SELECT id FROM device_types WHERE type_name = 'PDI'), 2, 'DI', 'PDI', 'DI2', 'read', 'PDI数字输入点2'),
+((SELECT id FROM device_types WHERE type_name = 'PDI'), 3, 'DI', 'PDI', 'DI3', 'read', 'PDI数字输入点3'),
+((SELECT id FROM device_types WHERE type_name = 'PDI'), 4, 'DI', 'PDI', 'DI4', 'read', 'PDI数字输入点4'),
+((SELECT id FROM device_types WHERE type_name = 'PDI'), 5, 'DI', 'PDI', 'DI5', 'read', 'PDI数字输入点5'),
+((SELECT id FROM device_types WHERE type_name = 'PDI'), 6, 'DI', 'PDI', 'DI6', 'read', 'PDI数字输入点6'),
+((SELECT id FROM device_types WHERE type_name = 'PDI'), 7, 'DI', 'PDI', 'DI7', 'read', 'PDI数字输入点7'),
+((SELECT id FROM device_types WHERE type_name = 'PDI'), 8, 'DI', 'PDI', 'DI8', 'read', 'PDI数字输入点8'),
+((SELECT id FROM device_types WHERE type_name = 'PDI'), 9, 'DI', 'PDI', 'DI9', 'read', 'PDI数字输入点9'),
+((SELECT id FROM device_types WHERE type_name = 'PDI'), 10, 'DI', 'PDI', 'DI10', 'read', 'PDI数字输入点10'),
+((SELECT id FROM device_types WHERE type_name = 'PDI'), 11, 'DI', 'PDI', 'DI11', 'read', 'PDI数字输入点11'),
+((SELECT id FROM device_types WHERE type_name = 'PDI'), 12, 'DI', 'PDI', 'DI12', 'read', 'PDI数字输入点12'),
+((SELECT id FROM device_types WHERE type_name = 'PDI'), 13, 'DI', 'PDI', 'DI13', 'read', 'PDI数字输入点13'),
+((SELECT id FROM device_types WHERE type_name = 'PDI'), 14, 'DI', 'PDI', 'DI14', 'read', 'PDI数字输入点14'),
+((SELECT id FROM device_types WHERE type_name = 'PDI'), 15, 'DI', 'PDI', 'DI15', 'read', 'PDI数字输入点15');
 
 -- PDO设备点位配置（16个DO点位）
-INSERT INTO device_type_points (device_type_id, point_index, point_type, point_name, mode, description) VALUES
-((SELECT id FROM device_types WHERE type_name = 'PDO'), 0, 'DO', 'DO0', 'write', 'PDO数字输出点0'),
-((SELECT id FROM device_types WHERE type_name = 'PDO'), 1, 'DO', 'DO1', 'write', 'PDO数字输出点1'),
-((SELECT id FROM device_types WHERE type_name = 'PDO'), 2, 'DO', 'DO2', 'write', 'PDO数字输出点2'),
-((SELECT id FROM device_types WHERE type_name = 'PDO'), 3, 'DO', 'DO3', 'write', 'PDO数字输出点3'),
-((SELECT id FROM device_types WHERE type_name = 'PDO'), 4, 'DO', 'DO4', 'write', 'PDO数字输出点4'),
-((SELECT id FROM device_types WHERE type_name = 'PDO'), 5, 'DO', 'DO5', 'write', 'PDO数字输出点5'),
-((SELECT id FROM device_types WHERE type_name = 'PDO'), 6, 'DO', 'DO6', 'write', 'PDO数字输出点6'),
-((SELECT id FROM device_types WHERE type_name = 'PDO'), 7, 'DO', 'DO7', 'write', 'PDO数字输出点7'),
-((SELECT id FROM device_types WHERE type_name = 'PDO'), 8, 'DO', 'DO8', 'write', 'PDO数字输出点8'),
-((SELECT id FROM device_types WHERE type_name = 'PDO'), 9, 'DO', 'DO9', 'write', 'PDO数字输出点9'),
-((SELECT id FROM device_types WHERE type_name = 'PDO'), 10, 'DO', 'DO10', 'write', 'PDO数字输出点10'),
-((SELECT id FROM device_types WHERE type_name = 'PDO'), 11, 'DO', 'DO11', 'write', 'PDO数字输出点11'),
-((SELECT id FROM device_types WHERE type_name = 'PDO'), 12, 'DO', 'DO12', 'write', 'PDO数字输出点12'),
-((SELECT id FROM device_types WHERE type_name = 'PDO'), 13, 'DO', 'DO13', 'write', 'PDO数字输出点13'),
-((SELECT id FROM device_types WHERE type_name = 'PDO'), 14, 'DO', 'DO14', 'write', 'PDO数字输出点14'),
-((SELECT id FROM device_types WHERE type_name = 'PDO'), 15, 'DO', 'DO15', 'write', 'PDO数字输出点15');
+INSERT INTO device_type_points (device_type_id, point_index, point_type, sim_type, point_name, mode, description) VALUES
+((SELECT id FROM device_types WHERE type_name = 'PDO'), 0, 'DO', 'PDO', 'DO0', 'write', 'PDO数字输出点0'),
+((SELECT id FROM device_types WHERE type_name = 'PDO'), 1, 'DO', 'PDO', 'DO1', 'write', 'PDO数字输出点1'),
+((SELECT id FROM device_types WHERE type_name = 'PDO'), 2, 'DO', 'PDO', 'DO2', 'write', 'PDO数字输出点2'),
+((SELECT id FROM device_types WHERE type_name = 'PDO'), 3, 'DO', 'PDO', 'DO3', 'write', 'PDO数字输出点3'),
+((SELECT id FROM device_types WHERE type_name = 'PDO'), 4, 'DO', 'PDO', 'DO4', 'write', 'PDO数字输出点4'),
+((SELECT id FROM device_types WHERE type_name = 'PDO'), 5, 'DO', 'PDO', 'DO5', 'write', 'PDO数字输出点5'),
+((SELECT id FROM device_types WHERE type_name = 'PDO'), 6, 'DO', 'PDO', 'DO6', 'write', 'PDO数字输出点6'),
+((SELECT id FROM device_types WHERE type_name = 'PDO'), 7, 'DO', 'PDO', 'DO7', 'write', 'PDO数字输出点7'),
+((SELECT id FROM device_types WHERE type_name = 'PDO'), 8, 'DO', 'PDO', 'DO8', 'write', 'PDO数字输出点8'),
+((SELECT id FROM device_types WHERE type_name = 'PDO'), 9, 'DO', 'PDO', 'DO9', 'write', 'PDO数字输出点9'),
+((SELECT id FROM device_types WHERE type_name = 'PDO'), 10, 'DO', 'PDO', 'DO10', 'write', 'PDO数字输出点10'),
+((SELECT id FROM device_types WHERE type_name = 'PDO'), 11, 'DO', 'PDO', 'DO11', 'write', 'PDO数字输出点11'),
+((SELECT id FROM device_types WHERE type_name = 'PDO'), 12, 'DO', 'PDO', 'DO12', 'write', 'PDO数字输出点12'),
+((SELECT id FROM device_types WHERE type_name = 'PDO'), 13, 'DO', 'PDO', 'DO13', 'write', 'PDO数字输出点13'),
+((SELECT id FROM device_types WHERE type_name = 'PDO'), 14, 'DO', 'PDO', 'DO14', 'write', 'PDO数字输出点14'),
+((SELECT id FROM device_types WHERE type_name = 'PDO'), 15, 'DO', 'PDO', 'DO15', 'write', 'PDO数字输出点15');
 
 -- PAI设备点位配置（16个AI点位）
-INSERT INTO device_type_points (device_type_id, point_index, point_type, point_name, mode, description) VALUES
-((SELECT id FROM device_types WHERE type_name = 'PAI'), 0, 'AI', 'AI0', 'read', 'PAI模拟输入点0'),
-((SELECT id FROM device_types WHERE type_name = 'PAI'), 1, 'AI', 'AI1', 'read', 'PAI模拟输入点1'),
-((SELECT id FROM device_types WHERE type_name = 'PAI'), 2, 'AI', 'AI2', 'read', 'PAI模拟输入点2'),
-((SELECT id FROM device_types WHERE type_name = 'PAI'), 3, 'AI', 'AI3', 'read', 'PAI模拟输入点3'),
-((SELECT id FROM device_types WHERE type_name = 'PAI'), 4, 'AI', 'AI4', 'read', 'PAI模拟输入点4'),
-((SELECT id FROM device_types WHERE type_name = 'PAI'), 5, 'AI', 'AI5', 'read', 'PAI模拟输入点5'),
-((SELECT id FROM device_types WHERE type_name = 'PAI'), 6, 'AI', 'AI6', 'read', 'PAI模拟输入点6'),
-((SELECT id FROM device_types WHERE type_name = 'PAI'), 7, 'AI', 'AI7', 'read', 'PAI模拟输入点7'),
-((SELECT id FROM device_types WHERE type_name = 'PAI'), 8, 'AI', 'AI8', 'read', 'PAI模拟输入点8'),
-((SELECT id FROM device_types WHERE type_name = 'PAI'), 9, 'AI', 'AI9', 'read', 'PAI模拟输入点9'),
-((SELECT id FROM device_types WHERE type_name = 'PAI'), 10, 'AI', 'AI10', 'read', 'PAI模拟输入点10'),
-((SELECT id FROM device_types WHERE type_name = 'PAI'), 11, 'AI', 'AI11', 'read', 'PAI模拟输入点11'),
-((SELECT id FROM device_types WHERE type_name = 'PAI'), 12, 'AI', 'AI12', 'read', 'PAI模拟输入点12'),
-((SELECT id FROM device_types WHERE type_name = 'PAI'), 13, 'AI', 'AI13', 'read', 'PAI模拟输入点13'),
-((SELECT id FROM device_types WHERE type_name = 'PAI'), 14, 'AI', 'AI14', 'read', 'PAI模拟输入点14'),
-((SELECT id FROM device_types WHERE type_name = 'PAI'), 15, 'AI', 'AI15', 'read', 'PAI模拟输入点15');
+INSERT INTO device_type_points (device_type_id, point_index, point_type, sim_type, point_name, mode, description) VALUES
+((SELECT id FROM device_types WHERE type_name = 'PAI'), 0, 'AI', 'PAI', 'AI0', 'read', 'PAI模拟输入点0'),
+((SELECT id FROM device_types WHERE type_name = 'PAI'), 1, 'AI', 'PAI', 'AI1', 'read', 'PAI模拟输入点1'),
+((SELECT id FROM device_types WHERE type_name = 'PAI'), 2, 'AI', 'PAI', 'AI2', 'read', 'PAI模拟输入点2'),
+((SELECT id FROM device_types WHERE type_name = 'PAI'), 3, 'AI', 'PAI', 'AI3', 'read', 'PAI模拟输入点3'),
+((SELECT id FROM device_types WHERE type_name = 'PAI'), 4, 'AI', 'PAI', 'AI4', 'read', 'PAI模拟输入点4'),
+((SELECT id FROM device_types WHERE type_name = 'PAI'), 5, 'AI', 'PAI', 'AI5', 'read', 'PAI模拟输入点5'),
+((SELECT id FROM device_types WHERE type_name = 'PAI'), 6, 'AI', 'PAI', 'AI6', 'read', 'PAI模拟输入点6'),
+((SELECT id FROM device_types WHERE type_name = 'PAI'), 7, 'AI', 'PAI', 'AI7', 'read', 'PAI模拟输入点7'),
+((SELECT id FROM device_types WHERE type_name = 'PAI'), 8, 'AI', 'PAI', 'AI8', 'read', 'PAI模拟输入点8'),
+((SELECT id FROM device_types WHERE type_name = 'PAI'), 9, 'AI', 'PAI', 'AI9', 'read', 'PAI模拟输入点9'),
+((SELECT id FROM device_types WHERE type_name = 'PAI'), 10, 'AI', 'PAI', 'AI10', 'read', 'PAI模拟输入点10'),
+((SELECT id FROM device_types WHERE type_name = 'PAI'), 11, 'AI', 'PAI', 'AI11', 'read', 'PAI模拟输入点11'),
+((SELECT id FROM device_types WHERE type_name = 'PAI'), 12, 'AI', 'PAI', 'AI12', 'read', 'PAI模拟输入点12'),
+((SELECT id FROM device_types WHERE type_name = 'PAI'), 13, 'AI', 'PAI', 'AI13', 'read', 'PAI模拟输入点13'),
+((SELECT id FROM device_types WHERE type_name = 'PAI'), 14, 'AI', 'PAI', 'AI14', 'read', 'PAI模拟输入点14'),
+((SELECT id FROM device_types WHERE type_name = 'PAI'), 15, 'AI', 'PAI', 'AI15', 'read', 'PAI模拟输入点15');
 
 -- PAO设备点位配置（16个AO点位）
-INSERT INTO device_type_points (device_type_id, point_index, point_type, point_name, mode, description) VALUES
-((SELECT id FROM device_types WHERE type_name = 'PAO'), 0, 'AO', 'AO0', 'write', 'PAO模拟输出点0'),
-((SELECT id FROM device_types WHERE type_name = 'PAO'), 1, 'AO', 'AO1', 'write', 'PAO模拟输出点1'),
-((SELECT id FROM device_types WHERE type_name = 'PAO'), 2, 'AO', 'AO2', 'write', 'PAO模拟输出点2'),
-((SELECT id FROM device_types WHERE type_name = 'PAO'), 3, 'AO', 'AO3', 'write', 'PAO模拟输出点3'),
-((SELECT id FROM device_types WHERE type_name = 'PAO'), 4, 'AO', 'AO4', 'write', 'PAO模拟输出点4'),
-((SELECT id FROM device_types WHERE type_name = 'PAO'), 5, 'AO', 'AO5', 'write', 'PAO模拟输出点5'),
-((SELECT id FROM device_types WHERE type_name = 'PAO'), 6, 'AO', 'AO6', 'write', 'PAO模拟输出点6'),
-((SELECT id FROM device_types WHERE type_name = 'PAO'), 7, 'AO', 'AO7', 'write', 'PAO模拟输出点7'),
-((SELECT id FROM device_types WHERE type_name = 'PAO'), 8, 'AO', 'AO8', 'write', 'PAO模拟输出点8'),
-((SELECT id FROM device_types WHERE type_name = 'PAO'), 9, 'AO', 'AO9', 'write', 'PAO模拟输出点9'),
-((SELECT id FROM device_types WHERE type_name = 'PAO'), 10, 'AO', 'AO10', 'write', 'PAO模拟输出点10'),
-((SELECT id FROM device_types WHERE type_name = 'PAO'), 11, 'AO', 'AO11', 'write', 'PAO模拟输出点11'),
-((SELECT id FROM device_types WHERE type_name = 'PAO'), 12, 'AO', 'AO12', 'write', 'PAO模拟输出点12'),
-((SELECT id FROM device_types WHERE type_name = 'PAO'), 13, 'AO', 'AO13', 'write', 'PAO模拟输出点13'),
-((SELECT id FROM device_types WHERE type_name = 'PAO'), 14, 'AO', 'AO14', 'write', 'PAO模拟输出点14'),
-((SELECT id FROM device_types WHERE type_name = 'PAO'), 15, 'AO', 'AO15', 'write', 'PAO模拟输出点15');
-
--- HI设备点位配置（20个AI点位）
 INSERT INTO device_type_points (device_type_id, point_index, point_type, sim_type, point_name, mode, description) VALUES
-((SELECT id FROM device_types WHERE type_name = 'HI'), 0, 'AI', 'HI', 'AI0', 'read', 'HI模拟输入点0'),
-((SELECT id FROM device_types WHERE type_name = 'HI'), 1, 'AI', 'HI', 'AI1', 'read', 'HI模拟输入点1'),
-((SELECT id FROM device_types WHERE type_name = 'HI'), 2, 'AI', 'HI', 'AI2', 'read', 'HI模拟输入点2'),
-((SELECT id FROM device_types WHERE type_name = 'HI'), 3, 'AI', 'HI', 'AI3', 'read', 'HI模拟输入点3'),
-((SELECT id FROM device_types WHERE type_name = 'HI'), 4, 'AI', 'HI', 'AI4', 'read', 'HI模拟输入点4'),
-((SELECT id FROM device_types WHERE type_name = 'HI'), 5, 'AI', 'HI', 'AI5', 'read', 'HI模拟输入点5'),
-((SELECT id FROM device_types WHERE type_name = 'HI'), 6, 'AI', 'HI', 'AI6', 'read', 'HI模拟输入点6'),
-((SELECT id FROM device_types WHERE type_name = 'HI'), 7, 'AI', 'HI', 'AI7', 'read', 'HI模拟输入点7'),
-((SELECT id FROM device_types WHERE type_name = 'HI'), 8, 'AI', 'HI', 'AI8', 'read', 'HI模拟输入点8'),
-((SELECT id FROM device_types WHERE type_name = 'HI'), 9, 'AI', 'HI', 'AI9', 'read', 'HI模拟输入点9'),
-((SELECT id FROM device_types WHERE type_name = 'HI'), 10, 'AI', 'HI', 'AI10', 'read', 'HI模拟输入点10'),
-((SELECT id FROM device_types WHERE type_name = 'HI'), 11, 'AI', 'HI', 'AI11', 'read', 'HI模拟输入点11'),
-((SELECT id FROM device_types WHERE type_name = 'HI'), 12, 'AI', 'HI', 'AI12', 'read', 'HI模拟输入点12'),
-((SELECT id FROM device_types WHERE type_name = 'HI'), 13, 'AI', 'HI', 'AI13', 'read', 'HI模拟输入点13'),
-((SELECT id FROM device_types WHERE type_name = 'HI'), 14, 'AI', 'HI', 'AI14', 'read', 'HI模拟输入点14'),
-((SELECT id FROM device_types WHERE type_name = 'HI'), 15, 'AI', 'HI', 'AI15', 'read', 'HI模拟输入点15'),
-((SELECT id FROM device_types WHERE type_name = 'HI'), 16, 'AI', 'HI', 'AI16', 'read', 'HI模拟输入点16'),
-((SELECT id FROM device_types WHERE type_name = 'HI'), 17, 'AI', 'HI', 'AI17', 'read', 'HI模拟输入点17'),
-((SELECT id FROM device_types WHERE type_name = 'HI'), 18, 'AI', 'HI', 'AI18', 'read', 'HI模拟输入点18'),
-((SELECT id FROM device_types WHERE type_name = 'HI'), 19, 'AI', 'HI', 'AI19', 'read', 'HI模拟输入点19');
+((SELECT id FROM device_types WHERE type_name = 'PAO'), 0, 'AO', 'PAO', 'AO0', 'write', 'PAO模拟输出点0'),
+((SELECT id FROM device_types WHERE type_name = 'PAO'), 1, 'AO', 'PAO', 'AO1', 'write', 'PAO模拟输出点1'),
+((SELECT id FROM device_types WHERE type_name = 'PAO'), 2, 'AO', 'PAO', 'AO2', 'write', 'PAO模拟输出点2'),
+((SELECT id FROM device_types WHERE type_name = 'PAO'), 3, 'AO', 'PAO', 'AO3', 'write', 'PAO模拟输出点3'),
+((SELECT id FROM device_types WHERE type_name = 'PAO'), 4, 'AO', 'PAO', 'AO4', 'write', 'PAO模拟输出点4'),
+((SELECT id FROM device_types WHERE type_name = 'PAO'), 5, 'AO', 'PAO', 'AO5', 'write', 'PAO模拟输出点5'),
+((SELECT id FROM device_types WHERE type_name = 'PAO'), 6, 'AO', 'PAO', 'AO6', 'write', 'PAO模拟输出点6'),
+((SELECT id FROM device_types WHERE type_name = 'PAO'), 7, 'AO', 'PAO', 'AO7', 'write', 'PAO模拟输出点7'),
+((SELECT id FROM device_types WHERE type_name = 'PAO'), 8, 'AO', 'PAO', 'AO8', 'write', 'PAO模拟输出点8'),
+((SELECT id FROM device_types WHERE type_name = 'PAO'), 9, 'AO', 'PAO', 'AO9', 'write', 'PAO模拟输出点9'),
+((SELECT id FROM device_types WHERE type_name = 'PAO'), 10, 'AO', 'PAO', 'AO10', 'write', 'PAO模拟输出点10'),
+((SELECT id FROM device_types WHERE type_name = 'PAO'), 11, 'AO', 'PAO', 'AO11', 'write', 'PAO模拟输出点11'),
+((SELECT id FROM device_types WHERE type_name = 'PAO'), 12, 'AO', 'PAO', 'AO12', 'write', 'PAO模拟输出点12'),
+((SELECT id FROM device_types WHERE type_name = 'PAO'), 13, 'AO', 'PAO', 'AO13', 'write', 'PAO模拟输出点13'),
+((SELECT id FROM device_types WHERE type_name = 'PAO'), 14, 'AO', 'PAO', 'AO14', 'write', 'PAO模拟输出点14'),
+((SELECT id FROM device_types WHERE type_name = 'PAO'), 15, 'AO', 'PAO', 'AO15', 'write', 'PAO模拟输出点15');
 
--- HO设备点位配置（20个AO点位）
+-- HI设备点位配置（20个AI点位）- 修改使用PAI替代HI
 INSERT INTO device_type_points (device_type_id, point_index, point_type, sim_type, point_name, mode, description) VALUES
-((SELECT id FROM device_types WHERE type_name = 'HO'), 0, 'AO', 'HO', 'AO0', 'write', 'HO模拟输出点0'),
-((SELECT id FROM device_types WHERE type_name = 'HO'), 1, 'AO', 'HO', 'AO1', 'write', 'HO模拟输出点1'),
-((SELECT id FROM device_types WHERE type_name = 'HO'), 2, 'AO', 'HO', 'AO2', 'write', 'HO模拟输出点2'),
-((SELECT id FROM device_types WHERE type_name = 'HO'), 3, 'AO', 'HO', 'AO3', 'write', 'HO模拟输出点3'),
-((SELECT id FROM device_types WHERE type_name = 'HO'), 4, 'AO', 'HO', 'AO4', 'write', 'HO模拟输出点4'),
-((SELECT id FROM device_types WHERE type_name = 'HO'), 5, 'AO', 'HO', 'AO5', 'write', 'HO模拟输出点5'),
-((SELECT id FROM device_types WHERE type_name = 'HO'), 6, 'AO', 'HO', 'AO6', 'write', 'HO模拟输出点6'),
-((SELECT id FROM device_types WHERE type_name = 'HO'), 7, 'AO', 'HO', 'AO7', 'write', 'HO模拟输出点7'),
-((SELECT id FROM device_types WHERE type_name = 'HO'), 8, 'AO', 'HO', 'AO8', 'write', 'HO模拟输出点8'),
-((SELECT id FROM device_types WHERE type_name = 'HO'), 9, 'AO', 'HO', 'AO9', 'write', 'HO模拟输出点9'),
-((SELECT id FROM device_types WHERE type_name = 'HO'), 10, 'AO', 'HO', 'AO10', 'write', 'HO模拟输出点10'),
-((SELECT id FROM device_types WHERE type_name = 'HO'), 11, 'AO', 'HO', 'AO11', 'write', 'HO模拟输出点11'),
-((SELECT id FROM device_types WHERE type_name = 'HO'), 12, 'AO', 'HO', 'AO12', 'write', 'HO模拟输出点12'),
-((SELECT id FROM device_types WHERE type_name = 'HO'), 13, 'AO', 'HO', 'AO13', 'write', 'HO模拟输出点13'),
-((SELECT id FROM device_types WHERE type_name = 'HO'), 14, 'AO', 'HO', 'AO14', 'write', 'HO模拟输出点14'),
-((SELECT id FROM device_types WHERE type_name = 'HO'), 15, 'AO', 'HO', 'AO15', 'write', 'HO模拟输出点15'),
-((SELECT id FROM device_types WHERE type_name = 'HO'), 16, 'AO', 'HO', 'AO16', 'write', 'HO模拟输出点16'),
-((SELECT id FROM device_types WHERE type_name = 'HO'), 17, 'AO', 'HO', 'AO17', 'write', 'HO模拟输出点17'),
-((SELECT id FROM device_types WHERE type_name = 'HO'), 18, 'AO', 'HO', 'AO18', 'write', 'HO模拟输出点18'),
-((SELECT id FROM device_types WHERE type_name = 'HO'), 19, 'AO', 'HO', 'AO19', 'write', 'HO模拟输出点19');
+((SELECT id FROM device_types WHERE type_name = 'HI'), 0, 'AI', 'PAI', 'AI0', 'read', 'HI模拟输入点0'),
+((SELECT id FROM device_types WHERE type_name = 'HI'), 1, 'AI', 'PAI', 'AI1', 'read', 'HI模拟输入点1'),
+((SELECT id FROM device_types WHERE type_name = 'HI'), 2, 'AI', 'PAI', 'AI2', 'read', 'HI模拟输入点2'),
+((SELECT id FROM device_types WHERE type_name = 'HI'), 3, 'AI', 'PAI', 'AI3', 'read', 'HI模拟输入点3'),
+((SELECT id FROM device_types WHERE type_name = 'HI'), 4, 'AI', 'PAI', 'AI4', 'read', 'HI模拟输入点4'),
+((SELECT id FROM device_types WHERE type_name = 'HI'), 5, 'AI', 'PAI', 'AI5', 'read', 'HI模拟输入点5'),
+((SELECT id FROM device_types WHERE type_name = 'HI'), 6, 'AI', 'PAI', 'AI6', 'read', 'HI模拟输入点6'),
+((SELECT id FROM device_types WHERE type_name = 'HI'), 7, 'AI', 'PAI', 'AI7', 'read', 'HI模拟输入点7'),
+((SELECT id FROM device_types WHERE type_name = 'HI'), 8, 'AI', 'PAI', 'AI8', 'read', 'HI模拟输入点8'),
+((SELECT id FROM device_types WHERE type_name = 'HI'), 9, 'AI', 'PAI', 'AI9', 'read', 'HI模拟输入点9'),
+((SELECT id FROM device_types WHERE type_name = 'HI'), 10, 'AI', 'PAI', 'AI10', 'read', 'HI模拟输入点10'),
+((SELECT id FROM device_types WHERE type_name = 'HI'), 11, 'AI', 'PAI', 'AI11', 'read', 'HI模拟输入点11'),
+((SELECT id FROM device_types WHERE type_name = 'HI'), 12, 'AI', 'PAI', 'AI12', 'read', 'HI模拟输入点12'),
+((SELECT id FROM device_types WHERE type_name = 'HI'), 13, 'AI', 'PAI', 'AI13', 'read', 'HI模拟输入点13'),
+((SELECT id FROM device_types WHERE type_name = 'HI'), 14, 'AI', 'PAI', 'AI14', 'read', 'HI模拟输入点14'),
+((SELECT id FROM device_types WHERE type_name = 'HI'), 15, 'AI', 'PAI', 'AI15', 'read', 'HI模拟输入点15'),
+((SELECT id FROM device_types WHERE type_name = 'HI'), 16, 'AI', 'PAI', 'AI16', 'read', 'HI模拟输入点16'),
+((SELECT id FROM device_types WHERE type_name = 'HI'), 17, 'AI', 'PAI', 'AI17', 'read', 'HI模拟输入点17'),
+((SELECT id FROM device_types WHERE type_name = 'HI'), 18, 'AI', 'PAI', 'AI18', 'read', 'HI模拟输入点18'),
+((SELECT id FROM device_types WHERE type_name = 'HI'), 19, 'AI', 'PAI', 'AI19', 'read', 'HI模拟输入点19');
+
+-- HO设备点位配置（20个AO点位）- 修改使用PAO替代HO
+INSERT INTO device_type_points (device_type_id, point_index, point_type, sim_type, point_name, mode, description) VALUES
+((SELECT id FROM device_types WHERE type_name = 'HO'), 0, 'AO', 'PAO', 'AO0', 'write', 'HO模拟输出点0'),
+((SELECT id FROM device_types WHERE type_name = 'HO'), 1, 'AO', 'PAO', 'AO1', 'write', 'HO模拟输出点1'),
+((SELECT id FROM device_types WHERE type_name = 'HO'), 2, 'AO', 'PAO', 'AO2', 'write', 'HO模拟输出点2'),
+((SELECT id FROM device_types WHERE type_name = 'HO'), 3, 'AO', 'PAO', 'AO3', 'write', 'HO模拟输出点3'),
+((SELECT id FROM device_types WHERE type_name = 'HO'), 4, 'AO', 'PAO', 'AO4', 'write', 'HO模拟输出点4'),
+((SELECT id FROM device_types WHERE type_name = 'HO'), 5, 'AO', 'PAO', 'AO5', 'write', 'HO模拟输出点5'),
+((SELECT id FROM device_types WHERE type_name = 'HO'), 6, 'AO', 'PAO', 'AO6', 'write', 'HO模拟输出点6'),
+((SELECT id FROM device_types WHERE type_name = 'HO'), 7, 'AO', 'PAO', 'AO7', 'write', 'HO模拟输出点7'),
+((SELECT id FROM device_types WHERE type_name = 'HO'), 8, 'AO', 'PAO', 'AO8', 'write', 'HO模拟输出点8'),
+((SELECT id FROM device_types WHERE type_name = 'HO'), 9, 'AO', 'PAO', 'AO9', 'write', 'HO模拟输出点9'),
+((SELECT id FROM device_types WHERE type_name = 'HO'), 10, 'AO', 'PAO', 'AO10', 'write', 'HO模拟输出点10'),
+((SELECT id FROM device_types WHERE type_name = 'HO'), 11, 'AO', 'PAO', 'AO11', 'write', 'HO模拟输出点11'),
+((SELECT id FROM device_types WHERE type_name = 'HO'), 12, 'AO', 'PAO', 'AO12', 'write', 'HO模拟输出点12'),
+((SELECT id FROM device_types WHERE type_name = 'HO'), 13, 'AO', 'PAO', 'AO13', 'write', 'HO模拟输出点13'),
+((SELECT id FROM device_types WHERE type_name = 'HO'), 14, 'AO', 'PAO', 'AO14', 'write', 'HO模拟输出点14'),
+((SELECT id FROM device_types WHERE type_name = 'HO'), 15, 'AO', 'PAO', 'AO15', 'write', 'HO模拟输出点15'),
+((SELECT id FROM device_types WHERE type_name = 'HO'), 16, 'AO', 'PAO', 'AO16', 'write', 'HO模拟输出点16'),
+((SELECT id FROM device_types WHERE type_name = 'HO'), 17, 'AO', 'PAO', 'AO17', 'write', 'HO模拟输出点17'),
+((SELECT id FROM device_types WHERE type_name = 'HO'), 18, 'AO', 'PAO', 'AO18', 'write', 'HO模拟输出点18'),
+((SELECT id FROM device_types WHERE type_name = 'HO'), 19, 'AO', 'PAO', 'AO19', 'write', 'HO模拟输出点19');
+
+-- EL2809设备点位（16DO）
+INSERT INTO device_type_points (device_type_id, point_index, point_type, sim_type, point_name, mode) VALUES
+((SELECT id FROM device_types WHERE type_name = 'EL2809'), 0, 'DO', 'PDO', 'DO1', 'write'),
+((SELECT id FROM device_types WHERE type_name = 'EL2809'), 1, 'DO', 'PDO', 'DO2', 'write'),
+((SELECT id FROM device_types WHERE type_name = 'EL2809'), 2, 'DO', 'PDO', 'DO3', 'write'),
+((SELECT id FROM device_types WHERE type_name = 'EL2809'), 3, 'DO', 'PDO', 'DO4', 'write'),
+((SELECT id FROM device_types WHERE type_name = 'EL2809'), 4, 'DO', 'PDO', 'DO5', 'write'),
+((SELECT id FROM device_types WHERE type_name = 'EL2809'), 5, 'DO', 'PDO', 'DO6', 'write'),
+((SELECT id FROM device_types WHERE type_name = 'EL2809'), 6, 'DO', 'PDO', 'DO7', 'write'),
+((SELECT id FROM device_types WHERE type_name = 'EL2809'), 7, 'DO', 'PDO', 'DO8', 'write'),
+((SELECT id FROM device_types WHERE type_name = 'EL2809'), 8, 'DO', 'PDO', 'DO9', 'write'),
+((SELECT id FROM device_types WHERE type_name = 'EL2809'), 9, 'DO', 'PDO', 'DO10', 'write'),
+((SELECT id FROM device_types WHERE type_name = 'EL2809'), 10, 'DO', 'PDO', 'DO11', 'write'),
+((SELECT id FROM device_types WHERE type_name = 'EL2809'), 11, 'DO', 'PDO', 'DO12', 'write'),
+((SELECT id FROM device_types WHERE type_name = 'EL2809'), 12, 'DO', 'PDO', 'DO13', 'write'),
+((SELECT id FROM device_types WHERE type_name = 'EL2809'), 13, 'DO', 'PDO', 'DO14', 'write'),
+((SELECT id FROM device_types WHERE type_name = 'EL2809'), 14, 'DO', 'PDO', 'DO15', 'write'),
+((SELECT id FROM device_types WHERE type_name = 'EL2809'), 15, 'DO', 'PDO', 'DO16', 'write');
+
+-- EL1809设备点位（16DI）
+INSERT INTO device_type_points (device_type_id, point_index, point_type, sim_type, point_name, mode) VALUES
+((SELECT id FROM device_types WHERE type_name = 'EL1809'), 0, 'DI', 'PDI', 'DI1', 'read'),
+((SELECT id FROM device_types WHERE type_name = 'EL1809'), 1, 'DI', 'PDI', 'DI2', 'read'),
+((SELECT id FROM device_types WHERE type_name = 'EL1809'), 2, 'DI', 'PDI', 'DI3', 'read'),
+((SELECT id FROM device_types WHERE type_name = 'EL1809'), 3, 'DI', 'PDI', 'DI4', 'read'),
+((SELECT id FROM device_types WHERE type_name = 'EL1809'), 4, 'DI', 'PDI', 'DI5', 'read'),
+((SELECT id FROM device_types WHERE type_name = 'EL1809'), 5, 'DI', 'PDI', 'DI6', 'read'),
+((SELECT id FROM device_types WHERE type_name = 'EL1809'), 6, 'DI', 'PDI', 'DI7', 'read'),
+((SELECT id FROM device_types WHERE type_name = 'EL1809'), 7, 'DI', 'PDI', 'DI8', 'read'),
+((SELECT id FROM device_types WHERE type_name = 'EL1809'), 8, 'DI', 'PDI', 'DI9', 'read'),
+((SELECT id FROM device_types WHERE type_name = 'EL1809'), 9, 'DI', 'PDI', 'DI10', 'read'),
+((SELECT id FROM device_types WHERE type_name = 'EL1809'), 10, 'DI', 'PDI', 'DI11', 'read'),
+((SELECT id FROM device_types WHERE type_name = 'EL1809'), 11, 'DI', 'PDI', 'DI12', 'read'),
+((SELECT id FROM device_types WHERE type_name = 'EL1809'), 12, 'DI', 'PDI', 'DI13', 'read'),
+((SELECT id FROM device_types WHERE type_name = 'EL1809'), 13, 'DI', 'PDI', 'DI14', 'read'),
+((SELECT id FROM device_types WHERE type_name = 'EL1809'), 14, 'DI', 'PDI', 'DI15', 'read'),
+((SELECT id FROM device_types WHERE type_name = 'EL1809'), 15, 'DI', 'PDI', 'DI16', 'read');
+
+-- EL3204设备点位（4AI）
+INSERT INTO device_type_points (device_type_id, point_index, point_type, sim_type, point_name, mode) VALUES
+((SELECT id FROM device_types WHERE type_name = 'EL3204'), 0, 'AI', 'PAI', 'AI1', 'read'),
+((SELECT id FROM device_types WHERE type_name = 'EL3204'), 1, 'AI', 'PAI', 'AI2', 'read'),
+((SELECT id FROM device_types WHERE type_name = 'EL3204'), 2, 'AI', 'PAI', 'AI3', 'read'),
+((SELECT id FROM device_types WHERE type_name = 'EL3204'), 3, 'AI', 'PAI', 'AI4', 'read');
+
+-- EL8601-8411机器人模块点位（3DI + 2DO + 2DI + 1AO）
+INSERT INTO device_type_points (device_type_id, point_index, point_type, sim_type, point_name, mode) VALUES
+((SELECT id FROM device_types WHERE type_name = 'EL8601-8411'), 0, 'DI', 'PDI', 'DI1', 'read'),
+((SELECT id FROM device_types WHERE type_name = 'EL8601-8411'), 1, 'DI', 'PDI', 'DI2', 'read'),
+((SELECT id FROM device_types WHERE type_name = 'EL8601-8411'), 2, 'DI', 'PDI', 'DI3', 'read'),
+((SELECT id FROM device_types WHERE type_name = 'EL8601-8411'), 3, 'DO', 'PDO', 'DO4', 'write'),
+((SELECT id FROM device_types WHERE type_name = 'EL8601-8411'), 4, 'DO', 'PDO', 'DO5', 'write'),
+((SELECT id FROM device_types WHERE type_name = 'EL8601-8411'), 5, 'DI', 'PDI', 'DI9', 'read'),
+((SELECT id FROM device_types WHERE type_name = 'EL8601-8411'), 6, 'DI', 'PDI', 'DI10', 'read'),
+((SELECT id FROM device_types WHERE type_name = 'EL8601-8411'), 7, 'AO', 'PAO', 'AO14', 'write');
+
+-- EL1859设备点位（8DI + 8DO）
+INSERT INTO device_type_points (device_type_id, point_index, point_type, sim_type, point_name, mode) VALUES
+-- 前8个DI
+((SELECT id FROM device_types WHERE type_name = 'EL1859'), 0, 'DI', 'PDI', 'DI1', 'read'),
+((SELECT id FROM device_types WHERE type_name = 'EL1859'), 1, 'DI', 'PDI', 'DI2', 'read'),
+((SELECT id FROM device_types WHERE type_name = 'EL1859'), 2, 'DI', 'PDI', 'DI3', 'read'),
+((SELECT id FROM device_types WHERE type_name = 'EL1859'), 3, 'DI', 'PDI', 'DI4', 'read'),
+((SELECT id FROM device_types WHERE type_name = 'EL1859'), 4, 'DI', 'PDI', 'DI5', 'read'),
+((SELECT id FROM device_types WHERE type_name = 'EL1859'), 5, 'DI', 'PDI', 'DI6', 'read'),
+((SELECT id FROM device_types WHERE type_name = 'EL1859'), 6, 'DI', 'PDI', 'DI7', 'read'),
+((SELECT id FROM device_types WHERE type_name = 'EL1859'), 7, 'DI', 'PDI', 'DI8', 'read'),
+-- 后8个DO
+((SELECT id FROM device_types WHERE type_name = 'EL1859'), 8, 'DO', 'PDO', 'DO1', 'write'),
+((SELECT id FROM device_types WHERE type_name = 'EL1859'), 9, 'DO', 'PDO', 'DO2', 'write'),
+((SELECT id FROM device_types WHERE type_name = 'EL1859'), 10, 'DO', 'PDO', 'DO3', 'write'),
+((SELECT id FROM device_types WHERE type_name = 'EL1859'), 11, 'DO', 'PDO', 'DO4', 'write'),
+((SELECT id FROM device_types WHERE type_name = 'EL1859'), 12, 'DO', 'PDO', 'DO5', 'write'),
+((SELECT id FROM device_types WHERE type_name = 'EL1859'), 13, 'DO', 'PDO', 'DO6', 'write'),
+((SELECT id FROM device_types WHERE type_name = 'EL1859'), 14, 'DO', 'PDO', 'DO7', 'write'),
+((SELECT id FROM device_types WHERE type_name = 'EL1859'), 15, 'DO', 'PDO', 'DO8', 'write');
+
+-- EL3064设备点位（4AI）
+INSERT INTO device_type_points (device_type_id, point_index, point_type, sim_type, point_name, mode) VALUES
+((SELECT id FROM device_types WHERE type_name = 'EL3064'), 0, 'AI', 'PAI', 'AI1', 'read'),
+((SELECT id FROM device_types WHERE type_name = 'EL3064'), 1, 'AI', 'PAI', 'AI2', 'read'),
+((SELECT id FROM device_types WHERE type_name = 'EL3064'), 2, 'AI', 'PAI', 'AI3', 'read'),
+((SELECT id FROM device_types WHERE type_name = 'EL3064'), 3, 'AI', 'PAI', 'AI4', 'read');
+
+-- EL4132设备点位（2AO）
+INSERT INTO device_type_points (device_type_id, point_index, point_type, sim_type, point_name, mode) VALUES
+((SELECT id FROM device_types WHERE type_name = 'EL4132'), 0, 'AO', 'PAO', 'AO1', 'write'),
+((SELECT id FROM device_types WHERE type_name = 'EL4132'), 1, 'AO', 'PAO', 'AO2', 'write');
+
+-- EL4004设备点位（4AO）
+INSERT INTO device_type_points (device_type_id, point_index, point_type, sim_type, point_name, mode) VALUES
+((SELECT id FROM device_types WHERE type_name = 'EL4004'), 0, 'AO', 'PAO', 'AO1', 'write'),
+((SELECT id FROM device_types WHERE type_name = 'EL4004'), 1, 'AO', 'PAO', 'AO2', 'write'),
+((SELECT id FROM device_types WHERE type_name = 'EL4004'), 2, 'AO', 'PAO', 'AO3', 'write'),
+((SELECT id FROM device_types WHERE type_name = 'EL4004'), 3, 'AO', 'PAO', 'AO4', 'write');
+
+-- EL3162设备点位（2AI）
+INSERT INTO device_type_points (device_type_id, point_index, point_type, sim_type, point_name, mode) VALUES
+((SELECT id FROM device_types WHERE type_name = 'EL3162'), 0, 'AI', 'PAI', 'AI1', 'read'),
+((SELECT id FROM device_types WHERE type_name = 'EL3162'), 1, 'AI', 'PAI', 'AI2', 'read');
+
+-- EL1004设备点位（4DI）
+INSERT INTO device_type_points (device_type_id, point_index, point_type, sim_type, point_name, mode) VALUES
+((SELECT id FROM device_types WHERE type_name = 'EL1004'), 0, 'DI', 'PDI', 'DI1', 'read'),
+((SELECT id FROM device_types WHERE type_name = 'EL1004'), 1, 'DI', 'PDI', 'DI2', 'read'),
+((SELECT id FROM device_types WHERE type_name = 'EL1004'), 2, 'DI', 'PDI', 'DI3', 'read'),
+((SELECT id FROM device_types WHERE type_name = 'EL1004'), 3, 'DI', 'PDI', 'DI4', 'read');
+
+-- EL3314设备点位（4AI - TC温度传感器）
+INSERT INTO device_type_points (device_type_id, point_index, point_type, sim_type, point_name, mode) VALUES
+((SELECT id FROM device_types WHERE type_name = 'EL3314'), 0, 'AI', 'PAI', 'TC1', 'read'),
+((SELECT id FROM device_types WHERE type_name = 'EL3314'), 1, 'AI', 'PAI', 'TC2', 'read'),
+((SELECT id FROM device_types WHERE type_name = 'EL3314'), 2, 'AI', 'PAI', 'TC3', 'read'),
+((SELECT id FROM device_types WHERE type_name = 'EL3314'), 3, 'AI', 'PAI', 'TC4', 'read');
+
+-- EL3403设备点位（8PIN 3U,N 3I,N）
+INSERT INTO device_type_points (device_type_id, point_index, point_type, sim_type, point_name, mode, description) VALUES
+((SELECT id FROM device_types WHERE type_name = 'EL3403'), 0, 'AI', 'PAI', 'U1', 'read', '电压测量点1'),
+((SELECT id FROM device_types WHERE type_name = 'EL3403'), 1, 'AI', 'PAI', 'U2', 'read', '电压测量点2'),
+((SELECT id FROM device_types WHERE type_name = 'EL3403'), 2, 'AI', 'PAI', 'U3', 'read', '电压测量点3'),
+((SELECT id FROM device_types WHERE type_name = 'EL3403'), 3, 'AI', 'PAI', 'N1', 'read', '电压中性点'),
+((SELECT id FROM device_types WHERE type_name = 'EL3403'), 4, 'AI', 'PAI', 'I1', 'read', '电流测量点1'),
+((SELECT id FROM device_types WHERE type_name = 'EL3403'), 5, 'AI', 'PAI', 'I2', 'read', '电流测量点2'),
+((SELECT id FROM device_types WHERE type_name = 'EL3403'), 6, 'AI', 'PAI', 'I3', 'read', '电流测量点3'),
+((SELECT id FROM device_types WHERE type_name = 'EL3403'), 7, 'AI', 'PAI', 'N2', 'read', '电流中性点');
+
+-- EL5151设备点位（8PIN 编码器接口）
+INSERT INTO device_type_points (device_type_id, point_index, point_type, sim_type, point_name, mode, description) VALUES
+((SELECT id FROM device_types WHERE type_name = 'EL5151'), 0, 'DI', 'PDI', 'CLK', 'read', '时钟信号(引脚1)'),
+((SELECT id FROM device_types WHERE type_name = 'EL5151'), 1, 'DI', 'PDI', 'DATA', 'read', '数据信号(引脚4)'),
+((SELECT id FROM device_types WHERE type_name = 'EL5151'), 2, 'DI', 'PDI', 'LATCH', 'read', '锁存信号(引脚5)'),
+((SELECT id FROM device_types WHERE type_name = 'EL5151'), 3, 'DO', 'PDO', 'EN', 'write', '使能信号(引脚8)'),
+((SELECT id FROM device_types WHERE type_name = 'EL5151'), 4, 'AI', 'PAI', 'A', 'read', 'A相编码器信号'),
+((SELECT id FROM device_types WHERE type_name = 'EL5151'), 5, 'AI', 'PAI', 'B', 'read', 'B相编码器信号'),
+((SELECT id FROM device_types WHERE type_name = 'EL5151'), 6, 'AI', 'PAI', 'Z', 'read', 'Z相编码器信号'),
+((SELECT id FROM device_types WHERE type_name = 'EL5151'), 7, 'DO', 'PDO', 'GATE', 'write', '门控信号');
+
+-- EK1101设备点位（6点 电源和通信接口）
+INSERT INTO device_type_points (device_type_id, point_index, point_type, sim_type, point_name, mode, description) VALUES
+((SELECT id FROM device_types WHERE type_name = 'EK1101'), 0, 'DI', 'PDI', 'P24V', 'read', '24V电源引脚(引脚2)'),
+((SELECT id FROM device_types WHERE type_name = 'EK1101'), 1, 'DI', 'PDI', 'P5V', 'read', '5V电源引脚(引脚6)'),
+((SELECT id FROM device_types WHERE type_name = 'EK1101'), 2, 'DI', 'PDI', 'GND1', 'read', '接地1(引脚3)'),
+((SELECT id FROM device_types WHERE type_name = 'EK1101'), 3, 'DI', 'PDI', 'GND2', 'read', '接地2(引脚5)'),
+((SELECT id FROM device_types WHERE type_name = 'EK1101'), 4, 'DI', 'PDI', 'GND3', 'read', '接地3(引脚7)'),
+((SELECT id FROM device_types WHERE type_name = 'EK1101'), 5, 'DI', 'PDI', 'PE', 'read', '保护地(引脚4,8)');
+
+-- EK1005设备点位（3点 电源接口）
+INSERT INTO device_type_points (device_type_id, point_index, point_type, sim_type, point_name, mode, description) VALUES
+((SELECT id FROM device_types WHERE type_name = 'EK1005'), 0, 'DI', 'PDI', 'P31', 'read', '正极电源(引脚N3-1)'),
+((SELECT id FROM device_types WHERE type_name = 'EK1005'), 1, 'DI', 'PDI', 'N2', 'read', '负极电源(引脚2)'),
+((SELECT id FROM device_types WHERE type_name = 'EK1005'), 2, 'DI', 'PDI', 'PE', 'read', '保护地(引脚3)');
+
+-- EK1122设备点位（4点 网络接口）
+INSERT INTO device_type_points (device_type_id, point_index, point_type, sim_type, point_name, mode, description) VALUES
+((SELECT id FROM device_types WHERE type_name = 'EK1122'), 0, 'DI', 'PDI', 'TX1', 'read', '发送数据1'),
+((SELECT id FROM device_types WHERE type_name = 'EK1122'), 1, 'DI', 'PDI', 'RX1', 'read', '接收数据1'),
+((SELECT id FROM device_types WHERE type_name = 'EK1122'), 2, 'DI', 'PDI', 'TX2', 'read', '发送数据2'),
+((SELECT id FROM device_types WHERE type_name = 'EK1122'), 3, 'DI', 'PDI', 'RX2', 'read', '接收数据2');
+
+-- FLK-D25设备点位（16点 D-sub接口）
+INSERT INTO device_type_points (device_type_id, point_index, point_type, sim_type, point_name, mode, description) VALUES
+-- 12 DI points (X2:4 8 14)
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), 0, 'DI', 'PDI', 'DI1', 'read', 'X2:4数字输入点1'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), 1, 'DI', 'PDI', 'DI2', 'read', 'X2:4数字输入点2'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), 2, 'DI', 'PDI', 'DI3', 'read', 'X2:4数字输入点3'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), 3, 'DI', 'PDI', 'DI4', 'read', 'X2:4数字输入点4'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), 4, 'DI', 'PDI', 'DI5', 'read', 'X2:8数字输入点1'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), 5, 'DI', 'PDI', 'DI6', 'read', 'X2:8数字输入点2'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), 6, 'DI', 'PDI', 'DI7', 'read', 'X2:8数字输入点3'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), 7, 'DI', 'PDI', 'DI8', 'read', 'X2:8数字输入点4'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), 8, 'DI', 'PDI', 'DI9', 'read', 'X2:14数字输入点1'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), 9, 'DI', 'PDI', 'DI10', 'read', 'X2:14数字输入点2'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), 10, 'DI', 'PDI', 'DI11', 'read', 'X2:14数字输入点3'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), 11, 'DI', 'PDI', 'DI12', 'read', 'X2:14数字输入点4'),
+-- 2 GND points (X2:7 17)
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), 12, 'DI', 'PDI', 'GND1', 'read', 'X2:7接地点'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), 13, 'DI', 'PDI', 'GND2', 'read', 'X2:17接地点'),
+-- 2 DO points (X2:13)
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), 14, 'DO', 'PDO', 'DO1', 'write', 'X2:13数字输出点1'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), 15, 'DO', 'PDO', 'DO2', 'write', 'X2:13数字输出点2');
+
+-- EL9100设备点位（3点 电源馈电模块）
+INSERT INTO device_type_points (device_type_id, point_index, point_type, sim_type, point_name, mode, description) VALUES
+((SELECT id FROM device_types WHERE type_name = 'EL9100'), 0, 'DI', 'PDI', 'POWER', 'read', '电源状态'),
+((SELECT id FROM device_types WHERE type_name = 'EL9100'), 1, 'DI', 'PDI', 'DIAG', 'read', '诊断状态'),
+((SELECT id FROM device_types WHERE type_name = 'EL9100'), 2, 'DI', 'PDI', 'FUSE', 'read', '保险丝状态');
+
+-- EL6731设备点位（2点 PROFIBUS主站模块）
+INSERT INTO device_type_points (device_type_id, point_index, point_type, sim_type, point_name, mode, description) VALUES
+((SELECT id FROM device_types WHERE type_name = 'EL6731'), 0, 'DI', 'PDI', 'STATUS', 'read', 'PROFIBUS通信状态'),
+((SELECT id FROM device_types WHERE type_name = 'EL6731'), 1, 'DI', 'PDI', 'ERROR', 'read', '错误状态');
+
+-- GV204-X1设备点位（4点 屏蔽和电源接口）
+INSERT INTO device_type_points (device_type_id, point_index, point_type, sim_type, point_name, mode, description) VALUES
+((SELECT id FROM device_types WHERE type_name = 'GV204-X1'), 0, 'DI', 'PDI', 'SHIELD', 'read', '屏蔽接地'),
+((SELECT id FROM device_types WHERE type_name = 'GV204-X1'), 1, 'DI', 'PDI', 'GND', 'read', '信号地'),
+((SELECT id FROM device_types WHERE type_name = 'GV204-X1'), 2, 'DI', 'PDI', 'VCC', 'read', '供电电源'),
+((SELECT id FROM device_types WHERE type_name = 'GV204-X1'), 3, 'DI', 'PDI', 'PE', 'read', '保护地');
+
+-- GV204-X2设备点位（8点 编码器输入接口）
+INSERT INTO device_type_points (device_type_id, point_index, point_type, sim_type, point_name, mode, description) VALUES
+((SELECT id FROM device_types WHERE type_name = 'GV204-X2'), 0, 'AI', 'PAI', 'ENC1A', 'read', '编码器1 A相'),
+((SELECT id FROM device_types WHERE type_name = 'GV204-X2'), 1, 'AI', 'PAI', 'ENC1B', 'read', '编码器1 B相'),
+((SELECT id FROM device_types WHERE type_name = 'GV204-X2'), 2, 'AI', 'PAI', 'ENC1Z', 'read', '编码器1 Z相'),
+((SELECT id FROM device_types WHERE type_name = 'GV204-X2'), 3, 'AI', 'PAI', 'ENC1COM', 'read', '编码器1 公共端'),
+((SELECT id FROM device_types WHERE type_name = 'GV204-X2'), 4, 'AI', 'PAI', 'ENC2A', 'read', '编码器2 A相'),
+((SELECT id FROM device_types WHERE type_name = 'GV204-X2'), 5, 'AI', 'PAI', 'ENC2B', 'read', '编码器2 B相'),
+((SELECT id FROM device_types WHERE type_name = 'GV204-X2'), 6, 'AI', 'PAI', 'ENC2Z', 'read', '编码器2 Z相'),
+((SELECT id FROM device_types WHERE type_name = 'GV204-X2'), 7, 'AI', 'PAI', 'ENC2COM', 'read', '编码器2 公共端');
+
+-- GV204-X3设备点位（4点 输出接口1）
+INSERT INTO device_type_points (device_type_id, point_index, point_type, sim_type, point_name, mode, description) VALUES
+((SELECT id FROM device_types WHERE type_name = 'GV204-X3'), 0, 'AO', 'PAO', 'OUT1', 'write', '模拟输出1'),
+((SELECT id FROM device_types WHERE type_name = 'GV204-X3'), 1, 'AO', 'PAO', 'OUT2', 'write', '模拟输出2'),
+((SELECT id FROM device_types WHERE type_name = 'GV204-X3'), 2, 'AO', 'PAO', 'OUT3', 'write', '模拟输出3'),
+((SELECT id FROM device_types WHERE type_name = 'GV204-X3'), 3, 'AO', 'PAO', 'OUT4', 'write', '模拟输出4');
+
+-- GV204-X4设备点位（8点 输出接口2）
+INSERT INTO device_type_points (device_type_id, point_index, point_type, sim_type, point_name, mode, description) VALUES
+((SELECT id FROM device_types WHERE type_name = 'GV204-X4'), 0, 'AO', 'PAO', 'OUT5', 'write', '模拟输出5'),
+((SELECT id FROM device_types WHERE type_name = 'GV204-X4'), 1, 'AO', 'PAO', 'OUT6', 'write', '模拟输出6'),
+((SELECT id FROM device_types WHERE type_name = 'GV204-X4'), 2, 'AO', 'PAO', 'OUT7', 'write', '模拟输出7'),
+((SELECT id FROM device_types WHERE type_name = 'GV204-X4'), 3, 'AO', 'PAO', 'OUT8', 'write', '模拟输出8'),
+((SELECT id FROM device_types WHERE type_name = 'GV204-X4'), 4, 'AO', 'PAO', 'OUT9', 'write', '模拟输出9'),
+((SELECT id FROM device_types WHERE type_name = 'GV204-X4'), 5, 'AO', 'PAO', 'OUT10', 'write', '模拟输出10'),
+((SELECT id FROM device_types WHERE type_name = 'GV204-X4'), 6, 'AO', 'PAO', 'OUT11', 'write', '模拟输出11'),
+((SELECT id FROM device_types WHERE type_name = 'GV204-X4'), 7, 'AO', 'PAO', 'OUT12', 'write', '模拟输出12');
 
 -- 开启外键检查
 SET FOREIGN_KEY_CHECKS = 1;
