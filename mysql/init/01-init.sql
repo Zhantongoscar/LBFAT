@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS device_types (
 CREATE TABLE IF NOT EXISTS device_type_points (
   id INT AUTO_INCREMENT PRIMARY KEY,
   device_type_id INT NOT NULL,
-  point_index SMALLINT UNSIGNED NOT NULL,
+  point_index VARCHAR(60) NOT NULL COMMENT '点位索引，支持数字和特殊字符',
   point_type ENUM('DI','DO','AI','AO') NOT NULL,
   sim_type ENUM('A','B','C','D','F','U','W','DD','PDI','PDO','PAI','PAO','HI','HO') NOT NULL COMMENT '模拟类型',
   point_name VARCHAR(50) NOT NULL,
@@ -722,25 +722,54 @@ INSERT INTO device_type_points (device_type_id, point_index, point_type, sim_typ
 
 -- FLK-D25设备点位（16点 D-sub接口）
 INSERT INTO device_type_points (device_type_id, point_index, point_type, sim_type, point_name, mode, description) VALUES
--- 12 DI points (X2:4 8 14)
-((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), 0, 'DI', 'PDI', 'DI1', 'read', 'X2:4数字输入点1'),
-((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), 1, 'DI', 'PDI', 'DI2', 'read', 'X2:4数字输入点2'),
-((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), 2, 'DI', 'PDI', 'DI3', 'read', 'X2:4数字输入点3'),
-((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), 3, 'DI', 'PDI', 'DI4', 'read', 'X2:4数字输入点4'),
-((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), 4, 'DI', 'PDI', 'DI5', 'read', 'X2:8数字输入点1'),
-((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), 5, 'DI', 'PDI', 'DI6', 'read', 'X2:8数字输入点2'),
-((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), 6, 'DI', 'PDI', 'DI7', 'read', 'X2:8数字输入点3'),
-((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), 7, 'DI', 'PDI', 'DI8', 'read', 'X2:8数字输入点4'),
-((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), 8, 'DI', 'PDI', 'DI9', 'read', 'X2:14数字输入点1'),
-((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), 9, 'DI', 'PDI', 'DI10', 'read', 'X2:14数字输入点2'),
-((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), 10, 'DI', 'PDI', 'DI11', 'read', 'X2:14数字输入点3'),
-((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), 11, 'DI', 'PDI', 'DI12', 'read', 'X2:14数字输入点4'),
--- 2 GND points (X2:7 17)
-((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), 12, 'DI', 'PDI', 'GND1', 'read', 'X2:7接地点'),
-((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), 13, 'DI', 'PDI', 'GND2', 'read', 'X2:17接地点'),
--- 2 DO points (X2:13)
-((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), 14, 'DO', 'PDO', 'DO1', 'write', 'X2:13数字输出点1'),
-((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), 15, 'DO', 'PDO', 'DO2', 'write', 'X2:13数字输出点2');
+-- X1:1 到X23
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), "X1:1", 'DI', 'PDI', 'DI1', 'read', 'X1:41数字输入点1'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), "X1:2", 'DI', 'PDI', 'DI2', 'read', 'X1:2数字输入点2'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), "X1:3", 'DI', 'PDI', 'DI3', 'read', 'X1:3数字输入点3'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), "X1:4", 'DI', 'PDI', 'DI4', 'read', 'X1:4数字输入点4'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), "X1:5", 'DI', 'PDI', 'DI5', 'read', 'X1:5数字输入点5'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), "X1:6", 'DI', 'PDI', 'DI6', 'read', 'X1:6数字输入点6'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), "X1:7", 'DI', 'PDI', 'DI7', 'read', 'X1:7数字输入点7'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), "X1:8", 'DI', 'PDI', 'DI8', 'read', 'X1:8数字输入点8'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), "X1:9", 'DI', 'PDI', 'DI9', 'read', 'X1:9数字输入点9'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), "X1:10", 'DI', 'PDI', 'DI10', 'read', 'X1:10数字输入点10'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), "X1:11", 'DI', 'PDI', 'DI11', 'read', 'X1:11数字输入点11'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), "X1:12", 'DI', 'PDI', 'DI12', 'read', 'X1:12数字输入点12'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), "X1:13", 'DI', 'PDI', 'DI13', 'read', 'X1:13数字输入点13'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), "X1:14", 'DI', 'PDI', 'DI14', 'read', 'X1:14数字输入点14'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), "X1:15", 'DI', 'PDI', 'DI15', 'read', 'X1:15数字输入点15'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), "X1:16", 'DI', 'PDI', 'DI16', 'read', 'X1:16数字输入点16'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), "X1:17", 'DI', 'PDI', 'DI17', 'read', 'X1:17数字输入点17'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), "X1:18", 'DI', 'PDI', 'DI18', 'read', 'X1:18数字输入点18'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), "X1:19", 'DI', 'PDI', 'DI19', 'read', 'X1:19数字输入点19'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), "X1:20", 'DI', 'PDI', 'DI20', 'read', 'X1:20数字输入点20'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), "X1:21", 'DI', 'PDI', 'DI21', 'read', 'X1:21数字输入点21'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), "X1:22", 'DI', 'PDI', 'DI22', 'read', 'X1:22数字输入点22'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), "X1:23", 'DI', 'PDI', 'DI23', 'read', 'X1:23数字输入点23'),
+
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), "X2:1", 'DI', 'PDI', 'DI1', 'read', 'X2:1数字输入点2'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), "X2:2", 'DI', 'PDI', 'DI2', 'read', 'X2:2数字输入点2'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), "X2:3", 'DI', 'PDI', 'DI3', 'read', 'X2:3数字输入点3'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), "X2:4", 'DI', 'PDI', 'DI4', 'read', 'X2:4数字输入点4'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), "X2:5", 'DI', 'PDI', 'DI5', 'read', 'X2:5数字输入点5'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), "X2:6", 'DI', 'PDI', 'DI6', 'read', 'X2:6数字输入点6'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), "X2:7", 'DI', 'PDI', 'DI7', 'read', 'X2:7数字输入点7'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), "X2:8", 'DI', 'PDI', 'DI8', 'read', 'X2:8数字输入点8'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), "X2:9", 'DI', 'PDI', 'DI9', 'read', 'X2:9数字输入点9'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), "X2:10", 'DI', 'PDI', 'DI10', 'read', 'X2:10数字输入点10'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), "X2:11", 'DI', 'PDI', 'DI11', 'read', 'X2:11数字输入点11'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), "X2:12", 'DI', 'PDI', 'DI12', 'read', 'X2:12数字输入点12'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), "X2:13", 'DI', 'PDI', 'DI13', 'read', 'X2:13数字输入点13'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), "X2:14", 'DI', 'PDI', 'DI14', 'read', 'X2:14数字输入点14'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), "X2:15", 'DI', 'PDI', 'DI15', 'read', 'X2:15数字输入点15'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), "X2:16", 'DI', 'PDI', 'DI16', 'read', 'X2:16数字输入点16'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), "X2:17", 'DI', 'PDI', 'DI17', 'read', 'X2:17数字输入点17'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), "X2:18", 'DI', 'PDI', 'DI18', 'read', 'X2:18数字输入点18'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), "X2:19", 'DI', 'PDI', 'DI19', 'read', 'X2:19数字输入点19'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), "X2:20", 'DI', 'PDI', 'DI20', 'read', 'X2:20数字输入点20'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), "X2:21", 'DI', 'PDI', 'DI21', 'read', 'X2:21数字输入点21'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), "X2:22", 'DI', 'PDI', 'DI22', 'read', 'X2:22数字输入点22'),
+((SELECT id FROM device_types WHERE type_name = 'FLK-D25'), "X2:23", 'DI', 'PDI', 'DI23', 'read', 'X2:23数字输入点23');
 
 -- EL9100设备点位（3点 电源馈电模块）
 INSERT INTO device_type_points (device_type_id, point_index, point_type, sim_type, point_name, mode, description) VALUES
