@@ -20,20 +20,19 @@ CREATE TABLE IF NOT EXISTS device_types (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) COMMENT '设备类型定义表';
-
 -- 设备点位表
 CREATE TABLE IF NOT EXISTS device_type_points (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    device_type_id INT NOT NULL,
-    point_index INT NOT NULL,
-    point_type ENUM('DI','DO','AI','AO') NOT NULL,
-    sim_type ENUM('A','B','C','D','F','U','W','DD','PDI','PDO','PAI','PAO','HI','HO') NOT NULL COMMENT '模拟类型',
-    point_name VARCHAR(50) NOT NULL,
-    mode ENUM('read','write') NOT NULL DEFAULT 'read',
-    description TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (device_type_id) REFERENCES device_types(id) ON DELETE CASCADE,
-    UNIQUE KEY unique_point (device_type_id, point_index)
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  device_type_id INT NOT NULL,
+  point_index SMALLINT UNSIGNED NOT NULL,
+  point_type ENUM('DI','DO','AI','AO') NOT NULL,
+  sim_type ENUM('A','B','C','D','F','U','W','DD','PDI','PDO','PAI','PAO','HI','HO') NOT NULL COMMENT '模拟类型',
+  point_name VARCHAR(50) NOT NULL,
+  mode ENUM('read','write') NOT NULL DEFAULT 'read',
+  description TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (device_type_id) REFERENCES device_types(id) ON DELETE CASCADE,
+  UNIQUE KEY unique_point (device_type_id, point_index)
 ) COMMENT '设备点位配置表';
 
 -- 用户表
