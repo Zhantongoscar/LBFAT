@@ -899,6 +899,7 @@ CREATE TABLE IF NOT EXISTS simpoint (
   sim_type VARCHAR(10) NOT NULL,
   mode VARCHAR(10) NOT NULL,
   description VARCHAR(255),
+  Location VARCHAR(50) DEFAULT 'X20',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -914,7 +915,8 @@ INSERT INTO simpoint (
   point_index,
   sim_type,
   mode,
-  description
+  description,
+  Location
 )
 SELECT 
   CONCAT("=",d.project_name,'+',d.Location,'-', d.module_type, d.serial_number, ':', dtp.point_index) as ftid,  
@@ -927,7 +929,8 @@ SELECT
   dtp.point_index,
   dtp.sim_type,
   dtp.mode,
-  dtp.description
+  dtp.description,
+  d.Location
 FROM devices d
 JOIN device_type_points dtp ON d.type_id = dtp.device_type_id
 ORDER BY d.project_name, d.module_type, d.serial_number, dtp.point_index;
