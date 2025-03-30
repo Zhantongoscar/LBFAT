@@ -72,6 +72,7 @@ CREATE TABLE IF NOT EXISTS devices (
     rssi INT DEFAULT 0 COMMENT '信号强度',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    Location VARCHAR(50) DEFAULT 'X20' COMMENT '设备位置',
     UNIQUE KEY uk_device (project_name, module_type, serial_number),
     INDEX idx_project_name (project_name),
     INDEX idx_status (status),
@@ -230,10 +231,70 @@ INSERT INTO project_subscriptions (project_name, is_subscribed) VALUES
 ('lb_prod', false);
 
 -- 插入设备数据
-INSERT INTO devices (id, project_name, module_type, serial_number, type_id, status, rssi) VALUES
-(1, 'lb_test', 'EBD', '1', 2, 'offline', 0),
-(2, 'lb_test', 'EDB', '4', 1, 'offline', 0),
-(3, 'lb_test', 'EDB', '5', 1, 'offline', 0)
+INSERT INTO devices (project_name, module_type, serial_number, type_id, status, rssi, Location) VALUES
+-- EBD设备 1-20 (Location: X20-X25, 每个5个)
+('lb_test', 'EBD', '1', 2, 'offline', 0, 'X20'),
+('lb_test', 'EBD', '2', 2, 'offline', 0, 'X20'),
+('lb_test', 'EBD', '3', 2, 'offline', 0, 'X20'),
+('lb_test', 'EBD', '4', 2, 'offline', 0, 'X20'),
+('lb_test', 'EBD', '5', 2, 'offline', 0, 'X20'),
+('lb_test', 'EBD', '6', 2, 'offline', 0, 'X21'),
+('lb_test', 'EBD', '7', 2, 'offline', 0, 'X21'),
+('lb_test', 'EBD', '8', 2, 'offline', 0, 'X21'),
+('lb_test', 'EBD', '9', 2, 'offline', 0, 'X21'),
+('lb_test', 'EBD', '10', 2, 'offline', 0, 'X21'),
+('lb_test', 'EBD', '11', 2, 'offline', 0, 'X22'),
+('lb_test', 'EBD', '12', 2, 'offline', 0, 'X22'),
+('lb_test', 'EBD', '13', 2, 'offline', 0, 'X22'),
+('lb_test', 'EBD', '14', 2, 'offline', 0, 'X22'),
+('lb_test', 'EBD', '15', 2, 'offline', 0, 'X22'),
+('lb_test', 'EBD', '16', 2, 'offline', 0, 'X23'),
+('lb_test', 'EBD', '17', 2, 'offline', 0, 'X23'),
+('lb_test', 'EBD', '18', 2, 'offline', 0, 'X23'),
+('lb_test', 'EBD', '19', 2, 'offline', 0, 'X23'),
+('lb_test', 'EBD', '20', 2, 'offline', 0, 'X23'),
+('lb_test', 'EBD', '21', 2, 'offline', 0, 'X24'),
+('lb_test', 'EBD', '22', 2, 'offline', 0, 'X24'),
+('lb_test', 'EBD', '23', 2, 'offline', 0, 'X24'),
+('lb_test', 'EBD', '24', 2, 'offline', 0, 'X24'),
+('lb_test', 'EBD', '25', 2, 'offline', 0, 'X24'),
+('lb_test', 'EBD', '26', 2, 'offline', 0, 'X25'),
+('lb_test', 'EBD', '27', 2, 'offline', 0, 'X25'),
+('lb_test', 'EBD', '28', 2, 'offline', 0, 'X25'),
+('lb_test', 'EBD', '29', 2, 'offline', 0, 'X25'),
+('lb_test', 'EBD', '30', 2, 'offline', 0, 'X25'),
+
+-- EDB设备 1-30
+('lb_test', 'EDB', '1', 1, 'offline', 0, 'X20'),
+('lb_test', 'EDB', '2', 1, 'offline', 0, 'X20'),
+('lb_test', 'EDB', '3', 1, 'offline', 0, 'X20'), 
+('lb_test', 'EDB', '4', 1, 'offline', 0, 'X20'),
+('lb_test', 'EDB', '5', 1, 'offline', 0, 'X20'),
+('lb_test', 'EDB', '6', 1, 'offline', 0, 'X21'),
+('lb_test', 'EDB', '7', 1, 'offline', 0, 'X21'),
+('lb_test', 'EDB', '8', 1, 'offline', 0, 'X21'),
+('lb_test', 'EDB', '9', 1, 'offline', 0, 'X21'),
+('lb_test', 'EDB', '10', 1, 'offline', 0, 'X21'),
+('lb_test', 'EDB', '11', 1, 'offline', 0, 'X22'),
+('lb_test', 'EDB', '12', 1, 'offline', 0, 'X22'),
+('lb_test', 'EDB', '13', 1, 'offline', 0, 'X22'),
+('lb_test', 'EDB', '14', 1, 'offline', 0, 'X22'),
+('lb_test', 'EDB', '15', 1, 'offline', 0, 'X22'),
+('lb_test', 'EDB', '16', 1, 'offline', 0, 'X23'),
+('lb_test', 'EDB', '17', 1, 'offline', 0, 'X23'),
+('lb_test', 'EDB', '18', 1, 'offline', 0, 'X23'),
+('lb_test', 'EDB', '19', 1, 'offline', 0, 'X23'),
+('lb_test', 'EDB', '20', 1, 'offline', 0, 'X23'),
+('lb_test', 'EDB', '21', 1, 'offline', 0, 'X24'),
+('lb_test', 'EDB', '22', 1, 'offline', 0, 'X24'),
+('lb_test', 'EDB', '23', 1, 'offline', 0, 'X24'),
+('lb_test', 'EDB', '24', 1, 'offline', 0, 'X24'),
+('lb_test', 'EDB', '25', 1, 'offline', 0, 'X24'),
+('lb_test', 'EDB', '26', 1, 'offline', 0, 'X25'),
+('lb_test', 'EDB', '27', 1, 'offline', 0, 'X25'),
+('lb_test', 'EDB', '28', 1, 'offline', 0, 'X25'),
+('lb_test', 'EDB', '29', 1, 'offline', 0, 'X25'),
+('lb_test', 'EDB', '30', 1, 'offline', 0, 'X25')
 ON DUPLICATE KEY UPDATE status = 'offline';
 
 -- 插入MQTT订阅
@@ -819,4 +880,60 @@ INSERT INTO device_type_points (device_type_id, point_index, point_type, sim_typ
 ((SELECT id FROM device_types WHERE type_name = 'GV204-X4'), 7, 'AO', 'PAO', 'OUT12', 'write', '模拟输出12');
 
 -- 开启外键检查
+-- 设置当前数据库
+USE lbfat;
+
+-- 清空并重新创建simpoint表
+DROP TABLE IF EXISTS simpoint;
+CREATE TABLE IF NOT EXISTS simpoint (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  ftid VARCHAR(50) NOT NULL,
+  target_ftid VARCHAR(50),
+  project_name VARCHAR(50) NOT NULL,
+  moduler_name VARCHAR(50) NOT NULL,
+  device_type_id INT NOT NULL,
+  FOREIGN KEY (device_type_id) REFERENCES device_types(id),
+  device_name VARCHAR(50) NOT NULL,
+  point_type VARCHAR(10) NOT NULL,
+  point_index VARCHAR(60) NOT NULL,
+  sim_type VARCHAR(10) NOT NULL,
+  mode VARCHAR(10) NOT NULL,
+  description VARCHAR(255),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 从devices和device_type_points表中插入数据到simpoint表
+INSERT INTO simpoint (
+  ftid,
+  target_ftid,
+  project_name,
+  moduler_name,
+  device_type_id,
+  device_name,
+  point_type,
+  point_index,
+  sim_type,
+  mode,
+  description
+)
+SELECT 
+  CONCAT("=",d.project_name,'+',d.Location,'-', d.module_type, d.serial_number, ':', dtp.point_index) as ftid,  
+  NULL as target_ftid,
+  d.project_name,
+  d.module_type AS moduler_name,
+  d.type_id AS device_type_id,
+  d.serial_number AS device_name,
+  dtp.point_type,
+  dtp.point_index,
+  dtp.sim_type,
+  dtp.mode,
+  dtp.description
+FROM devices d
+JOIN device_type_points dtp ON d.type_id = dtp.device_type_id
+ORDER BY d.project_name, d.module_type, d.serial_number, dtp.point_index;
+
+
+
+
 SET FOREIGN_KEY_CHECKS = 1;
+-- 插入数据到simpoint表
