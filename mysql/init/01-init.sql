@@ -890,16 +890,14 @@ CREATE TABLE IF NOT EXISTS simpoint (
   ftid VARCHAR(50) NOT NULL,
   target_ftid VARCHAR(50),
   project_name VARCHAR(50) NOT NULL,
-  moduler_name VARCHAR(50) NOT NULL,
-  device_type_id INT NOT NULL,
-  FOREIGN KEY (device_type_id) REFERENCES device_types(id),
+  moduler VARCHAR(50) NOT NULL,
   device_name VARCHAR(50) NOT NULL,
   point_type VARCHAR(10) NOT NULL,
   point_index VARCHAR(60) NOT NULL,
   sim_type VARCHAR(10) NOT NULL,
   mode VARCHAR(10) NOT NULL,
   description VARCHAR(255),
-  Location VARCHAR(50) DEFAULT 'X20',
+  hartingbox VARCHAR(50),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -908,29 +906,27 @@ INSERT INTO simpoint (
   ftid,
   target_ftid,
   project_name,
-  moduler_name,
-  device_type_id,
+  moduler,
   device_name,
   point_type,
   point_index,
   sim_type,
   mode,
   description,
-  Location
+  hartingbox
 )
 SELECT 
   CONCAT("=",d.project_name,'+',d.Location,'-', d.module_type, d.serial_number, ':', dtp.point_index) as ftid,  
   NULL as target_ftid,
   d.project_name,
-  d.module_type AS moduler_name,
-  d.type_id AS device_type_id,
+  CONCAT(d.module_type,d.serial_number) AS moduler,
   d.serial_number AS device_name,
   dtp.point_type,
   dtp.point_index,
   dtp.sim_type,
   dtp.mode,
   dtp.description,
-  d.Location
+  NULL as hartingbox
 FROM devices d
 JOIN device_type_points dtp ON d.type_id = dtp.device_type_id
 ORDER BY d.project_name, d.module_type, d.serial_number, dtp.point_index;
