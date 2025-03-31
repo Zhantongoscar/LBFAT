@@ -230,72 +230,13 @@ INSERT INTO project_subscriptions (project_name, is_subscribed) VALUES
 ('lb_test', true),
 ('lb_prod', false);
 
--- 插入设备数据
-INSERT INTO devices (project_name, module_type, serial_number, type_id, status, rssi, Location) VALUES
--- EBD设备 1-20 (Location: X20-X25, 每个5个)
-('lb_test', 'EBD', '1', 2, 'offline', 0, 'X20'),
-('lb_test', 'EBD', '2', 2, 'offline', 0, 'X20'),
-('lb_test', 'EBD', '3', 2, 'offline', 0, 'X20'),
-('lb_test', 'EBD', '4', 2, 'offline', 0, 'X20'),
-('lb_test', 'EBD', '5', 2, 'offline', 0, 'X20'),
-('lb_test', 'EBD', '6', 2, 'offline', 0, 'X21'),
-('lb_test', 'EBD', '7', 2, 'offline', 0, 'X21'),
-('lb_test', 'EBD', '8', 2, 'offline', 0, 'X21'),
-('lb_test', 'EBD', '9', 2, 'offline', 0, 'X21'),
-('lb_test', 'EBD', '10', 2, 'offline', 0, 'X21'),
-('lb_test', 'EBD', '11', 2, 'offline', 0, 'X22'),
-('lb_test', 'EBD', '12', 2, 'offline', 0, 'X22'),
-('lb_test', 'EBD', '13', 2, 'offline', 0, 'X22'),
-('lb_test', 'EBD', '14', 2, 'offline', 0, 'X22'),
-('lb_test', 'EBD', '15', 2, 'offline', 0, 'X22'),
-('lb_test', 'EBD', '16', 2, 'offline', 0, 'X23'),
-('lb_test', 'EBD', '17', 2, 'offline', 0, 'X23'),
-('lb_test', 'EBD', '18', 2, 'offline', 0, 'X23'),
-('lb_test', 'EBD', '19', 2, 'offline', 0, 'X23'),
-('lb_test', 'EBD', '20', 2, 'offline', 0, 'X23'),
-('lb_test', 'EBD', '21', 2, 'offline', 0, 'X24'),
-('lb_test', 'EBD', '22', 2, 'offline', 0, 'X24'),
-('lb_test', 'EBD', '23', 2, 'offline', 0, 'X24'),
-('lb_test', 'EBD', '24', 2, 'offline', 0, 'X24'),
-('lb_test', 'EBD', '25', 2, 'offline', 0, 'X24'),
-('lb_test', 'EBD', '26', 2, 'offline', 0, 'X25'),
-('lb_test', 'EBD', '27', 2, 'offline', 0, 'X25'),
-('lb_test', 'EBD', '28', 2, 'offline', 0, 'X25'),
-('lb_test', 'EBD', '29', 2, 'offline', 0, 'X25'),
-('lb_test', 'EBD', '30', 2, 'offline', 0, 'X25'),
-
--- EDB设备 1-30
-('lb_test', 'EDB', '1', 1, 'offline', 0, 'X20'),
-('lb_test', 'EDB', '2', 1, 'offline', 0, 'X20'),
-('lb_test', 'EDB', '3', 1, 'offline', 0, 'X20'), 
-('lb_test', 'EDB', '4', 1, 'offline', 0, 'X20'),
-('lb_test', 'EDB', '5', 1, 'offline', 0, 'X20'),
-('lb_test', 'EDB', '6', 1, 'offline', 0, 'X21'),
-('lb_test', 'EDB', '7', 1, 'offline', 0, 'X21'),
-('lb_test', 'EDB', '8', 1, 'offline', 0, 'X21'),
-('lb_test', 'EDB', '9', 1, 'offline', 0, 'X21'),
-('lb_test', 'EDB', '10', 1, 'offline', 0, 'X21'),
-('lb_test', 'EDB', '11', 1, 'offline', 0, 'X22'),
-('lb_test', 'EDB', '12', 1, 'offline', 0, 'X22'),
-('lb_test', 'EDB', '13', 1, 'offline', 0, 'X22'),
-('lb_test', 'EDB', '14', 1, 'offline', 0, 'X22'),
-('lb_test', 'EDB', '15', 1, 'offline', 0, 'X22'),
-('lb_test', 'EDB', '16', 1, 'offline', 0, 'X23'),
-('lb_test', 'EDB', '17', 1, 'offline', 0, 'X23'),
-('lb_test', 'EDB', '18', 1, 'offline', 0, 'X23'),
-('lb_test', 'EDB', '19', 1, 'offline', 0, 'X23'),
-('lb_test', 'EDB', '20', 1, 'offline', 0, 'X23'),
-('lb_test', 'EDB', '21', 1, 'offline', 0, 'X24'),
-('lb_test', 'EDB', '22', 1, 'offline', 0, 'X24'),
-('lb_test', 'EDB', '23', 1, 'offline', 0, 'X24'),
-('lb_test', 'EDB', '24', 1, 'offline', 0, 'X24'),
-('lb_test', 'EDB', '25', 1, 'offline', 0, 'X24'),
-('lb_test', 'EDB', '26', 1, 'offline', 0, 'X25'),
-('lb_test', 'EDB', '27', 1, 'offline', 0, 'X25'),
-('lb_test', 'EDB', '28', 1, 'offline', 0, 'X25'),
-('lb_test', 'EDB', '29', 1, 'offline', 0, 'X25'),
-('lb_test', 'EDB', '30', 1, 'offline', 0, 'X25')
-ON DUPLICATE KEY UPDATE status = 'offline';
+-- -- 插入设备数据
+-- INSERT INTO devices (project_name, module_type, serial_number, type_id, status, rssi, Location) VALUES
+-- -- EBD设备 1-20 (Location: X20-X25, 每个5个)
+-- ('lb_test', 'EBD', '1', 2, 'offline', 0, 'X20'),
+-- -- EDB设备 1-30
+-- ('lb_test', 'EDB', '1', 1, 'offline', 0, 'X20')
+-- ON DUPLICATE KEY UPDATE status = 'offline';
 
 -- 插入MQTT订阅
 INSERT INTO mqtt_subscriptions (topic, qos, is_active) VALUES
