@@ -16,6 +16,7 @@ services:
       - ./mysql/conf/my.cnf:/etc/mysql/conf.d/my.cnf
     networks:
       - lbfat_network
+    restart: unless-stopped
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     deploy:
       resources:
@@ -42,6 +43,7 @@ services:
       - ./emqx/log:/opt/emqx/log
     networks:
       - lbfat_network
+    restart: unless-stopped
     deploy:
       resources:
         limits:
@@ -74,6 +76,7 @@ services:
         condition: service_started
     networks:
       - lbfat_network
+    restart: unless-stopped
     deploy:
       resources:
         limits:
@@ -99,6 +102,7 @@ services:
       - backend
     networks:
       - lbfat_network
+    restart: unless-stopped
     deploy:
       resources:
         limits:
@@ -150,6 +154,7 @@ services:
       - NEO4J_PASSWORD=13701033228
     networks:
       - lbfat_network
+    restart: unless-stopped
     depends_on:
       - neo4j
     profiles:
