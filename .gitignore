@@ -86,7 +86,7 @@ neo4j/data/transactions/neo4j/neostore.transaction.db.*
 neo4j/data/databases/
 neo4j/data/dbms/
 
-# Neo4j - 完整配置
+# Neo4j - 主配置
 neo4j/
 !neo4j/README.md
 !neo4j/conf/*.conf
@@ -99,13 +99,31 @@ neo4j/data/databases/
 neo4j/data/dbms/
 neo4j/logs/
 
-# 删除重复的配置项
-# 移除以下重复项因为已被上面的规则覆盖：
-# - neo4j/data/transactions/
-# - neo4j/data/
-# - neo4j/logs/
-# - neo4j/import/
-# - neo4j/admin-import/
-# - neo4j/conf/
-# - neo4j/plugins/
-# - neo4j/certificates/
+# Git 平台文件限制 (GitHub: 100MB, Gitee: 50MB)
+# Neo4j 配置
+neo4j/
+!neo4j/README.md
+!neo4j/conf/*.conf
+!neo4j/import/.gitkeep
+!neo4j/plugins/.gitkeep
+
+# 大文件存储
+*.tar
+*.tar.gz
+*.zip
+*.rar
+*.7z
+*.jar
+*.war
+*.db
+*.dump
+*.backup
+*.iso
+
+# Neo4j 特定大文件
+neo4j/data/
+neo4j/data/transactions/
+neo4j/data/databases/
+neo4j/data/dbms/
+neo4j/logs/
+**/neostore.transaction.db.*
